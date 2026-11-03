@@ -45,7 +45,7 @@ const ROW_PCAP =
   'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,ghi_chu,thu_tu';
 
 const ROW_KPI =
-  'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,ghi_chu';
+  'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,thuong_ql,thuong_nhom_tia,thuong_nhom_cp,ghi_chu';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -133,6 +133,9 @@ interface DbRowKpi {
   phan_tram: string | number | null;
   danh_gia: string | null;
   tien_thuong: string | number | null;
+  thuong_ql: string | number | null;
+  thuong_nhom_tia: string | number | null;
+  thuong_nhom_cp: string | number | null;
   ghi_chu: string | null;
 }
 
@@ -244,6 +247,9 @@ function kpiRowToModel(row: DbRowKpi): FarmBaoCaoKpiThuongRow {
     phan_tram: numNullable(row.phan_tram),
     danh_gia: row.danh_gia ?? null,
     tien_thuong: num(row.tien_thuong),
+    thuong_ql: num(row.thuong_ql),
+    thuong_nhom_tia: num(row.thuong_nhom_tia),
+    thuong_nhom_cp: num(row.thuong_nhom_cp),
     ghi_chu: row.ghi_chu ?? null,
   };
 }
@@ -375,6 +381,9 @@ function kpiPayloadRows(idBaoCao: number, values: BaoCaoSoCheFormValues) {
       : computeKpiPhanTram(r.muc_tieu, r.thuc_te),
     danh_gia: r.danh_gia?.trim() || null,
     tien_thuong: Number(r.tien_thuong ?? 0),
+    thuong_ql: Number(r.thuong_ql ?? 0),
+    thuong_nhom_tia: Number(r.thuong_nhom_tia ?? 0),
+    thuong_nhom_cp: Number(r.thuong_nhom_cp ?? 0),
     ghi_chu: r.ghi_chu?.trim() || null,
   }));
 }

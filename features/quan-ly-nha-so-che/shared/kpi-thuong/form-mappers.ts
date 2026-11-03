@@ -9,6 +9,9 @@ export function defaultKpiThuongFormRow(): KpiThuongFormRow {
     phan_tram: null,
     danh_gia: null,
     tien_thuong: 0,
+    thuong_ql: 0,
+    thuong_nhom_tia: 0,
+    thuong_nhom_cp: 0,
     ghi_chu: null,
   };
 }
@@ -22,6 +25,9 @@ export function kpiThuongRowsToForm(rows: FarmBaoCaoKpiThuongRow[]): KpiThuongFo
     phan_tram: k.phan_tram == null || Number.isNaN(Number(k.phan_tram)) ? null : Number(k.phan_tram),
     danh_gia: k.danh_gia ?? null,
     tien_thuong: Number(k.tien_thuong ?? 0),
+    thuong_ql: Number(k.thuong_ql ?? 0),
+    thuong_nhom_tia: Number(k.thuong_nhom_tia ?? 0),
+    thuong_nhom_cp: Number(k.thuong_nhom_cp ?? 0),
     ghi_chu: k.ghi_chu ?? null,
   }));
 }

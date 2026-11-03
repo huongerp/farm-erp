@@ -5,7 +5,7 @@ import DetailSection from '../../../../components/shared/DetailSection';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { FarmBaoCaoKpiThuongRow } from './types';
-import { sumTienThuongKpiThuong } from './types';
+import { KPI_COT_THUONG_THEM, sumCotKpiThuong, sumTienThuongKpiThuong } from './types';
 import { DanhGiaKpiBadge } from '../../bao-cao-so-che/components/BaoCaoSoCheKpiThuongFormSection';
 
 interface Props {
@@ -52,6 +52,10 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
               value: formatNumberVN(row.tien_thuong),
               className: tienColor(row.tien_thuong),
             });
+            for (const c of KPI_COT_THUONG_THEM) {
+              const n = Number(row[c.key] ?? 0);
+              if (n !== 0) fields.push({ key: c.key, label: k(c.labelKey), value: formatNumberVN(n), className: tienColor(n) });
+            }
             return (
               <div
                 key={row.id || `${row.thu_tu}-${idx}`}
@@ -89,7 +93,7 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm min-w-[48rem]">
+          <table className="w-full text-sm min-w-[66rem]">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="text-center px-2 py-2 font-medium w-12">{k('colTt')}</th>
@@ -100,6 +104,9 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
                 <th className="text-right px-2 py-2 font-medium w-24">{k('colPhanTram')}</th>
                 <th className="text-left px-2 py-2 font-medium min-w-[5rem]">{k('colDanhGia')}</th>
                 <th className="text-right px-2 py-2 font-medium w-28">{k('colTienThuong')}</th>
+                {KPI_COT_THUONG_THEM.map((c) => (
+                  <th key={c.key} className="text-right px-2 py-2 font-medium w-28">{k(c.labelKey)}</th>
+                ))}
                 <th className="text-left px-2 py-2 font-medium min-w-[8rem]">{k('colGhiChu')}</th>
               </tr>
             </thead>
@@ -131,6 +138,14 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
                   )}>
                     {formatNumberVN(row.tien_thuong)}
                   </td>
+                  {KPI_COT_THUONG_THEM.map((c) => {
+                    const n = Number(row[c.key] ?? 0);
+                    return (
+                      <td key={c.key} className={cn('px-2 py-2 text-right text-sm tabular-nums font-medium', tienColor(n))}>
+                        {formatNumberVN(n)}
+                      </td>
+                    );
+                  })}
                   <td className="px-2 py-2 text-sm text-muted-foreground whitespace-pre-wrap">
                     {row.ghi_chu?.trim() ? row.ghi_chu : '—'}
                   </td>
@@ -143,6 +158,11 @@ const BaoCaoKpiThuongDetailSection: React.FC<Props> = ({ rows, i18nPrefix }) => 
                 <td className="px-2 py-2 text-right font-bold text-primary text-sm tabular-nums">
                   {formatNumberVN(tongThuong)}
                 </td>
+                {KPI_COT_THUONG_THEM.map((c) => (
+                  <td key={c.key} className="px-2 py-2 text-right font-bold text-primary text-sm tabular-nums">
+                    {formatNumberVN(sumCotKpiThuong(sorted, c.key))}
+                  </td>
+                ))}
                 <td />
               </tr>
             </tbody>

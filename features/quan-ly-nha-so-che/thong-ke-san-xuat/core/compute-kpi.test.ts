@@ -34,6 +34,9 @@ function kpiRow(
     phan_tram: 50,
     danh_gia: 'Không đạt',
     tien_thuong: 0,
+    thuong_ql: 0,
+    thuong_nhom_tia: 0,
+    thuong_nhom_cp: 0,
     ghi_chu: null,
     ...overrides,
   };

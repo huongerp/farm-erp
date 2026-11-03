@@ -18,6 +18,7 @@ export async function exportThanhToanDoiTacToXLSX(item: ThanhToanDoiTac): Promis
   const rows: (string | number)[][] = [
     [t('thanhToanDoiTac.form.soPhieu'), item.so_phieu],
     [t('thanhToanDoiTac.form.hangMuc'), item.hang_muc_thanh_toan],
+    [t('thanhToanDoiTac.form.noiDungChiTiet'), item.noi_dung_chi_tiet ?? '—'],
     [t('thanhToanDoiTac.form.ngay'), formatDate(item.ngay)],
     [t('thanhToanDoiTac.form.donVi'), item.ten_don_vi ?? '—'],
     [t('thanhToanDoiTac.store.nhomDoiTacCol'), item.ten_nhom ?? '—'],

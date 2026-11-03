@@ -9,7 +9,7 @@ import { findBaoCaoNhanCongByBranchAndDate, findDuBaoSlDongThungByBranchAndDate,
 import { SO_LIEU_BUONG_ROW_DEFS, BCSC_SO_LIEU_STT_OFFSET, BCSC_KPI_STT_OFFSET } from '../core/so-lieu-row-meta';
 import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
-import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { computeKpiPhanTram, KPI_COT_THUONG_THEM, sumCotKpiThuong } from '../../shared/kpi-thuong/types';
 import { bcscTrangThaiLabel, getBcscPreviewSignLabels } from '../core/bcsc-preview-layout';
 import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
@@ -130,15 +130,15 @@ export async function exportBaoCaoSoCheToXLSX(
     [],
     // V. KPI/Thưởng
     [`V. ${t('baoCaoSoChe.kpiThuong.sectionTitle')}`],
-    [t('common.phieuIn.stt'), t('baoCaoSoChe.kpiThuong.colHangMuc'), t('baoCaoSoChe.kpiThuong.colDvt'), t('baoCaoSoChe.kpiThuong.colMucTieu'), t('baoCaoSoChe.kpiThuong.colThucTe'), '%', t('baoCaoSoChe.kpiThuong.colDanhGia'), t('baoCaoSoChe.kpiThuong.colTienThuong'), t('baoCaoSoChe.kpiThuong.colGhiChu')],
+    [t('common.phieuIn.stt'), t('baoCaoSoChe.kpiThuong.colHangMuc'), t('baoCaoSoChe.kpiThuong.colDvt'), t('baoCaoSoChe.kpiThuong.colMucTieu'), t('baoCaoSoChe.kpiThuong.colThucTe'), '%', t('baoCaoSoChe.kpiThuong.colDanhGia'), t('baoCaoSoChe.kpiThuong.colTienThuong'), ...KPI_COT_THUONG_THEM.map((c) => t(`baoCaoSoChe.kpiThuong.${c.labelKey}`)), t('baoCaoSoChe.kpiThuong.colGhiChu')],
     ...kpiThuong.map((r, i) => {
       const pct =
         r.phan_tram != null && Number.isFinite(Number(r.phan_tram))
           ? Number(r.phan_tram)
           : computeKpiPhanTram(r.muc_tieu, r.thuc_te);
-      return [i + 1, r.ten_hang_muc || '', r.don_vi_tinh || '', r.muc_tieu || '', r.thuc_te || '', pct ?? '', r.danh_gia || '', r.tien_thuong, r.ghi_chu || ''];
+      return [i + 1, r.ten_hang_muc || '', r.don_vi_tinh || '', r.muc_tieu || '', r.thuc_te || '', pct ?? '', r.danh_gia || '', r.tien_thuong, ...KPI_COT_THUONG_THEM.map((c) => Number(r[c.key] ?? 0)), r.ghi_chu || ''];
     }),
-    [t('baoCaoSoChe.kpiThuong.rowTongThuong'), '', '', '', '', '', '', tongThuong, ''],
+    [t('baoCaoSoChe.kpiThuong.rowTongThuong'), '', '', '', '', '', '', tongThuong, ...KPI_COT_THUONG_THEM.map((c) => sumCotKpiThuong(kpiThuong, c.key)), ''],
     [],
     // Chữ ký
     getBcscPreviewSignLabels(t),
@@ -146,7 +146,7 @@ export async function exportBaoCaoSoCheToXLSX(
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 6 }, { wch: 36 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 22 }];
+  ws['!cols'] = [{ wch: 6 }, { wch: 36 }, { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Báo cáo sơ chế');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);

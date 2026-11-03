@@ -24,7 +24,7 @@ import {
 } from '../core/so-lieu-row-meta';
 import { enrichPhamCapRowsWithDerived, sumPhamCapDisplayTotals } from '../core/pham-cap-derived';
 import { sumTienThuongKpiThuong } from '../core/types';
-import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { computeKpiPhanTram, KPI_COT_THUONG_THEM, sumCotKpiThuong } from '../../shared/kpi-thuong/types';
 import { formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { HangKyTen, KhungPhieu, TD_IN, TH_IN } from '../../../../components/shared/phieu-in/PhieuInParts';
 import BaoCaoSoChePreviewOverview from './BaoCaoSoChePreviewOverview';
@@ -264,13 +264,16 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
               <thead>
                 <tr>
                   <th className={`${thPrint} w-7 text-center`}>{t('common.phieuIn.stt')}</th>
-                  <th className={thPrint} style={{ width: '28%' }}>{t('baoCaoSoChe.kpiThuong.colHangMuc')}</th>
-                  <th className={`${thPrint} w-14`}>{t('baoCaoSoChe.kpiThuong.colDvt')}</th>
-                  <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colMucTieu')}</th>
-                  <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colThucTe')}</th>
-                  <th className={`${thPrint} w-14 text-right`}>{t('baoCaoSoChe.kpiThuong.colPhanTram')}</th>
-                  <th className={`${thPrint} w-16`}>{t('baoCaoSoChe.kpiThuong.colDanhGia')}</th>
-                  <th className={`${thPrint} w-20 text-right`}>{t('baoCaoSoChe.kpiThuong.colTienThuong')}</th>
+                  <th className={thPrint} style={{ width: '15%' }}>{t('baoCaoSoChe.kpiThuong.colHangMuc')}</th>
+                  <th className={`${thPrint} w-12`}>{t('baoCaoSoChe.kpiThuong.colDvt')}</th>
+                  <th className={`${thPrint} w-12 text-right`}>{t('baoCaoSoChe.kpiThuong.colMucTieu')}</th>
+                  <th className={`${thPrint} w-12 text-right`}>{t('baoCaoSoChe.kpiThuong.colThucTe')}</th>
+                  <th className={`${thPrint} w-12 text-right`}>{t('baoCaoSoChe.kpiThuong.colPhanTram')}</th>
+                  <th className={`${thPrint} w-14`}>{t('baoCaoSoChe.kpiThuong.colDanhGia')}</th>
+                  <th className={`${thPrint} w-16 text-right`}>{t('baoCaoSoChe.kpiThuong.colTienThuong')}</th>
+                  {KPI_COT_THUONG_THEM.map((c) => (
+                    <th key={c.key} className={`${thPrint} w-14 text-right`}>{t(`baoCaoSoChe.kpiThuong.${c.labelKey}`)}</th>
+                  ))}
                   <th className={thPrint}>{t('baoCaoSoChe.kpiThuong.colGhiChu')}</th>
                 </tr>
               </thead>
@@ -292,6 +295,9 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
                       </td>
                       <td className={`${tdPrint} font-semibold`}>{r.danh_gia?.trim() || '—'}</td>
                       <td className={`${tdPrint} text-right tabular-nums font-medium`}>{formatNumberVN(r.tien_thuong)}</td>
+                      {KPI_COT_THUONG_THEM.map((c) => (
+                        <td key={c.key} className={`${tdPrint} text-right tabular-nums`}>{formatNumberVN(Number(r[c.key] ?? 0))}</td>
+                      ))}
                       <td className={`${tdPrint} whitespace-pre-wrap`}>{r.ghi_chu?.trim() || ''}</td>
                     </tr>
                   );
@@ -299,6 +305,11 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
                 <tr className="bg-gray-100 font-semibold">
                   <td colSpan={7} className={`${tdPrint} text-right`}>{t('baoCaoSoChe.kpiThuong.rowTongThuong')}</td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{formatNumberVN(tongThuong)}</td>
+                  {KPI_COT_THUONG_THEM.map((c) => (
+                    <td key={c.key} className={`${tdPrint} text-right tabular-nums`}>
+                      {formatNumberVN(sumCotKpiThuong(kpiThuongSorted, c.key))}
+                    </td>
+                  ))}
                   <td className={tdPrint} />
                 </tr>
               </tbody>

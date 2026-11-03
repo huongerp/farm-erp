@@ -99,6 +99,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
   const defaultValues: Partial<ThanhToanDoiTacFormValues> = {
     so_phieu: '',
     hang_muc_thanh_toan: '',
+    noi_dung_chi_tiet: null,
     ngay: getTodayISO().slice(0, 10),
     id_don_vi: '',
     id_doi_tac: '',
@@ -126,6 +127,7 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
       reset({
         so_phieu: initialData.so_phieu,
         hang_muc_thanh_toan: initialData.hang_muc_thanh_toan,
+        noi_dung_chi_tiet: initialData.noi_dung_chi_tiet ?? null,
         ngay: initialData.ngay,
         id_don_vi: initialData.id_don_vi ?? '',
         id_doi_tac: initialData.id_doi_tac,
@@ -228,6 +230,15 @@ const ThanhToanDoiTacForm: React.FC<Props> = ({
               {...register('hang_muc_thanh_toan')}
               error={errors.hang_muc_thanh_toan?.message}
             />
+            <div className="col-span-2">
+              <Textarea
+                label={t('thanhToanDoiTac.form.noiDungChiTiet')}
+                placeholder={t('thanhToanDoiTac.form.noiDungChiTietPlaceholder')}
+                rows={3}
+                {...register('noi_dung_chi_tiet')}
+                error={errors.noi_dung_chi_tiet?.message}
+              />
+            </div>
             <Input
               label={t('thanhToanDoiTac.form.ngay')}
               type="date"

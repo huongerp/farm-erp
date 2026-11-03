@@ -10,7 +10,28 @@ export interface FarmBaoCaoKpiThuongRow {
   phan_tram: number | null;
   danh_gia: string | null;
   tien_thuong: number;
+  /** Thưởng QL / nhóm tỉa / nhóm CP — nhập tay, độc lập với `tien_thuong` (migration 064) */
+  thuong_ql: number;
+  thuong_nhom_tia: number;
+  thuong_nhom_cp: number;
   ghi_chu: string | null;
+}
+
+/** 3 cột thưởng nhập tay, theo thứ tự hiển thị sau cột Tiền thưởng. */
+export const KPI_COT_THUONG_THEM = [
+  { key: 'thuong_ql', labelKey: 'colThuongQl' },
+  { key: 'thuong_nhom_tia', labelKey: 'colThuongNhomTia' },
+  { key: 'thuong_nhom_cp', labelKey: 'colThuongNhomCp' },
+] as const;
+
+export type KpiCotThuongKey = 'tien_thuong' | (typeof KPI_COT_THUONG_THEM)[number]['key'];
+
+/** Tổng một cột số tiền của bảng KPI / thưởng. */
+export function sumCotKpiThuong(
+  rows: Partial<Record<KpiCotThuongKey, number | null>>[] | null | undefined,
+  key: KpiCotThuongKey
+): number {
+  return (rows ?? []).reduce((s, r) => s + Number(r?.[key] ?? 0), 0);
 }
 
 export type KpiThuongFormRow = {
@@ -21,6 +42,9 @@ export type KpiThuongFormRow = {
   phan_tram: number | null;
   danh_gia: string | null;
   tien_thuong: number;
+  thuong_ql: number;
+  thuong_nhom_tia: number;
+  thuong_nhom_cp: number;
   ghi_chu: string | null;
 };
 

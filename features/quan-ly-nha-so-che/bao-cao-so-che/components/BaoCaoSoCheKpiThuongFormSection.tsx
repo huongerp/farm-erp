@@ -12,7 +12,7 @@ import Input from '../../../../components/ui/Input';
 import NumberInput from '../../../../components/ui/NumberInput';
 import FormSection from '../../../../components/shared/FormSection';
 import { cn, formatNumberVN } from '../../../../lib/utils';
-import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { computeKpiPhanTram, KPI_COT_THUONG_THEM, sumCotKpiThuong } from '../../shared/kpi-thuong/types';
 import { defaultKpiThuongFormRow } from '../../shared/kpi-thuong/form-mappers';
 import type { KpiThuongFormRow } from '../../shared/kpi-thuong/types';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
@@ -103,7 +103,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps -- kpiRows đọc từ closure khi presetSources / presetMucTieuKey đổi
   }, [presetSources, presetMucTieuKey, setValue]);
 
-  const tongTienThuong = (kpiRows ?? []).reduce((s, r) => s + Number(r?.tien_thuong ?? 0), 0);
+  const tongTienThuong = sumCotKpiThuong(kpiRows, 'tien_thuong');
 
   return (
     <FormSection title={k('sectionTitle')} icon={<Award size={14} />} variant="primary">
@@ -121,7 +121,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm min-w-[58rem]">
+        <table className="w-full text-sm min-w-[80rem]">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
               <th className="text-center px-1 py-2 font-medium w-10">{k('colTt')}</th>
@@ -132,6 +132,9 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
               <th className="text-right px-2 py-2 font-medium w-[5rem]">{k('colPhanTram')}</th>
               <th className="text-left px-2 py-2 font-medium w-[7rem]">{k('colDanhGia')}</th>
               <th className="text-right px-2 py-2 font-medium w-[8.5rem]">{k('colTienThuong')}</th>
+              {KPI_COT_THUONG_THEM.map((c) => (
+                <th key={c.key} className="text-right px-2 py-2 font-medium w-[8.5rem]">{k(c.labelKey)}</th>
+              ))}
               <th className="text-left px-2 py-2 font-medium min-w-[6rem]">{k('colGhiChu')}</th>
               <th className="w-10 px-1" />
             </tr>
@@ -139,7 +142,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
           <tbody>
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-3 py-6 text-center text-muted-foreground text-sm">
+                <td colSpan={13} className="px-3 py-6 text-center text-muted-foreground text-sm">
                   {k('empty')}
                 </td>
               </tr>
@@ -297,6 +300,28 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                       />
                     </td>
 
+                    {/* Thưởng QL / nhóm tỉa / nhóm CP — nhập tay */}
+                    {KPI_COT_THUONG_THEM.map((c) => (
+                      <td key={c.key} className="px-2 py-1.5 align-top">
+                        <Controller
+                          name={`kpi_thuong.${index}.${c.key}`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <NumberInput
+                              value={f.value ?? 0}
+                              onChange={f.onChange}
+                              min={-1e15}
+                              max={1e15}
+                              maxFractionDigits={0}
+                              showZeroFormatted
+                              className="w-full text-right"
+                              disabled={disabled}
+                            />
+                          )}
+                        />
+                      </td>
+                    ))}
+
                     {/* Ghi chú */}
                     <td className="px-2 py-1.5 align-top">
                       <Controller
@@ -335,6 +360,11 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                 <td className="px-2 py-2 text-right font-bold text-primary tabular-nums text-sm">
                   {formatNumberVN(tongTienThuong)}
                 </td>
+                {KPI_COT_THUONG_THEM.map((c) => (
+                  <td key={c.key} className="px-2 py-2 text-right font-bold text-primary tabular-nums text-sm">
+                    {formatNumberVN(sumCotKpiThuong(kpiRows, c.key))}
+                  </td>
+                ))}
                 <td colSpan={2} />
               </tr>
             )}

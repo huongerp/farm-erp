@@ -29,6 +29,9 @@ export function defaultBcscKpiThuongRows(): KpiThuongFormRow[] {
     phan_tram: null,
     danh_gia: DEFAULT_DANH_GIA,
     tien_thuong: 0,
+    thuong_ql: 0,
+    thuong_nhom_tia: 0,
+    thuong_nhom_cp: 0,
     ghi_chu: null,
   }));
 }

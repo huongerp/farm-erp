@@ -5,6 +5,8 @@ export interface ThanhToanDoiTac {
   so_phieu: string;
   /** Hạng mục thanh toán (VD: DNTT tiền cơm bếp ăn tuần 9) */
   hang_muc_thanh_toan: string;
+  /** Nội dung chi tiết / diễn giải (nhiều dòng) */
+  noi_dung_chi_tiet?: string | null;
   /** Ngày lập */
   ngay: string;
   /** Đơn vị – FK phòng ban */
@@ -16,6 +18,10 @@ export interface ThanhToanDoiTac {
   ma_doi_tac?: string;
   /** Nhóm đối tác – enrich từ đối tác (id_nhom) */
   ten_nhom?: string;
+  /** Tài khoản nhận tiền của đối tác – enrich từ đối tác (in phiếu / chi tiết) */
+  ngan_hang_bin?: string | null;
+  so_tai_khoan?: string | null;
+  chu_tai_khoan?: string | null;
   /** Trạng thái thanh toán – FK TrangThaiThanhToanDoiTac */
   id_trang_thai_thanh_toan: string;
   ten_trang_thai?: string;

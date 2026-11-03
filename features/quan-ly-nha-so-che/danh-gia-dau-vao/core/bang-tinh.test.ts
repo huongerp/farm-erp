@@ -289,3 +289,28 @@ describe('kiểm tra số lượng lỗi', () => {
     ]);
   });
 });
+
+describe('ghi chú phiếu theo chuyến (in phiếu)', () => {
+  it('phiếu một chuyến: lấy ghi chú phiếu đã trim, kèm số chuyến', () => {
+    const luoi = dungLuoiNgay({ ...phieuMau(), ghi_chu: '  xe về trễ  ' }, mauTheoId, { nhanXeDoi: 'xé đôi' });
+    expect(luoi.ghiChuChuyen).toEqual([{ chuyen: 1, ghi_chu: 'xe về trễ' }]);
+  });
+
+  it('phiếu một chuyến không có ghi chú (null hoặc toàn khoảng trắng) → rỗng', () => {
+    expect(dungLuoiNgay({ ...phieuMau(), ghi_chu: null }, mauTheoId, { nhanXeDoi: 'xé đôi' }).ghiChuChuyen).toEqual([]);
+    expect(dungLuoiNgay({ ...phieuMau(), ghi_chu: '   ' }, mauTheoId, { nhanXeDoi: 'xé đôi' }).ghiChuChuyen).toEqual([]);
+  });
+
+  it('lưới tổng ngày: gom ghi chú từng chuyến theo số chuyến, bỏ chuyến trống', () => {
+    const [tong] = congPhieuTheoNgay([
+      { ...phieuChuyen2(), ghi_chu: 'chuyến hai' },
+      { ...phieuMau(), ghi_chu: null },
+      { ...phieuMau(), id: 'p3', chuyen: 3, ghi_chu: 'chuyến ba' },
+    ]);
+    const luoi = dungLuoiNgay(tong, mauTheoId, { nhanXeDoi: 'xé đôi' });
+    expect(luoi.ghiChuChuyen).toEqual([
+      { chuyen: 2, ghi_chu: 'chuyến hai' },
+      { chuyen: 3, ghi_chu: 'chuyến ba' },
+    ]);
+  });
+});

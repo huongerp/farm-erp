@@ -29,7 +29,7 @@ const TABLE_DOI_TAC = 'fp_mh_danh_sach_doi_tac';
 const RPC_NEXT_SO_PHIEU = 'get_next_so_phieu_thanh_toan_doi_tac';
 
 const THANH_TOAN_ROW_COLUMNS =
-  'id,so_phieu,hang_muc_thanh_toan,ngay,id_don_vi,id_doi_tac,id_trang_thai_thanh_toan,trang_thai,so_tien,ngay_xu_ly,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,so_phieu,hang_muc_thanh_toan,noi_dung_chi_tiet,ngay,id_don_vi,id_doi_tac,id_trang_thai_thanh_toan,trang_thai,so_tien,ngay_xu_ly,ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 export interface NextSoPhieuTtoConfig {
   tien_to_so_phieu: string;
@@ -50,6 +50,7 @@ interface DbRow {
   id: number;
   so_phieu: string;
   hang_muc_thanh_toan: string;
+  noi_dung_chi_tiet: string | null;
   ngay: string;
   id_don_vi: number | null;
   id_doi_tac: number;
@@ -68,17 +69,27 @@ interface DoiTacNhomRow {
   ma_doi_tac: string;
   ten_doi_tac: string;
   id_nhom: number | null;
+  ngan_hang_bin: string | null;
+  so_tai_khoan: string | null;
+  chu_tai_khoan: string | null;
 }
 
+type DoiTacEnrich = {
+  ten: string;
+  ma: string;
+  ten_nhom?: string;
+  ngan_hang_bin?: string | null;
+  so_tai_khoan?: string | null;
+  chu_tai_khoan?: string | null;
+};
+
 /** Map đối tác (NCC) kèm tên nhóm – dùng enrich list/detail thanh toán. */
-async function loadDoiTacEnrichMap(
-  loai: LoaiDoiTac
-): Promise<Record<string, { ten: string; ma: string; ten_nhom?: string }>> {
+async function loadDoiTacEnrichMap(loai: LoaiDoiTac): Promise<Record<string, DoiTacEnrich>> {
   const [doiTacRows, nhomList] = await Promise.all([
     fetchAllRows<DoiTacNhomRow>((from, to) =>
       db
         .from(TABLE_DOI_TAC)
-        .select('id, ma_doi_tac, ten_doi_tac, id_nhom')
+        .select('id, ma_doi_tac, ten_doi_tac, id_nhom, ngan_hang_bin, so_tai_khoan, chu_tai_khoan')
         .eq('loai_doi_tac', loai)
         .order('thu_tu', { ascending: true })
         .order('ma_doi_tac', { ascending: true })
@@ -90,12 +101,15 @@ async function loadDoiTacEnrichMap(
   nhomList.forEach((n) => {
     nhomMap[n.id] = n.ten_nhom;
   });
-  const map: Record<string, { ten: string; ma: string; ten_nhom?: string }> = {};
+  const map: Record<string, DoiTacEnrich> = {};
   doiTacRows.forEach((row) => {
     map[String(row.id)] = {
       ten: row.ten_doi_tac ?? '',
       ma: row.ma_doi_tac ?? '',
       ten_nhom: row.id_nhom != null ? nhomMap[String(row.id_nhom)] : undefined,
+      ngan_hang_bin: row.ngan_hang_bin,
+      so_tai_khoan: row.so_tai_khoan,
+      chu_tai_khoan: row.chu_tai_khoan,
     };
   });
   return map;
@@ -114,6 +128,9 @@ function rowToItem(
     ten_doi_tac?: string;
     ma_doi_tac?: string;
     ten_nhom?: string;
+    ngan_hang_bin?: string | null;
+    so_tai_khoan?: string | null;
+    chu_tai_khoan?: string | null;
     ten_nguoi_tao?: string;
     ma_nguoi_tao?: string;
     ten_trang_thai?: string;
@@ -130,6 +147,7 @@ function rowToItem(
     id: String(row.id),
     so_phieu: row.so_phieu ?? '',
     hang_muc_thanh_toan: row.hang_muc_thanh_toan ?? '',
+    noi_dung_chi_tiet: row.noi_dung_chi_tiet ?? null,
     ngay: row.ngay ?? '',
     id_don_vi: row.id_don_vi != null ? String(row.id_don_vi) : null,
     ten_don_vi: enrich.ten_don_vi ?? null,
@@ -137,6 +155,9 @@ function rowToItem(
     ten_doi_tac: enrich.ten_doi_tac,
     ma_doi_tac: enrich.ma_doi_tac,
     ten_nhom: enrich.ten_nhom,
+    ngan_hang_bin: enrich.ngan_hang_bin ?? null,
+    so_tai_khoan: enrich.so_tai_khoan ?? null,
+    chu_tai_khoan: enrich.chu_tai_khoan ?? null,
     id_trang_thai_thanh_toan: idTrangThai,
     ten_trang_thai: tenTrangThai,
     // Thẻ thống kê Chờ / Đã thanh toán / Đã huỷ đếm theo mã — thiếu là mọi thẻ = 0.
@@ -195,6 +216,9 @@ function mapRowsWithRefs(
       ten_doi_tac: doiTac?.ten,
       ma_doi_tac: doiTac?.ma,
       ten_nhom: doiTac?.ten_nhom,
+      ngan_hang_bin: doiTac?.ngan_hang_bin,
+      so_tai_khoan: doiTac?.so_tai_khoan,
+      chu_tai_khoan: doiTac?.chu_tai_khoan,
       ten_nguoi_tao: nv?.ten,
       ma_nguoi_tao: nv?.ma,
       ten_trang_thai: ten_trang_thai ?? row.trang_thai ?? undefined,
@@ -207,7 +231,7 @@ function mapRowsWithRefs(
 
 /** Cột tham gia ô tìm kiếm ở server. */
 const TTDT_SEARCH_SPEC = {
-  text: ['so_phieu', 'hang_muc_thanh_toan', 'ghi_chu', 'trang_thai'],
+  text: ['so_phieu', 'hang_muc_thanh_toan', 'noi_dung_chi_tiet', 'ghi_chu', 'trang_thai'],
   numeric: ['id', 'so_tien'],
   dates: ['ngay', 'ngay_xu_ly'],
 } as const;
@@ -386,6 +410,9 @@ export async function getThanhToanDoiTacById(id: string): Promise<ThanhToanDoiTa
     ten_doi_tac: doiTac?.ten,
     ma_doi_tac: doiTac?.ma,
     ten_nhom: doiTac?.ten_nhom,
+    ngan_hang_bin: doiTac?.ngan_hang_bin,
+    so_tai_khoan: doiTac?.so_tai_khoan,
+    chu_tai_khoan: doiTac?.chu_tai_khoan,
     ten_nguoi_tao: nv?.ten,
     ma_nguoi_tao: nv?.ma,
     ten_trang_thai: ten_trang_thai ?? r.trang_thai ?? undefined,
@@ -408,6 +435,7 @@ export async function createThanhToanDoiTac(data: ThanhToanDoiTacFormValues): Pr
   const payload = {
     so_phieu: soPhieu,
     hang_muc_thanh_toan: data.hang_muc_thanh_toan.trim(),
+    noi_dung_chi_tiet: data.noi_dung_chi_tiet?.trim() || null,
     ngay: data.ngay.trim(),
     id_don_vi: toNum(data.id_don_vi),
     id_doi_tac: Number(data.id_doi_tac),
@@ -451,6 +479,7 @@ export async function updateThanhToanDoiTac(
   const payload = {
     so_phieu: soPhieu,
     hang_muc_thanh_toan: data.hang_muc_thanh_toan.trim(),
+    noi_dung_chi_tiet: data.noi_dung_chi_tiet?.trim() || null,
     ngay: data.ngay.trim(),
     id_don_vi: toNum(data.id_don_vi),
     id_doi_tac: Number(data.id_doi_tac),

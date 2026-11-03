@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, Calendar, Building2, Users, Tag, User, RefreshCw, Printer, X, Folder } from 'lucide-react';
+import { CreditCard, Calendar, Building2, Users, Tag, User, RefreshCw, Printer, X, Folder, FileText, Landmark } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import Input from '../../../../components/ui/Input';
@@ -15,6 +15,8 @@ import DetailToolbar, { type DetailToolbarAction } from '../../../../components/
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
+
+import { thongTinNganHangDoiTac } from '../utils/thong-tin-ngan-hang';
 
 const PREVIEW_BASE = '/mua-hang/thanh-toan-doi-tac/preview';
 
@@ -48,6 +50,8 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
   statusList = KHONG_CO_TRANG_THAI,
 }) => {
   const { t } = useTranslation();
+  const thongTinNganHang = thongTinNganHangDoiTac(data);
+  const coThongTinNganHang = thongTinNganHang !== '';
   const [showChangeStatusPopup, setShowChangeStatusPopup] = useState(false);
   const [changeStatusIdTrangThai, setChangeStatusIdTrangThai] = useState('');
   const [changeStatusNgayXuLy, setChangeStatusNgayXuLy] = useState('');
@@ -166,6 +170,14 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
             <DetailFieldGrid>
               <DetailField label={t('thanhToanDoiTac.form.soPhieu')} value={data.so_phieu} icon={<CreditCard size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.hangMuc')} value={data.hang_muc_thanh_toan} icon={<CreditCard size={12} />} className="col-span-1 sm:col-span-2" />
+              {data.noi_dung_chi_tiet?.trim() && (
+                <DetailField
+                  label={t('thanhToanDoiTac.form.noiDungChiTiet')}
+                  value={<span className="whitespace-pre-line">{data.noi_dung_chi_tiet}</span>}
+                  icon={<FileText size={12} />}
+                  className="col-span-1 sm:col-span-2"
+                />
+              )}
               <DetailField label={t('thanhToanDoiTac.form.ngay')} value={data.ngay} icon={<Calendar size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.donVi')} value={data.ten_don_vi ?? '—'} icon={<Building2 size={12} />} />
               <DetailField label={t('thanhToanDoiTac.store.nhomDoiTacCol')} value={data.ten_nhom ?? '—'} icon={<Folder size={12} />} />
@@ -186,6 +198,14 @@ const ThanhToanDoiTacDetail: React.FC<Props> = ({
                 }
                 icon={<Tag size={12} />}
               />
+              {coThongTinNganHang && (
+                <DetailField
+                  label={t('thanhToanDoiTac.detail.taiKhoanNhan')}
+                  value={thongTinNganHang}
+                  icon={<Landmark size={12} />}
+                  className="col-span-1 sm:col-span-2"
+                />
+              )}
               <DetailField label={t('thanhToanDoiTac.form.soTien')} value={formatNumberVN(data.so_tien)} icon={<CreditCard size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.ngayXuLy')} value={data.ngay_xu_ly ?? '—'} icon={<Calendar size={12} />} />
               <DetailField label={t('thanhToanDoiTac.form.ghiChu')} value={data.ghi_chu ?? '—'} icon={<CreditCard size={12} />} className="col-span-1 sm:col-span-2" />

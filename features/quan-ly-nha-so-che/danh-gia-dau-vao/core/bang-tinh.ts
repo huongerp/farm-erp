@@ -192,6 +192,22 @@ export interface DgdvPhieuTongNgay extends DgdvPhieuDayDu {
   so_chuyen: number;
   /** tổng thu + KSC từng chuyến, theo số chuyến */
   ds_chuyen: DgdvTongMotChuyen[];
+  /** ghi chú phiếu từng chuyến (đã trim, bỏ chuyến trống), theo số chuyến */
+  ghi_chu_chuyen: DgdvGhiChuChuyen[];
+}
+
+/** Ghi chú phiếu của một chuyến (in dưới lưới). */
+export interface DgdvGhiChuChuyen {
+  chuyen: number;
+  ghi_chu: string;
+}
+
+/** Ghi chú phiếu đã trim của các phiếu, theo thứ tự truyền vào; bỏ phiếu không có chữ. */
+function ghiChuTheoChuyen(ds: Pick<DgdvPhieuDayDu, 'chuyen' | 'ghi_chu'>[]): DgdvGhiChuChuyen[] {
+  return ds.flatMap((p) => {
+    const ghi_chu = p.ghi_chu?.trim() ?? '';
+    return ghi_chu ? [{ chuyen: p.chuyen, ghi_chu }] : [];
+  });
 }
 
 /**
@@ -280,6 +296,7 @@ function congMotNgay(dsGoc: DgdvPhieuDayDu[]): DgdvPhieuTongNgay {
     ids_phieu: ds.map((p) => p.id),
     so_chuyen: ds.length,
     ds_chuyen: ds.map((p) => ({ id_phieu: p.id, chuyen: p.chuyen, ...tongPhieu(p) })),
+    ghi_chu_chuyen: ghiChuTheoChuyen(ds),
   };
 }
 
@@ -327,6 +344,8 @@ export interface DgdvLuoiNgay extends DgdvTongNgay {
   ids_phieu: string[];
   /** tổng từng chuyến tạo nên lưới, theo số chuyến (1 phần tử nếu là lưới một chuyến) */
   dsChuyen: DgdvTongMotChuyen[];
+  /** ghi chú phiếu từng chuyến có chữ (đã trim), theo số chuyến — in dưới lưới */
+  ghiChuChuyen: DgdvGhiChuChuyen[];
   id_chi_nhanh: string;
   ten_chi_nhanh: string | null;
   nam: number;
@@ -432,6 +451,7 @@ export function dungLuoiNgay(
     chuyen: phieu.chuyen,
     ids_phieu: 'ids_phieu' in phieu ? phieu.ids_phieu : [phieu.id],
     dsChuyen: 'ds_chuyen' in phieu ? phieu.ds_chuyen : [{ id_phieu: phieu.id, chuyen: phieu.chuyen, ...tong }],
+    ghiChuChuyen: 'ghi_chu_chuyen' in phieu ? phieu.ghi_chu_chuyen : ghiChuTheoChuyen([phieu]),
     id_chi_nhanh: phieu.id_chi_nhanh,
     ten_chi_nhanh: phieu.ten_chi_nhanh ?? null,
     nam: phieu.nam,

@@ -112,6 +112,7 @@ function detailHeaders(t: TFunction): string[] {
     '#',
     t('thanhToanDoiTac.form.soPhieu'),
     t('thanhToanDoiTac.form.hangMuc'),
+    t('thanhToanDoiTac.form.noiDungChiTiet'),
     t('thanhToanDoiTac.form.ngay'),
     t('thanhToanDoiTac.form.donVi'),
     t('thanhToanDoiTac.store.nhomDoiTacCol'),
@@ -129,6 +130,7 @@ function detailRows(list: ThanhToanDoiTac[], t: TFunction): Array<Record<string,
     '#': index + 1,
     [t('thanhToanDoiTac.form.soPhieu')]: item.so_phieu,
     [t('thanhToanDoiTac.form.hangMuc')]: item.hang_muc_thanh_toan,
+    [t('thanhToanDoiTac.form.noiDungChiTiet')]: item.noi_dung_chi_tiet ?? '',
     [t('thanhToanDoiTac.form.ngay')]: item.ngay ? formatDate(item.ngay) : '',
     [t('thanhToanDoiTac.form.donVi')]: item.ten_don_vi ?? '',
     [t('thanhToanDoiTac.store.nhomDoiTacCol')]: item.ten_nhom ?? '',
@@ -168,7 +170,7 @@ export async function exportThanhToanDoiTacReportToXLSX({
   XLSX.utils.book_append_sheet(wb, wsOverview, 'TongQuan');
 
   const wsDetails = sheetFromRows(XLSX, detailRows(list, t), detailHeaders(t));
-  setColumnWidths(wsDetails, [8, 18, 36, 14, 24, 28, 18, 16, 16, 22, 36]);
+  setColumnWidths(wsDetails, [8, 18, 36, 44, 14, 24, 28, 18, 16, 16, 22, 36]);
   XLSX.utils.book_append_sheet(wb, wsDetails, 'DanhSach');
 
   const amountHeaders = [
@@ -353,6 +355,7 @@ function buildDetailTableHTML(list: ThanhToanDoiTac[], t: TFunction): string {
       <td class="number">${index + 1}</td>
       <td>${escapeHtml(item.so_phieu)}</td>
       <td>${escapeHtml(item.hang_muc_thanh_toan)}</td>
+      <td style="white-space: pre-line">${escapeHtml(item.noi_dung_chi_tiet)}</td>
       <td>${escapeHtml(item.ngay ? formatDate(item.ngay) : '')}</td>
       <td>${escapeHtml(item.ten_don_vi)}</td>
       <td>${escapeHtml(item.ten_nhom)}</td>
@@ -372,6 +375,7 @@ function buildDetailTableHTML(list: ThanhToanDoiTac[], t: TFunction): string {
         <th class="number">#</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.soPhieu'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.hangMuc'))}</th>
+        <th>${escapeHtml(t('thanhToanDoiTac.form.noiDungChiTiet'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.ngay'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.form.donVi'))}</th>
         <th>${escapeHtml(t('thanhToanDoiTac.store.nhomDoiTacCol'))}</th>
@@ -381,7 +385,7 @@ function buildDetailTableHTML(list: ThanhToanDoiTac[], t: TFunction): string {
       </tr>
     </thead>
     <tbody>
-      ${rows || `<tr><td colspan="9" class="empty">${escapeHtml(t('thanhToanDoiTac.stats.noData'))}</td></tr>`}
+      ${rows || `<tr><td colspan="10" class="empty">${escapeHtml(t('thanhToanDoiTac.stats.noData'))}</td></tr>`}
     </tbody>
   </table>
 </section>`;

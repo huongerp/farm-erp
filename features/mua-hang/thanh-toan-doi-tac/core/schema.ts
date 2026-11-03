@@ -10,6 +10,7 @@ export const thanhToanDoiTacSchema = z.object({
     .string()
     .min(1, i18n.t('thanhToanDoiTac.validation.hangMucRequired'))
     .max(255, i18n.t('thanhToanDoiTac.validation.hangMucMax')),
+  noi_dung_chi_tiet: z.string().optional().nullable(),
   ngay: z.string().min(1, i18n.t('thanhToanDoiTac.validation.ngayRequired')),
   id_don_vi: z.string().min(1, i18n.t('thanhToanDoiTac.validation.donViRequired')),
   id_doi_tac: z.string().min(1, i18n.t('thanhToanDoiTac.validation.doiTacRequired')),

@@ -76,6 +76,14 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         );
       case 'hang_muc_thanh_toan':
         return <span className="text-sm text-foreground truncate block">{item.hang_muc_thanh_toan}</span>;
+      case 'noi_dung_chi_tiet':
+        return item.noi_dung_chi_tiet ? (
+          <span className="text-sm text-muted-foreground line-clamp-2 whitespace-pre-line" title={item.noi_dung_chi_tiet}>
+            {item.noi_dung_chi_tiet}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground">—</span>
+        );
       case 'ngay_xu_ly':
         return <span className="text-sm text-muted-foreground">{item.ngay_xu_ly ?? '—'}</span>;
       case 'ngay':
@@ -136,6 +144,9 @@ const ThanhToanDoiTacList: React.FC<Props> = ({
         {item.ngay_xu_ly ? ` · ${t('thanhToanDoiTac.store.ngayXuLyCol')}: ${formatYmdToDisplay(item.ngay_xu_ly)}` : ''}
       </p>
       <p className="mt-2 text-sm font-medium text-foreground line-clamp-2">{item.hang_muc_thanh_toan}</p>
+      {item.noi_dung_chi_tiet && (
+        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2 whitespace-pre-line">{item.noi_dung_chi_tiet}</p>
+      )}
       {(item.ten_doi_tac || item.ten_nhom) && (
         <p className="mt-0.5 text-xs text-muted-foreground truncate">
           {t('thanhToanDoiTac.store.doiTacCol')}: {[item.ten_doi_tac, item.ten_nhom].filter(Boolean).join(' · ')}

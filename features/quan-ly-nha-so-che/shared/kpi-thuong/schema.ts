@@ -15,6 +15,9 @@ export const kpiThuongRowSchema = z.object({
   ),
   danh_gia: z.string().max(500).optional().nullable(),
   tien_thuong: z.coerce.number().finite().default(0),
+  thuong_ql: z.coerce.number().finite().default(0),
+  thuong_nhom_tia: z.coerce.number().finite().default(0),
+  thuong_nhom_cp: z.coerce.number().finite().default(0),
   ghi_chu: z.string().max(8000).optional().nullable(),
 });
 
