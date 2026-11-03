@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, type ChamCong, type LoaiChuyen } from './types';
+import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, NGOAI_LE_CODE, type ChamCong, type LoaiChuyen } from './types';
 import i18n from '../../../../lib/i18n';
 import { hinhAnhUrlsSchema } from '../../shared/hinh-anh-url-schema';
 import { findSubSlGioPairIssues, normalizeChiTietSubFormByLoai } from './ct-sub';
@@ -70,7 +70,10 @@ export const baoCaoNhanCongFormSchema = z
         if (!nv.ho_ten.trim()) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvTenRequired'), path: [...path, 'ho_ten'] });
         }
-        if (nv.cham_cong !== 'NGHI' && !(nv.so_gio_cong > 0)) {
+        if (ct.loai_chuyen === NGOAI_LE_CODE && !nv.vi_tri?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.ngoaiLeViTriRequired'), path: [...path, 'vi_tri'] });
+        }
+        if (ct.loai_chuyen !== NGOAI_LE_CODE && nv.cham_cong !== 'NGHI' && !(nv.so_gio_cong > 0)) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, message: reqMsg('baoCaoNhanCong.validation.nvGioRequired'), path: [...path, 'so_gio_cong'] });
         }
       });

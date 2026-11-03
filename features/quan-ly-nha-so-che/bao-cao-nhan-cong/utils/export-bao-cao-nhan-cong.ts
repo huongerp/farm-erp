@@ -3,7 +3,7 @@
  */
 import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
-import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
+import { NGOAI_LE_CODE, chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
 import { combinedRowGhiChuAtIndex, displayLoaiTotalsOnCt, formatGioTbVN, hasSubLinesOnCt, isSubFormRowEmpty, subAlignedRowCount, subByLoaiForCtDisplay, sumDisplayLoaiTotalsOnRows, sumTongGioQuyDoiRowIVFromRows, tongGioCongNgayVaNua } from '../core/ct-sub';
 import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
@@ -11,7 +11,7 @@ import { useUIStore } from '../../../../store/useStore';
 import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 import type { NoiDungIn } from '../core/preview-url';
-import { buoiCuaChamCong, nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, nhomNhanVienTheoChuyen, tongHopNgoaiLe } from '../core/danh-sach-nv';
 
 type XlsxModule = typeof import('xlsx');
 type Aoa = (string | number)[][];
@@ -237,13 +237,18 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
         nuaCu ? '½' : buoi.sang ? '✓' : '',
         buoi.chieu ? '✓' : '',
         nv.cham_cong === 'NGHI' ? '✓' : '',
-        Number(nv.so_gio_cong),
-        Number(nv.so_gio_tc),
+        ct.loai_chuyen === NGOAI_LE_CODE ? EMPTY : Number(nv.so_gio_cong),
+        ct.loai_chuyen === NGOAI_LE_CODE ? EMPTY : Number(nv.so_gio_tc),
         nv.ghi_chu ?? '',
       ]);
     }
   }
-  rows.push(['', '', t('baoCaoNhanCong.nv.tongNguoi', { n: stt })]);
+  const ngoaiLe = tongHopNgoaiLe(data.chi_tiet.find((ct) => ct.loai_chuyen === NGOAI_LE_CODE)?.nhan_vien ?? []);
+  rows.push(['', '', t('baoCaoNhanCong.ngoaiLe.tongNsc', { n: stt - ngoaiLe.soNguoi })]);
+  if (ngoaiLe.soNguoi > 0) {
+    rows.push([t('baoCaoNhanCong.ngoaiLe.tong', { n: ngoaiLe.soNguoi, sang: ngoaiLe.sang, chieu: ngoaiLe.chieu, cong: ngoaiLe.cong })]);
+    rows.push([t('baoCaoNhanCong.ngoaiLe.hint')]);
+  }
   rows.push([]);
   rows.push(getBcncPreviewSignLabels(t));
 
@@ -257,6 +262,9 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong, noiDu
   const coTen = nhomNhanVienTheoChuyen(data).length > 0;
   const wb = XLSX.utils.book_new();
   if (noiDung !== 'nhan-vien') XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
+  if (noiDung === 'chuyen' && data.chi_tiet.some((ct) => ct.loai_chuyen === NGOAI_LE_CODE && ct.nhan_vien?.length)) {
+    XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, { ...data, chi_tiet: data.chi_tiet.filter((ct) => ct.loai_chuyen === NGOAI_LE_CODE) }), 'Ngoai_le');
+  }
   if (noiDung !== 'chuyen' && coTen) XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, data), 'Danh_sach_NV');
   if (wb.SheetNames.length === 0) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);

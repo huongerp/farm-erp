@@ -4,8 +4,8 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FarmBaoCaoNhanCong } from '../core/types';
-import { buoiCuaChamCong, nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
+import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
+import { buoiCuaChamCong, nhomNhanVienTheoChuyen, tongHopNgoaiLe } from '../core/danh-sach-nv';
 import { formatNumberVN } from '../../../../lib/utils';
 
 interface Props {
@@ -39,8 +39,8 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
 
   const c = LOP[variant];
   const num = `${c.td} text-right tabular-nums`;
-  const tong = nhom.reduce((s, { nhanVien }) => s + nhanVien.length, 0);
-  let stt = 0;
+  const tong = nhom.filter(({ ct }) => ct.loai_chuyen !== NGOAI_LE_CODE).reduce((s, { nhanVien }) => s + nhanVien.length, 0);
+  const ngoaiLe = tongHopNgoaiLe(nhom.find(({ ct }) => ct.loai_chuyen === NGOAI_LE_CODE)?.nhanVien ?? []);
 
   return (
     <div className={c.wrap}>
@@ -59,15 +59,16 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
           </tr>
         </thead>
         <tbody>
-          {nhom.map(({ ct, tt, nhanVien }) => (
+          {nhom.map(({ ct, tt, nhanVien }, nhomIdx) => (
             <React.Fragment key={ct.loai_chuyen}>
               <tr>
                 <td colSpan={9} className={c.group}>
                   {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: nhanVien.length })}
+                  {ct.loai_chuyen === NGOAI_LE_CODE && <p className="m-0 mt-1 font-normal">{t('baoCaoNhanCong.ngoaiLe.hint')}</p>}
                 </td>
               </tr>
-              {nhanVien.map((nv) => {
-                stt += 1;
+              {nhanVien.map((nv, nvIdx) => {
+                const stt = nhom.slice(0, nhomIdx).reduce((s, g) => s + g.nhanVien.length, 0) + nvIdx + 1;
                 return (
                   <tr key={nv.id}>
                     <td className={`${c.td} text-center tabular-nums`}>{stt}</td>
@@ -84,8 +85,8 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
                       </>
                     )}
                     <td className={`${c.td} text-center`}>{nv.cham_cong === 'NGHI' ? '✓' : ''}</td>
-                    <td className={num}>{formatNumberVN(nv.so_gio_cong)}</td>
-                    <td className={num}>{nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
+                    <td className={num}>{ct.loai_chuyen === NGOAI_LE_CODE ? '—' : formatNumberVN(nv.so_gio_cong)}</td>
+                    <td className={num}>{ct.loai_chuyen !== NGOAI_LE_CODE && nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
                     <td className={c.td}>{nv.ghi_chu ?? ''}</td>
                   </tr>
                 );
@@ -94,7 +95,8 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
           ))}
           <tr>
             <td colSpan={9} className={c.total}>
-              {t('baoCaoNhanCong.nv.tongNguoi', { n: tong })}
+              {t('baoCaoNhanCong.ngoaiLe.tongNsc', { n: tong })}
+              {ngoaiLe.soNguoi > 0 && <p className="m-0 mt-1">{t('baoCaoNhanCong.ngoaiLe.tong', { n: ngoaiLe.soNguoi, sang: ngoaiLe.sang, chieu: ngoaiLe.chieu, cong: formatNumberVN(ngoaiLe.cong) })}</p>}
             </td>
           </tr>
         </tbody>

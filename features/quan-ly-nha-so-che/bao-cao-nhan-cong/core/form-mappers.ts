@@ -1,5 +1,5 @@
 import type { FarmBaoCaoNhanCong } from './types';
-import { LOAI_CHUYEN_CODES } from './types';
+import { LOAI_CHUYEN_CODES, NGOAI_LE_CODE } from './types';
 import type { BaoCaoNhanCongFormValues } from './schema';
 import {
   LOAI_CHI_TIEU_CODES,
@@ -15,7 +15,7 @@ import {
   padSubToRowCount,
   type ChiTietSubFormByLoai,
 } from './ct-sub';
-import { nvChoNgayKe, nvCoTen, nvModelsToForm, subTuDanhSachNv } from './danh-sach-nv';
+import { nvChoNgayKe, nvCoTen, nvModelsToForm, nvKhongTinhGio, subTuDanhSachNv } from './danh-sach-nv';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
@@ -87,6 +87,9 @@ export function applySubTotalsToChiTietForm(
 ): BaoCaoNhanCongFormValues['chi_tiet'] {
   return chi_tiet.map((row) => {
     const nhan_vien = nvCoTen(row.nhan_vien);
+    if (row.loai_chuyen === NGOAI_LE_CODE) {
+      return { ...row, nhan_vien: nvKhongTinhGio(nhan_vien), sub: emptySubFormByLoai(), sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0, so_gio_tc: 0 };
+    }
     const nguon = nhan_vien.length > 0 ? subTuDanhSachNv(nhan_vien) : row.sub;
     const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(nguon)));
     const totals = syncChiTietTotalsFromSub(sub);

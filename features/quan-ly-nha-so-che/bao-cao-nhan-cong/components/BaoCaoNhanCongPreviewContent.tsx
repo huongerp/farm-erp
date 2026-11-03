@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { FarmBaoCaoNhanCong } from '../core/types';
+import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
 import { getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
 import type { NoiDungIn } from '../core/preview-url';
 import { formatYmdToDisplay } from '../../../../lib/utils';
@@ -22,6 +22,8 @@ interface Props {
 const BaoCaoNhanCongPreviewContent: React.FC<Props> = ({ data, noiDung }) => {
   const { t } = useTranslation();
   const inChuyen = noiDung !== 'nhan-vien';
+  const ngoaiLe = data.chi_tiet.filter((ct) => ct.loai_chuyen === NGOAI_LE_CODE);
+  const inNgoaiLe = noiDung === 'chuyen' && ngoaiLe.some((ct) => (ct.nhan_vien?.length ?? 0) > 0);
   const inNv = noiDung !== 'chuyen' && (data.chi_tiet ?? []).some((ct) => (ct.nhan_vien?.length ?? 0) > 0);
 
   return (
@@ -41,6 +43,13 @@ const BaoCaoNhanCongPreviewContent: React.FC<Props> = ({ data, noiDung }) => {
           <h2 className={`text-[9pt] font-bold uppercase ${inChuyen ? 'mt-3' : ''} mb-1.5 text-gray-900`}>{t('baoCaoNhanCong.nv.sectionDetail')}</h2>
           <BaoCaoNhanCongNhanVienBang data={data} variant="print" />
         </>
+      )}
+
+      {inNgoaiLe && (
+        <div className="mt-3">
+          <h2 className="text-[9pt] font-bold uppercase mb-1.5 text-gray-900">{t('baoCaoNhanCong.chuyen.NGOAI_LE')}</h2>
+          <BaoCaoNhanCongNhanVienBang data={{ ...data, chi_tiet: ngoaiLe }} variant="print" />
+        </div>
       )}
 
       <HangKyTen

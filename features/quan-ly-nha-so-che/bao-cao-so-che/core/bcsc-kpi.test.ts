@@ -80,6 +80,8 @@ describe('extractLaborSnapshotFromBcnc — congQdTongNgay', () => {
         ct('ct-1', 'XAN_NAI', 3, 0, 1),
         ct('ct-2', 'TIA_DANH_GIA', 6, 2, 2),
         ct('ct-6', 'CONG_DINH_BIEN_KHONG_SAN_XUAT', 6, 0, 6),
+        // Ngoại lệ không vào cả công QĐ tổng ngày, kể cả đầu vào còn số tổng nhập sót.
+        ct('ct-7', 'NGOAI_LE', 30, 8, 7),
       ],
     });
 

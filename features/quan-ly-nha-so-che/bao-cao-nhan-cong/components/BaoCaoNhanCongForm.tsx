@@ -10,6 +10,7 @@ import Combobox from '../../../../components/ui/Combobox';
 import MultiImageInput, { type ImageItem } from '../../../../components/ui/MultiImageInput';
 import { uploadAnh } from '../../../../lib/media-upload';
 import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core/schema';
+import { NGOAI_LE_CODE } from '../core/types';
 import type { FarmBaoCaoNhanCong } from '../core/types';
 import type { LoaiChuyen } from '../core/types';
 import {
@@ -640,6 +641,10 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
             </table>
           </div>
           )}
+        </FormSection>
+
+        <FormSection title={t('baoCaoNhanCong.chuyen.NGOAI_LE')} icon={<Users size={14} />}>
+          {renderNhanVienEditor(6, NGOAI_LE_CODE)}
         </FormSection>
 
       </form>

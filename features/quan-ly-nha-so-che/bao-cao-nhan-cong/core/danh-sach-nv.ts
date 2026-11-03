@@ -6,7 +6,7 @@
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { padSubToRowCount, subAlignedRowCount, type ChiTietSubFormByLoai, type CtSubFormRow } from './ct-sub';
 import type { ChamCong, FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt, FarmBaoCaoNhanCongNv, LoaiChuyen, VarNhanVienSoChe } from './types';
-import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay } from './types';
+import { chuyenTtLabelByThuTu, normalizeChiTietForDisplay, NGOAI_LE_CODE } from './types';
 
 /** Giờ mặc định khi thêm người — cả ngày 7,5h = sáng 3,75h + chiều 3,75h; nghỉ 0h; NUA_NGAY là mã cũ (4h). */
 export const GIO_CONG_MAC_DINH: Record<ChamCong, number> = { CA_NGAY: 7.5, SANG: 3.75, CHIEU: 3.75, NUA_NGAY: 4, NGHI: 0 };
@@ -91,6 +91,21 @@ export function nvFormRowMoi(nv?: Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri'>, n
 /** Dòng có tên (bỏ dòng vừa thêm chưa gõ tên). */
 export function nvCoTen(ds: readonly NvFormRow[] | undefined): NvFormRow[] {
   return (ds ?? []).filter((r) => gonTen(r.ho_ten) != null);
+}
+
+/** Ngoại lệ giữ buổi đi làm, tuyệt đối không quy đổi thành giờ hay đầu vào KPI. */
+export function nvKhongTinhGio(ds: readonly NvFormRow[]): NvFormRow[] {
+  return ds.map((r) => ({ ...r, so_gio_cong: 0, so_gio_tc: 0 }));
+}
+
+export function tongHopNgoaiLe(ds: readonly Pick<NvFormRow, 'ho_ten' | 'cham_cong'>[]) {
+  const coTen = ds.filter((r) => gonTen(r.ho_ten) != null);
+  return {
+    soNguoi: coTen.length,
+    sang: coTen.filter((r) => buoiCuaChamCong(r.cham_cong).sang).length,
+    chieu: coTen.filter((r) => buoiCuaChamCong(r.cham_cong).chieu).length,
+    cong: coTen.reduce((s, r) => s + CONG_THEO_CHAM_CONG[r.cham_cong], 0),
+  };
 }
 
 /** Gom số giờ thành dòng sub: mỗi mức giờ một dòng, sl = số người (giữ thứ tự gặp đầu). */
@@ -185,12 +200,14 @@ export interface NhomNvTheoChuyen {
   nhanVien: FarmBaoCaoNhanCongNv[];
 }
 
-/** Tên theo chuyền đúng thứ tự trên phiếu (chuyền SX rồi dòng V), bỏ chuyền không có tên. */
+/** Tên theo chuyền đúng thứ tự trên phiếu (chuyền SX, dòng V, Ngoại lệ), bỏ chuyền không có tên. */
 export function nhomNhanVienTheoChuyen(data: Pick<FarmBaoCaoNhanCong, 'chi_tiet'>): NhomNvTheoChuyen[] {
   const { production, vRow } = normalizeChiTietForDisplay(data.chi_tiet ?? []);
+  const ngoaiLe = (data.chi_tiet ?? []).find((ct) => ct.loai_chuyen === NGOAI_LE_CODE);
   return [
     ...production.map((ct, i) => ({ ct, tt: chuyenTtLabelByThuTu(i + 1), thuTuChuyen: i })),
     { ct: vRow, tt: 'V', thuTuChuyen: production.length },
+    ...(ngoaiLe ? [{ ct: ngoaiLe, tt: 'VI', thuTuChuyen: production.length + 1 }] : []),
   ]
     .map((g) => ({ ...g, nhanVien: [...(g.ct.nhan_vien ?? [])].sort((a, b) => a.thu_tu - b.thu_tu) }))
     .filter((g) => g.nhanVien.length > 0);

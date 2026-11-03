@@ -3,7 +3,7 @@ import { normalizeText, matchKey, parseImportDate, parseImportNumber, parseImpor
 import { IMPORT_ROW_KEY, type ImportErrorRow } from '../../../../lib/import-types';
 import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core/schema';
 import { defaultChiTietRows, applySubTotalsToChiTietForm, findBaoCaoDuplicateByBranchAndDate, type PhieuTomTatTrung } from '../core/form-mappers';
-import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES } from '../core/types';
+import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, NGOAI_LE_CODE } from '../core/types';
 import { GIO_CONG_MAC_DINH } from '../core/danh-sach-nv';
 import { emptySubFormByLoai } from '../core/ct-sub';
 
@@ -44,6 +44,7 @@ export function planBaoCaoNhanCongImport(
     if (!cn) msgs.push(tr('loiChiNhanh'));
     const loai = chuyen.get(matchKey(r.loai_chuyen));
     if (!loai) msgs.push(tr('loiChuyen'));
+    const ngoaiLe = loai === NGOAI_LE_CODE;
     const cc = chamCong.get(matchKey(r.cham_cong));
     if (!cc) msgs.push(tr('loiChamCong'));
     const ten = normalizeText(r.ho_ten);
@@ -51,9 +52,10 @@ export function planBaoCaoNhanCongImport(
     const gio = parseImportNumber(r.so_gio_cong);
     const tc = parseImportNumber(r.so_gio_tc);
     if (!sl.ok || (ten ? sl.value != null && sl.value !== 1 : sl.value == null || sl.value < 1)) msgs.push(tr('loiSoLuong'));
-    const soGio = gio.ok ? gio.value ?? (cc ? GIO_CONG_MAC_DINH[cc] : 0) : 0;
+    const soGio = gio.ok ? gio.value ?? (cc && !ngoaiLe ? GIO_CONG_MAC_DINH[cc] : 0) : 0;
     const soTc = tc.ok ? tc.value ?? 0 : 0;
-    if (!gio.ok || !tc.ok || soGio > 24 || soTc > 24 || (cc !== 'NGHI' && soGio <= 0)) msgs.push(tr('loiGio'));
+    if (!gio.ok || !tc.ok || soGio > 24 || soTc > 24 || (!ngoaiLe && cc !== 'NGHI' && soGio <= 0)) msgs.push(tr('loiGio'));
+    if (ngoaiLe && (!ten || !normalizeText(r.vi_tri) || soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNgoaiLe'));
     if (cc === 'NGHI' && (soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNghi'));
     if (!ten && normalizeText(r.vi_tri)) msgs.push(tr('loiViTri'));
     if (ngay && cn && findBaoCaoDuplicateByBranchAndDate(existing, ngay, cn.id)) msgs.push(i18n.t('baoCaoNhanCong.validation.duplicateNgayChiNhanh'));

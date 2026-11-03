@@ -8,7 +8,7 @@
  */
 import type { TFunction } from 'i18next';
 import type { Worksheet } from 'exceljs';
-import type { FarmBaoCaoNhanCong } from '../core/types';
+import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
 import { dungDongChiTietNv, dungMaTranViTri, type DongChiTietNv } from '../core/theo-doi-vi-tri';
 import { getExportColumnsBaoCaoNhanCongList, mapFarmBaoCaoNhanCongListRow } from './export-bao-cao-nhan-cong-danh-sach';
 import { dinhDangOXuat, mauSoExcel } from '../../../../lib/export/dinh-dang-o';
@@ -101,8 +101,8 @@ function sheetChiTiet(ws: Worksheet, dong: readonly DongChiTietNv[], t: TFunctio
       d.hoTen,
       d.viTri ?? '',
       t(`baoCaoNhanCong.nv.chamCong.${d.chamCong}`),
-      d.gioCong,
-      d.gioTc,
+      d.loaiChuyen === NGOAI_LE_CODE ? '—' : d.gioCong,
+      d.loaiChuyen === NGOAI_LE_CODE ? '—' : d.gioTc,
       d.ghiChu ?? '',
       moTaThayDoi(d, t),
     ]);

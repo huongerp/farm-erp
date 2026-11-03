@@ -8,9 +8,9 @@ import Button from '../../../../components/ui/Button';
 import { cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/schema';
-import type { LoaiChuyen, VarNhanVienSoChe } from '../core/types';
+import { NGOAI_LE_CODE, type LoaiChuyen, type VarNhanVienSoChe } from '../core/types';
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
-import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { khoaTen, laTenMoi, tenKhongTrung } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const GIO_INPUT = { maxFractionDigits: 2, min: 0, max: 24 } as const;
@@ -44,6 +44,10 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
+  const gridCols = ngoaiLe
+    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_auto]'
+    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_auto]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
 
@@ -63,8 +67,8 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const apply = useCallback(
     (next: NvFormRow[]) => {
       const opts = { shouldDirty: true } as const;
-      setValue(`chi_tiet.${chiTietIndex}.nhan_vien`, next, opts);
-      if (next.length === 0) return;
+      setValue(`chi_tiet.${chiTietIndex}.nhan_vien`, ngoaiLe ? nvKhongTinhGio(next) : next, opts);
+      if (ngoaiLe) return;
       const sub = subTuDanhSachNv(next);
       const totals = syncChiTietTotalsFromSub(sub);
       setValue(`chi_tiet.${chiTietIndex}.sub`, sub, opts);
@@ -73,7 +77,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
       setValue(`chi_tiet.${chiTietIndex}.sl_tang_ca`, totals.sl_tang_ca, opts);
       setValue(`chi_tiet.${chiTietIndex}.so_gio_tc`, totals.so_gio_tc, opts);
     },
-    [chiTietIndex, setValue]
+    [chiTietIndex, setValue, ngoaiLe]
   );
 
   const current = () => [...((getValues(`chi_tiet.${chiTietIndex}.nhan_vien`) ?? []) as NvFormRow[])];
@@ -106,6 +110,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     patchRow(idx, { cham_cong: moi.cham_cong, so_gio_cong: moi.so_gio_cong, so_gio_tc: moi.so_gio_tc });
   };
 
+  const tongNgoaiLe = tongHopNgoaiLe(ds);
   const coDongSang = ds.some((r) => r.cham_cong === 'SANG');
   const chamChieu = () => apply(chamChieuCaChuyen(current()));
 
@@ -124,23 +129,25 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
           {t('baoCaoNhanCong.nv.title', { n: ds.length })}
         </span>
         <span className="text-caption text-muted-foreground flex-1 min-w-[12rem]">
-          {ds.length > 0 ? t('baoCaoNhanCong.nv.dangDem') : t('baoCaoNhanCong.nv.hint')}
+          {ngoaiLe ? t('baoCaoNhanCong.ngoaiLe.hint') : ds.length > 0 ? t('baoCaoNhanCong.nv.dangDem') : t('baoCaoNhanCong.nv.hint')}
         </span>
         {coDongSang && (
           <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={chamChieu}>
             <Sun size={13} />
-            {t('baoCaoNhanCong.nv.chamChieuCaChuyen')}
+            {t(ngoaiLe ? 'baoCaoNhanCong.ngoaiLe.chamChieuCaNhom' : 'baoCaoNhanCong.nv.chamChieuCaChuyen')}
           </Button>
         )}
       </div>
 
       {ds.length > 0 && (
-        <div className="hidden sm:grid grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_auto] gap-2 px-2 text-caption text-muted-foreground">
+        <div className={`hidden sm:grid ${gridCols} gap-2 px-2 text-caption text-muted-foreground`}>
           <span>{t('baoCaoNhanCong.nv.hoTen')}</span>
           <span>{t('baoCaoNhanCong.nv.viTri')}</span>
           <span />
-          <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
-          <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
+          {!ngoaiLe && (<>
+            <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
+            <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
+          </>)}
           <span className="w-9" />
         </div>
       )}
@@ -151,7 +158,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         return (
           <div
             key={idx}
-            className="grid grid-cols-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_auto] gap-2 items-start rounded-lg bg-muted/30 p-2"
+            className={`grid grid-cols-2 ${gridCols} gap-2 items-start rounded-lg bg-muted/30 p-2`}
           >
             <div className="col-span-2 sm:col-span-1 min-w-0">
               <Combobox
@@ -172,6 +179,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 value={row.vi_tri ?? ''}
                 onChange={(x) => patchRow(idx, { vi_tri: x ? String(x).trim() : null })}
                 placeholder={t('baoCaoNhanCong.nv.viTri')}
+                error={err?.vi_tri?.message as string | undefined}
                 creatable
                 creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
                 dropdownInPortal
@@ -210,42 +218,44 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
               </div>
               {row.cham_cong === 'NUA_NGAY' && <span className="text-caption text-muted-foreground whitespace-nowrap">{t('baoCaoNhanCong.nv.nuaNgayCu')}</span>}
             </div>
-            <NumberInput
-              value={row.so_gio_cong}
-              onChange={(v) => patchRow(idx, { so_gio_cong: v })}
-              {...GIO_INPUT}
-              disabled={row.cham_cong === 'NGHI'}
-              compact
-              label={isMobile ? t('baoCaoNhanCong.nv.gioCong') : undefined}
-              className="w-full min-w-0"
-              error={err?.so_gio_cong?.message as string | undefined}
-            />
-            <div className="flex items-start gap-1">
+            {!ngoaiLe && (<>
               <NumberInput
-                value={row.so_gio_tc}
-                onChange={(v) => patchRow(idx, { so_gio_tc: v })}
+                value={row.so_gio_cong}
+                onChange={(v) => patchRow(idx, { so_gio_cong: v })}
                 {...GIO_INPUT}
                 disabled={row.cham_cong === 'NGHI'}
                 compact
-                label={isMobile ? t('baoCaoNhanCong.nv.gioTc') : undefined}
+                label={isMobile ? t('baoCaoNhanCong.nv.gioCong') : undefined}
                 className="w-full min-w-0"
+                error={err?.so_gio_cong?.message as string | undefined}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
-                onClick={() => xoa(idx)}
-                aria-label={t('common.delete')}
-              >
-                <Trash2 size={15} />
-              </Button>
-            </div>
+              <div className="flex items-start gap-1">
+                <NumberInput
+                  value={row.so_gio_tc}
+                  onChange={(v) => patchRow(idx, { so_gio_tc: v })}
+                  {...GIO_INPUT}
+                  disabled={row.cham_cong === 'NGHI'}
+                  compact
+                  label={isMobile ? t('baoCaoNhanCong.nv.gioTc') : undefined}
+                  className="w-full min-w-0"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
+                  onClick={() => xoa(idx)}
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={15} />
+                </Button>
+              </div>
+            </>)}
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-9 w-9 p-0 shrink-0 text-rose-600 hidden sm:inline-flex"
+              className={cn('h-9 w-9 p-0 shrink-0 text-rose-600', !ngoaiLe && 'hidden sm:inline-flex')}
               onClick={() => xoa(idx)}
               aria-label={t('common.delete')}
             >
@@ -255,6 +265,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         );
       })}
 
+      {ngoaiLe && ds.length > 0 && <p className="text-xs text-muted-foreground">{t('baoCaoNhanCong.ngoaiLe.tong', { n: tongNgoaiLe.soNguoi, sang: tongNgoaiLe.sang, chieu: tongNgoaiLe.chieu, cong: tongNgoaiLe.cong })}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={themNguoi}>
           <Plus size={13} />

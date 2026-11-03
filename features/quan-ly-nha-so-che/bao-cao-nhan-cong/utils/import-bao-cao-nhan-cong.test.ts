@@ -9,6 +9,16 @@ const row = { ngay: '03/11/2026', chi_nhanh: 'FP1', loai_chuyen: 'XAN_NAI', ho_t
 const plan = (rows: Record<string, unknown>[]) => planBaoCaoNhanCongImport(rows, branches, []);
 
 describe('planBaoCaoNhanCongImport', () => {
+  it('nhập Ngoại lệ chỉ với tên, khâu và buổi; chặn số lượng tổng hợp hoặc giờ', () => {
+    const ngoaiLe = { ...row, loai_chuyen: 'NGOAI_LE', vi_tri: 'Chăm sóc tại farm' };
+    const result = plan([ngoaiLe]);
+    expect(result.errors).toEqual([]);
+    expect(result.phieu[0].values.chi_tiet[6]).toMatchObject({ sl_cong_ngay: 0, sub: { CN_NGAY: [] }, nhan_vien: [{ so_gio_cong: 0, so_gio_tc: 0, cham_cong: 'CA_NGAY' }] });
+    for (const bad of [{ vi_tri: '' }, { ho_ten: '', so_luong: 2 }, { so_gio_cong: 7.5 }, { so_gio_tc: 1 }]) {
+      expect(plan([{ ...ngoaiLe, ...bad }]).phieu).toEqual([]);
+    }
+  });
+
   it('gom theo ngày/chi nhánh, chuẩn hóa mã/tên và tính tổng theo danh sách người', () => {
     const result = plan([row, { ...row, ho_ten: 'Trần Bình', cham_cong: 'Sáng', so_gio_tc: '1,5', chi_nhanh: ' nhà sơ chế 1 ' }, { ...row, ngay: '04/11/2026' }]);
     expect(result.errors).toEqual([]);
@@ -16,7 +26,7 @@ describe('planBaoCaoNhanCongImport', () => {
     const ct = result.phieu[0].values.chi_tiet[0];
     expect(ct).toMatchObject({ sl_cong_ngay: 1, sl_cong_nua: 1, sl_tang_ca: 1, so_gio_tc: 1.5 });
     expect(ct.nhan_vien.map((n) => n.so_gio_cong)).toEqual([7.5, 3.75]);
-    expect(result.phieu[0].values.chi_tiet).toHaveLength(6);
+    expect(result.phieu[0].values.chi_tiet).toHaveLength(7);
   });
 
   it('nhập số lượng tổng hợp theo từng mức giờ, giữ ghi chú và tổng giờ tăng ca', () => {

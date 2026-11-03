@@ -10,8 +10,11 @@ export const CHUYEN_PRODUCTION_CODES = [
   'CONG_TANG_CUONG',
 ] as const;
 
-/** Mã dòng lưu DB — khớp CHECK constraint SQL (5 chuyền + V) */
-export const LOAI_CHUYEN_CODES = [...CHUYEN_PRODUCTION_CODES, 'CONG_DINH_BIEN_KHONG_SAN_XUAT'] as const;
+/** Ngoài lô chỉ theo dõi người và buổi đi làm, không thuộc nhân công nhà sơ chế. */
+export const NGOAI_LE_CODE = 'NGOAI_LE' as const;
+
+/** Mã dòng lưu DB — khớp CHECK constraint SQL (5 chuyền + V + Ngoại lệ). */
+export const LOAI_CHUYEN_CODES = [...CHUYEN_PRODUCTION_CODES, 'CONG_DINH_BIEN_KHONG_SAN_XUAT', NGOAI_LE_CODE] as const;
 
 export type LoaiChuyen = (typeof LOAI_CHUYEN_CODES)[number];
 
@@ -155,19 +158,19 @@ export interface FarmBaoCaoNhanCong {
 }
 
 export function sumSlCongNgay(item: FarmBaoCaoNhanCong): number {
-  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_cong_ngay ?? 0), 0);
+  return (item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE).reduce((s, r) => s + Number(r.sl_cong_ngay ?? 0), 0);
 }
 
 export function sumSlCongNua(item: FarmBaoCaoNhanCong): number {
-  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_cong_nua ?? 0), 0);
+  return (item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE).reduce((s, r) => s + Number(r.sl_cong_nua ?? 0), 0);
 }
 
 export function sumSlTangCa(item: FarmBaoCaoNhanCong): number {
-  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.sl_tang_ca ?? 0), 0);
+  return (item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE).reduce((s, r) => s + Number(r.sl_tang_ca ?? 0), 0);
 }
 
 export function sumSoGioTc(item: FarmBaoCaoNhanCong): number {
-  return (item.chi_tiet ?? []).reduce((s, r) => s + Number(r.so_gio_tc ?? 0), 0);
+  return (item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE).reduce((s, r) => s + Number(r.so_gio_tc ?? 0), 0);
 }
 
 type TongGioTichRow = Partial<ChiTietNumericFields> & {
@@ -194,7 +197,7 @@ export function sumTongGioTangCaTichTuChiTiet(rows: TongGioTichRow[]): number {
 }
 
 export function sumTongGioTangCaTichPhieu(item: FarmBaoCaoNhanCong): number {
-  return sumTongGioTangCaTichTuChiTiet(item.chi_tiet ?? []);
+  return sumTongGioTangCaTichTuChiTiet((item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE));
 }
 
 /** 1 công ngày + ½ công nửa (nửa công ÷ 2), theo từng dòng chuyền. */
@@ -208,6 +211,6 @@ export function sumTongCongQuyDoiTuChiTiet(rows: Partial<ChiTietNumericFields>[]
 }
 
 export function sumTongCongQuyDoiPhieu(item: FarmBaoCaoNhanCong): number {
-  return sumTongCongQuyDoiTuChiTiet(item.chi_tiet ?? []);
+  return sumTongCongQuyDoiTuChiTiet((item.chi_tiet ?? []).filter((r) => r.loai_chuyen !== NGOAI_LE_CODE));
 }
 
