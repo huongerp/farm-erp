@@ -6,10 +6,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
-import { KhungPhieu, TD_IN, TH_IN } from '../../../../../components/shared/phieu-in/PhieuInParts';
+import { HangKyTen, KhungPhieu, TD_IN, TH_IN } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { tomTatChuyenLuoi } from '../../utils/export-luoi';
+import { nhanTiLeKsc } from '../../utils/export-danh-sach';
 
 // ~47 cột (11 màu × 4) trên A4 ngang: tiêu đề phụ nhãn ngắn, ô chữ được ngắt giữa từ (`anywhere` hạ bề rộng tối
 // thiểu) để bảng luôn vừa khổ thay vì tràn mất cột cuối; ô số giữ bề rộng (`break-words` chỉ ngắt khi bị ép).
@@ -133,6 +134,36 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
   );
 };
 
+/** Ghi chú phiếu (theo chuyến) + ghi chú dây dưới lưới; không có chữ thì không hiện. */
+const GhiChuIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
+  const { t } = useTranslation();
+  const ghiChuPhieu =
+    luoi.chuyen === 0
+      ? luoi.ghiChuChuyen.map((g) => t('danhGiaDauVao.preview.ghiChuChuyen', { chuyen: g.chuyen, ghiChu: g.ghi_chu })).join(' · ')
+      : luoi.ghiChuChuyen.map((g) => g.ghi_chu).join(' · ');
+  const ghiChuDay = luoi.cot
+    .flatMap((c) => {
+      const gc = c.ghi_chu?.trim();
+      return gc ? [`${c.nhan}: ${gc}`] : [];
+    })
+    .join(' · ');
+  if (!ghiChuPhieu && !ghiChuDay) return null;
+  return (
+    <div className="mt-2 text-[0.82em] whitespace-pre-wrap">
+      {ghiChuPhieu && (
+        <p className="m-0">
+          <span className="font-semibold">{t('danhGiaDauVao.preview.ghiChuPhieu')}</span> {ghiChuPhieu}
+        </p>
+      )}
+      {ghiChuDay && (
+        <p className="m-0">
+          <span className="font-semibold">{t('danhGiaDauVao.preview.ghiChuDay')}</span> {ghiChuDay}
+        </p>
+      )}
+    </div>
+  );
+};
+
 const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[]; chuyen?: number }> = ({ dsKhoi, chuyen }) => {
   const { t } = useTranslation();
   const dsLuoi = dsKhoi.flatMap((k) => k.luoi);
@@ -162,9 +193,19 @@ const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[]; chuyen?: number }> 
                 {formatNumberVN(luoi.tongThu)}
                 {chuyen != null && <> · {t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen })}</>} · {t('danhGiaDauVao.luoi.tuanThuHoach')} {tuanThu} · {t('danhGiaDauVao.luoi.ngay')}{' '}
                 {formatYmdToDisplay(luoi.ngay)}
+                {!tomTat && <> · {t('danhGiaDauVao.bang.tiLeKsc', { tiLe: nhanTiLeKsc(luoi.ksc, luoi.tongThu) })}</>}
               </p>
               {tomTat && <p className="text-center m-0 mb-2">{tomTat}</p>}
               <LuoiIn luoi={luoi} />
+              <GhiChuIn luoi={luoi} />
+              <HangKyTen
+                labels={[
+                  t('danhGiaDauVao.preview.kyNguoiKiemTra'),
+                  t('danhGiaDauVao.preview.kyToTruong'),
+                  t('danhGiaDauVao.preview.kyQuanLy'),
+                ]}
+                khoangKyMm={15}
+              />
             </KhungPhieu>
           </div>
         );
