@@ -5,6 +5,7 @@ import { Plus, Sun, Trash2, UserPlus, Users } from 'lucide-react';
 import Combobox from '../../../../components/ui/Combobox';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Button from '../../../../components/ui/Button';
+import Input from '../../../../components/ui/Input';
 import { cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
 import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/schema';
@@ -14,8 +15,11 @@ import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
+import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 
 const GIO_INPUT = { maxFractionDigits: 2, min: 0, max: 24 } as const;
+/** Khớp nhanVienRowSchema.ghi_chu. */
+const GHI_CHU_MAX = 500;
 
 interface Props {
   chiTietIndex: number;
@@ -50,10 +54,11 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const themViTriNeuMoi = useThemViTriNeuMoi();
+  const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
   const gridCols = ngoaiLe
-    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_auto]'
-    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_auto]';
+    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_minmax(0,1.5fr)_auto]'
+    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_minmax(0,1.5fr)_auto]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
 
@@ -158,6 +163,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
             <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
             <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
           </>)}
+          <span>{t('baoCaoNhanCong.nv.ghiChu')}</span>
           <span className="w-9" />
         </div>
       )}
@@ -194,7 +200,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 }}
                 placeholder={t('baoCaoNhanCong.nv.viTri')}
                 error={err?.vi_tri?.message as string | undefined}
-                creatable
+                creatable={canThemViTri}
                 creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
                 dropdownInPortal
               />
@@ -265,11 +271,36 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 </Button>
               </div>
             </>)}
+            {/* Ghi chú riêng của người này — in ở cột Ghi chú của «Danh sách nhân công theo chuyền». */}
+            <div className="col-span-2 sm:col-span-1 flex items-start gap-1 min-w-0">
+              <Input
+                value={row.ghi_chu ?? ''}
+                onChange={(e) => patchRow(idx, { ghi_chu: e.target.value.trim() ? e.target.value : null })}
+                maxLength={GHI_CHU_MAX}
+                placeholder={t('baoCaoNhanCong.nv.ghiChu')}
+                aria-label={t('baoCaoNhanCong.nv.ghiChu')}
+                title={row.ghi_chu ?? undefined}
+                className="h-9"
+                error={err?.ghi_chu?.message as string | undefined}
+              />
+              {ngoaiLe && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
+                  onClick={() => xoa(idx)}
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 size={15} />
+                </Button>
+              )}
+            </div>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className={cn('h-9 w-9 p-0 shrink-0 text-rose-600', !ngoaiLe && 'hidden sm:inline-flex')}
+              className="h-9 w-9 p-0 shrink-0 text-rose-600 hidden sm:inline-flex"
               onClick={() => xoa(idx)}
               aria-label={t('common.delete')}
             >

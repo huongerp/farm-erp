@@ -101,7 +101,8 @@ export function buildRowSections(row: ThongKeSanXuatRow): CardSection[] {
       m('kpiNsSoChe', kpiThucTeDisplay(k, 0)),
       m('kpiLoiNaiChuoi', kpiThucTeDisplay(k, 1)),
       m('kpiTyLeThuHoi', kpiThucTeDisplay(k, 2)),
-      tienThuongMetric('tienThuong', k?.tongTienThuong),
+      // Net cả 4 nhóm thưởng (KPI kể cả phạt + QL + nhóm tỉa + nhóm CP)
+      tienThuongMetric('tienThuong', k?.tongThuongNet),
     ],
   };
 

@@ -8,14 +8,13 @@ import {
   sumTongCongQuyDoiTuChiTiet,
 } from '../../bao-cao-nhan-cong/core/types';
 import { displayLoaiTotalsOnCt } from '../../bao-cao-nhan-cong/core/ct-sub';
-import { sumTienThuongKpiThuong } from '../../bao-cao-so-che/core/types';
 import {
   computeBaoCaoSoCheKpis,
   buildBaoCaoSoCheKpiThuongPresetSources,
   enrichBaoCaoSoCheKpiThuongRows,
 } from '../../bao-cao-so-che/core/bcsc-kpi';
 import { sumPhamCapDisplayTotals } from '../../bao-cao-so-che/core/pham-cap-derived';
-import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { computeKpiPhanTram, sumCotKpiThuong } from '../../shared/kpi-thuong/types';
 import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type {
   ThongKeSanXuatRow,
@@ -78,8 +77,15 @@ function buildKpiSnapshot(
   const tongKpi = validRows.length;
   const soKpiDat = validRows.filter((r) => r.danh_gia != null && KPI_DAT_VALUES.has(r.danh_gia)).length;
   const tatCaKpiDat = tongKpi > 0 && soKpiDat === tongKpi;
-  const tongTienThuong = sumTienThuongKpiThuong(rows);
-  return { rows, soKpiDat, tongKpi, tatCaKpiDat, tongTienThuong };
+  const tongTienThuong = sumCotKpiThuong(rows, 'tien_thuong');
+  const tongThuongQl = sumCotKpiThuong(rows, 'thuong_ql');
+  const tongThuongNhomTia = sumCotKpiThuong(rows, 'thuong_nhom_tia');
+  const tongThuongNhomCp = sumCotKpiThuong(rows, 'thuong_nhom_cp');
+  return {
+    rows, soKpiDat, tongKpi, tatCaKpiDat,
+    tongTienThuong, tongThuongQl, tongThuongNhomTia, tongThuongNhomCp,
+    tongThuongNet: tongTienThuong + tongThuongQl + tongThuongNhomTia + tongThuongNhomCp,
+  };
 }
 
 // ─── Merge ────────────────────────────────────────────────────────────────────
@@ -174,7 +180,13 @@ export function computeThongKeSanXuatSummary(rows: ThongKeSanXuatRow[]): ThongKe
   const tongCnDinhBien = bcncRows.reduce((s, r) => s + (r.bcncSnapshot?.cnDinhBien ?? 0), 0);
   const validKRows = bcncRows.filter((r) => r.bcncSnapshot?.kDinhBien != null);
   const sumKDinhBien = validKRows.reduce((s, r) => s + (r.bcncSnapshot?.kDinhBien ?? 0), 0);
-  const tongTienThuong = rows.reduce((s, r) => s + (r.kpiSnapshot?.tongTienThuong ?? 0), 0);
+  const sumKpi = (pick: (k: KpiSnapshot) => number) =>
+    rows.reduce((s, r) => s + (r.kpiSnapshot ? pick(r.kpiSnapshot) : 0), 0);
+  const tongTienThuong = sumKpi((k) => k.tongTienThuong);
+  const tongThuongQl = sumKpi((k) => k.tongThuongQl);
+  const tongThuongNhomTia = sumKpi((k) => k.tongThuongNhomTia);
+  const tongThuongNhomCp = sumKpi((k) => k.tongThuongNhomCp);
+  const tongThuongNet = sumKpi((k) => k.tongThuongNet);
   const tongBuongSoChe = bcscRows.reduce((s, r) => s + num(r.bcsc?.tong_buong_so_che), 0);
   const tongSoThungTT = rows.reduce((s, r) => s + (r.dbdtKpi?.tong_so_thung_thuc_te ?? 0), 0);
   return {
@@ -184,7 +196,9 @@ export function computeThongKeSanXuatSummary(rows: ThongKeSanXuatRow[]): ThongKe
     tbGioTangCaNgay: bcncRows.length > 0 ? tongGioTangCaTich / bcncRows.length : null,
     tbCnDinhBien: bcncRows.length > 0 ? tongCnDinhBien / bcncRows.length : null,
     tbKDinhBien: validKRows.length > 0 ? sumKDinhBien / validKRows.length : null,
-    ngayCoBcsc, ngayDatKpi, tongTienThuong, tongBuongSoChe, tongSoThungTT,
+    ngayCoBcsc, ngayDatKpi,
+    tongTienThuong, tongThuongQl, tongThuongNhomTia, tongThuongNhomCp, tongThuongNet,
+    tongBuongSoChe, tongSoThungTT,
   };
 }
 

@@ -13,6 +13,7 @@ import { LOAI_CHUYEN_CODES, type LoaiChuyen, type VarNhanVienSoChe } from '../co
 import { useNhanVienSoChe, useUpdateNhanVienSoChe, useThemViTriNeuMoi, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
 import { gonTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
+import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 
 type Patch = Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>;
 
@@ -25,6 +26,7 @@ const SuaNguoi: React.FC<{
   const { t } = useTranslation();
   const luu = useUpdateNhanVienSoChe();
   const themViTriNeuMoi = useThemViTriNeuMoi();
+  const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const [v, setV] = useState<Patch>({ ho_ten: nv.ho_ten, vi_tri: nv.vi_tri, loai_chuyen: nv.loai_chuyen, dang_dung: nv.dang_dung });
   const tenTrong = !gonTen(v.ho_ten);
 
@@ -47,7 +49,7 @@ const SuaNguoi: React.FC<{
             setV({ ...v, vi_tri: viTri });
             themViTriNeuMoi(viTri);
           }}
-          creatable
+          creatable={canThemViTri}
           creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
           dropdownInPortal
         />

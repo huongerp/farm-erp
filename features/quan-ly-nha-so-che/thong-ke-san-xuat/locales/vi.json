@@ -41,7 +41,7 @@
   "thongKeSanXuat.card.ngayDatKpi": "Ngày đạt KPI",
   "thongKeSanXuat.card.ngayDatKpiDesc": "trên tổng ngày có BC sơ chế",
   "thongKeSanXuat.card.tongTienThuong": "Tổng tiền thưởng",
-  "thongKeSanXuat.card.tongTienThuongDesc": "Từ đánh giá KPI sơ chế",
+  "thongKeSanXuat.card.tongTienThuongDesc": "Thưởng KPI (trừ phạt) + QL + nhóm tỉa + nhóm CP",
   "thongKeSanXuat.card.tongBuongSoChe": "Tổng buồng sơ chế",
   "thongKeSanXuat.card.tongBuongSoCheDesc": "Tổng buồng đưa vào sơ chế",
   "thongKeSanXuat.card.tongThungTT": "Tổng thùng thực tế",
@@ -165,5 +165,12 @@
   "thongKeSanXuat.mobile.stats.thungKH": "Thùng kế hoạch",
   "thongKeSanXuat.mobile.stats.thungTT": "Thùng thực tế",
   "thongKeSanXuat.mobile.stats.tyLeTTKH": "Thực tế / kế hoạch",
-  "thongKeSanXuat.mobile.stats.chuaCoDuLieu": "Chưa có dữ liệu"
+  "thongKeSanXuat.mobile.stats.chuaCoDuLieu": "Chưa có dữ liệu",
+
+  "thongKeSanXuat.thuong.kpi": "Tiền thưởng KPI",
+  "thongKeSanXuat.thuong.ql": "Thưởng QL",
+  "thongKeSanXuat.thuong.nhomTia": "Thưởng nhóm tỉa",
+  "thongKeSanXuat.thuong.nhomCp": "Thưởng nhóm CP",
+  "thongKeSanXuat.thuong.tongCong": "Tổng cộng",
+  "thongKeSanXuat.thuong.netTitle": "Tổng 4 nhóm: Tiền thưởng KPI (kể cả phạt) + Thưởng QL + Thưởng nhóm tỉa + Thưởng nhóm CP"
 }

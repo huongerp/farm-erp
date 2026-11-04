@@ -30,7 +30,13 @@ export interface KpiSnapshot {
   soKpiDat: number;
   tongKpi: number;
   tatCaKpiDat: boolean;
+  /** Tổng cột `tien_thuong` (Tiền thưởng KPI) — âm là phạt. */
   tongTienThuong: number;
+  tongThuongQl: number;
+  tongThuongNhomTia: number;
+  tongThuongNhomCp: number;
+  /** Net cả 4 nhóm: Tiền thưởng KPI (kể cả phạt) + QL + nhóm tỉa + nhóm CP. */
+  tongThuongNet: number;
 }
 
 // ─── Merged row ───────────────────────────────────────────────────────────────
@@ -81,7 +87,13 @@ export interface ThongKeSanXuatSummary {
   tbKDinhBien: number | null;
   ngayCoBcsc: number;
   ngayDatKpi: number;
+  /** Tổng cột Tiền thưởng KPI (`tien_thuong`) — chưa gồm 3 nhóm thưởng nhập tay. */
   tongTienThuong: number;
+  tongThuongQl: number;
+  tongThuongNhomTia: number;
+  tongThuongNhomCp: number;
+  /** Net cả 4 nhóm thưởng — dùng cho thẻ «Tổng tiền thưởng». */
+  tongThuongNet: number;
   tongBuongSoChe: number;
   tongSoThungTT: number;
 }

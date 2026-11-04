@@ -9,6 +9,9 @@ export function tongHopChiNhanh(rows: ByChiNhanhRow[]) {
   const ngayCoBcsc = rows.reduce((s, r) => s + r.ngayCoBcsc, 0);
   const tienThuongDuong = rows.reduce((s, r) => s + r.tienThuongDuong, 0);
   const tienThuongAm = rows.reduce((s, r) => s + r.tienThuongAm, 0);
+  const thuongQl = rows.reduce((s, r) => s + r.tongThuongQl, 0);
+  const thuongNhomTia = rows.reduce((s, r) => s + r.tongThuongNhomTia, 0);
+  const thuongNhomCp = rows.reduce((s, r) => s + r.tongThuongNhomCp, 0);
   return {
     tongNgay,
     tongCongQD,
@@ -19,7 +22,11 @@ export function tongHopChiNhanh(rows: ByChiNhanhRow[]) {
     kpiRate: ngayCoBcsc > 0 ? (ngayDat / ngayCoBcsc) * 100 : null,
     tienThuongDuong,
     tienThuongAm,
-    net: tienThuongDuong + tienThuongAm,
+    thuongQl,
+    thuongNhomTia,
+    thuongNhomCp,
+    /** Net = thưởng KPI + phạt (âm) + QL + nhóm tỉa + nhóm CP. */
+    net: tienThuongDuong + tienThuongAm + thuongQl + thuongNhomTia + thuongNhomCp,
   };
 }
 

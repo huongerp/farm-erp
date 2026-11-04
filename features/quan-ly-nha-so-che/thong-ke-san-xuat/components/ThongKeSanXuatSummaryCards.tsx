@@ -156,11 +156,11 @@ const ThongKeSanXuatSummaryCards: React.FC<Props> = ({ summary }) => {
           sub={kpiPct != null ? `${kpiPct}% ngày có BCSC` : undefined}
         />
         <Card
-          {...(summary.tongTienThuong > 0 ? EMERALD : NEUTRAL)}
+          {...(summary.tongThuongNet > 0 ? EMERALD : NEUTRAL)}
           icon={Banknote}
           title={t('thongKeSanXuat.card.tongTienThuong')}
-          value={fmtCur(summary.tongTienThuong)}
-          sub="Tiền thưởng KPI net"
+          value={fmtCur(summary.tongThuongNet)}
+          sub={t('thongKeSanXuat.card.tongTienThuongDesc')}
         />
       </div>
 

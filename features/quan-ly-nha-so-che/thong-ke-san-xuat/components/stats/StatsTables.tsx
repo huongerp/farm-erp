@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Building2, FileCheck, CheckCircle2, Banknote } from 'lucide-react';
 import { useIsMobile } from '../../../../../lib/hooks/use-is-mobile';
 import { fmt1, fmtInt, fmtCur, fmtCurSigned, fmtPct, buildKpiRows } from './stats-format';
@@ -34,6 +35,7 @@ const TD = ({ children, right, center, cls }: { children: React.ReactNode; right
 // ─── Table 1: Tổng hợp theo chi nhánh ────────────────────────────────────────
 
 function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   if (isMobile) {
     return (
@@ -44,7 +46,7 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
   }
   return (
     <TableShell title="Tổng hợp theo chi nhánh" icon={<Building2 size={14} className="text-primary" />}>
-      <table className="w-full text-xs min-w-[700px]">
+      <table className="w-full text-xs min-w-[1000px]">
         <thead>
           <tr>
             <TH>Chi nhánh</TH>
@@ -54,14 +56,17 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
             <TH right>Giờ TC</TH>
             <TH right>KPI đạt/có BCSC</TH>
             <TH right>% KPI</TH>
-            <TH right>Tiền thưởng</TH>
+            <TH right>{t('thongKeSanXuat.thuong.kpi')}</TH>
+            <TH right>{t('thongKeSanXuat.thuong.ql')}</TH>
+            <TH right>{t('thongKeSanXuat.thuong.nhomTia')}</TH>
+            <TH right>{t('thongKeSanXuat.thuong.nhomCp')}</TH>
             <TH right>Tiền phạt</TH>
-            <TH right>Net</TH>
+            <th title={t('thongKeSanXuat.thuong.netTitle')} className="px-3 py-2 text-caption font-medium text-muted-foreground bg-muted/30 border-b border-border whitespace-nowrap text-right">Net</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/40">
           {rows.length === 0 ? (
-            <tr><td colSpan={10} className="px-4 py-6 text-center text-muted-foreground text-xs">Chưa có dữ liệu</td></tr>
+            <tr><td colSpan={13} className="px-4 py-6 text-center text-muted-foreground text-xs">Chưa có dữ liệu</td></tr>
           ) : rows.map((r) => (
             <tr key={r.id} className="hover:bg-muted/20 transition-colors">
               <TD cls="font-medium text-foreground">{r.ten}</TD>
@@ -72,6 +77,9 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
               <TD right>{r.ngayCoBcsc > 0 ? `${r.ngayDatKpi}/${r.ngayCoBcsc}` : '—'}</TD>
               <TD right cls={r.kpiRate != null ? (r.kpiRate >= 80 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : r.kpiRate < 50 ? 'text-red-500' : '') : ''}>{fmtPct(r.kpiRate)}</TD>
               <TD right cls="text-emerald-600 dark:text-emerald-400">{r.tienThuongDuong > 0 ? fmtCur(r.tienThuongDuong) : '—'}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(r.tongThuongQl)}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(r.tongThuongNhomTia)}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(r.tongThuongNhomCp)}</TD>
               <TD right cls="text-red-500 dark:text-red-400">{r.tienThuongAm < 0 ? fmtCur(Math.abs(r.tienThuongAm)) : '—'}</TD>
               <TD right cls={r.tongTienThuong > 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : r.tongTienThuong < 0 ? 'text-red-500 font-semibold' : 'text-muted-foreground'}>{r.tongTienThuong !== 0 ? fmtCurSigned(r.tongTienThuong) : '—'}</TD>
             </tr>
@@ -79,7 +87,7 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
         </tbody>
         {rows.length > 1 && (() => {
           const { tongNgay: totNgay, tongCongQD: totCongQD, tongGioTC: totGioTC, ngayDat: totDat, ngayCoBcsc: totBcsc,
-            tienThuongDuong: totDuong, tienThuongAm: totAm, net: totNet, kpiRate } = tongHopChiNhanh(rows);
+            tienThuongDuong: totDuong, tienThuongAm: totAm, thuongQl: totQl, thuongNhomTia: totTia, thuongNhomCp: totCp, net: totNet, kpiRate } = tongHopChiNhanh(rows);
           return (
             <tfoot>
               <tr className="bg-muted/40 font-semibold border-t border-border">
@@ -91,6 +99,9 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
                 <TD right>{totBcsc > 0 ? `${totDat}/${totBcsc}` : '—'}</TD>
                 <TD right cls="text-foreground">{fmtPct(kpiRate)}</TD>
                 <TD right cls="text-emerald-600 dark:text-emerald-400">{totDuong > 0 ? fmtCur(totDuong) : '—'}</TD>
+                <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(totQl)}</TD>
+                <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(totTia)}</TD>
+                <TD right cls="text-emerald-600 dark:text-emerald-400">{fmtCur(totCp)}</TD>
                 <TD right cls="text-red-500 dark:text-red-400">{totAm < 0 ? fmtCur(Math.abs(totAm)) : '—'}</TD>
                 <TD right cls={totNet > 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : totNet < 0 ? 'text-red-500 font-bold' : ''}>{totNet !== 0 ? fmtCurSigned(totNet) : '—'}</TD>
               </tr>
@@ -105,6 +116,7 @@ function TableByChiNhanh({ rows }: { rows: ByChiNhanhRow[] }) {
 // ─── Table 2: KPI & Thưởng/Phạt ─────────────────────────────────────────────
 
 function TableKpiAnalysis({ a }: { a: KpiAnalysis }) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   if (isMobile) {
     return (
@@ -117,15 +129,18 @@ function TableKpiAnalysis({ a }: { a: KpiAnalysis }) {
 
   return (
     <TableShell title="Phân tích KPI & Thưởng / Phạt" icon={<CheckCircle2 size={14} className="text-primary" />}>
-      <table className="w-full text-xs min-w-[520px]">
+      <table className="w-full text-xs min-w-[820px]">
         <thead>
           <tr>
             <TH>Chỉ tiêu</TH>
             <TH right>Số ngày</TH>
             <TH right>Tỷ lệ</TH>
-            <TH right>Tiền thưởng (+)</TH>
+            <TH right>{t('thongKeSanXuat.thuong.kpi')} (+)</TH>
+            <TH right>{t('thongKeSanXuat.thuong.ql')}</TH>
+            <TH right>{t('thongKeSanXuat.thuong.nhomTia')}</TH>
+            <TH right>{t('thongKeSanXuat.thuong.nhomCp')}</TH>
             <TH right>Tiền phạt (−)</TH>
-            <TH right>Net</TH>
+            <th title={t('thongKeSanXuat.thuong.netTitle')} className="px-3 py-2 text-caption font-medium text-muted-foreground bg-muted/30 border-b border-border whitespace-nowrap text-right">Net</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/40">
@@ -135,6 +150,9 @@ function TableKpiAnalysis({ a }: { a: KpiAnalysis }) {
               <TD right cls="font-semibold">{fmtInt(r.count)}</TD>
               <TD right cls="text-muted-foreground">{r.pct}</TD>
               <TD right cls="text-emerald-600 dark:text-emerald-400">{r.tienThuong}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{r.thuongQl}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{r.thuongNhomTia}</TD>
+              <TD right cls="text-emerald-600 dark:text-emerald-400">{r.thuongNhomCp}</TD>
               <TD right cls="text-red-500 dark:text-red-400">{r.tienPhat}</TD>
               <TD right cls={r.net.startsWith('+') ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : r.net.startsWith('-') ? 'text-red-500 font-semibold' : 'text-muted-foreground'}>{r.net}</TD>
             </tr>
@@ -146,6 +164,9 @@ function TableKpiAnalysis({ a }: { a: KpiAnalysis }) {
             <TD right>{fmtInt(a.tongNgayCoBcsc + a.ngayKhongCoBcsc)}</TD>
             <TD right>—</TD>
             <TD right cls="text-emerald-600 dark:text-emerald-400 font-bold">{a.tienThuongDuong > 0 ? fmtCurSigned(a.tienThuongDuong) : '—'}</TD>
+            <TD right cls="text-emerald-600 dark:text-emerald-400 font-bold">{fmtCurSigned(a.thuongQl)}</TD>
+            <TD right cls="text-emerald-600 dark:text-emerald-400 font-bold">{fmtCurSigned(a.thuongNhomTia)}</TD>
+            <TD right cls="text-emerald-600 dark:text-emerald-400 font-bold">{fmtCurSigned(a.thuongNhomCp)}</TD>
             <TD right cls="text-red-500 dark:text-red-400 font-bold">{a.tienThuongAm < 0 ? fmtCurSigned(a.tienThuongAm) : '—'}</TD>
             <TD right cls={a.tienThuongNet > 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold text-sm' : a.tienThuongNet < 0 ? 'text-red-500 font-bold text-sm' : ''}>{a.tienThuongNet !== 0 ? fmtCurSigned(a.tienThuongNet) : '—'}</TD>
           </tr>

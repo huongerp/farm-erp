@@ -94,7 +94,10 @@ export function ByChiNhanhCards({ rows }: { rows: ByChiNhanhRow[] }) {
             { label: L('gioTangCa'), value: tot.tongGioTC > 0 ? fmt1(tot.tongGioTC) : '—', cls: tot.tongGioTC > 0 ? 'text-orange-600 dark:text-orange-400' : undefined },
             { label: L('kpiDatCoBcsc'), value: tot.ngayCoBcsc > 0 ? `${tot.ngayDat}/${tot.ngayCoBcsc}` : '—' },
             { label: L('tyLeKpi'), value: fmtPct(tot.kpiRate) },
-            { label: L('tienThuong'), value: tot.tienThuongDuong > 0 ? fmtCur(tot.tienThuongDuong) : '—', cls: POS },
+            { label: t('thongKeSanXuat.thuong.kpi'), value: tot.tienThuongDuong > 0 ? fmtCur(tot.tienThuongDuong) : '—', cls: POS },
+            { label: t('thongKeSanXuat.thuong.ql'), value: fmtCur(tot.thuongQl), cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomTia'), value: fmtCur(tot.thuongNhomTia), cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomCp'), value: fmtCur(tot.thuongNhomCp), cls: POS },
             { label: L('tienPhat'), value: tot.tienThuongAm < 0 ? fmtCur(Math.abs(tot.tienThuongAm)) : '—', cls: NEG },
             { label: L('net'), value: tot.net !== 0 ? fmtCurSigned(tot.net) : '—', cls: netCls(tot.net) },
           ]}
@@ -115,7 +118,10 @@ export function ByChiNhanhCards({ rows }: { rows: ByChiNhanhRow[] }) {
               value: fmtPct(r.kpiRate),
               cls: r.kpiRate != null ? (r.kpiRate >= 80 ? POS : r.kpiRate < 50 ? 'text-red-500' : undefined) : undefined,
             },
-            { label: L('tienThuong'), value: r.tienThuongDuong > 0 ? fmtCur(r.tienThuongDuong) : '—', cls: POS },
+            { label: t('thongKeSanXuat.thuong.kpi'), value: r.tienThuongDuong > 0 ? fmtCur(r.tienThuongDuong) : '—', cls: POS },
+            { label: t('thongKeSanXuat.thuong.ql'), value: fmtCur(r.tongThuongQl), cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomTia'), value: fmtCur(r.tongThuongNhomTia), cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomCp'), value: fmtCur(r.tongThuongNhomCp), cls: POS },
             { label: L('tienPhat'), value: r.tienThuongAm < 0 ? fmtCur(Math.abs(r.tienThuongAm)) : '—', cls: NEG },
             { label: L('net'), value: r.tongTienThuong !== 0 ? fmtCurSigned(r.tongTienThuong) : '—', cls: netCls(r.tongTienThuong) },
           ]}
@@ -140,6 +146,9 @@ export function KpiAnalysisCards({ a }: { a: KpiAnalysis }) {
         items={[
           { label: L('soNgay'), value: fmtInt(a.tongNgayCoBcsc + a.ngayKhongCoBcsc) },
           { label: L('tienThuongCong'), value: a.tienThuongDuong > 0 ? fmtCurSigned(a.tienThuongDuong) : '—', cls: POS },
+          { label: t('thongKeSanXuat.thuong.ql'), value: fmtCurSigned(a.thuongQl), cls: POS },
+          { label: t('thongKeSanXuat.thuong.nhomTia'), value: fmtCurSigned(a.thuongNhomTia), cls: POS },
+          { label: t('thongKeSanXuat.thuong.nhomCp'), value: fmtCurSigned(a.thuongNhomCp), cls: POS },
           { label: L('tienPhatTru'), value: a.tienThuongAm < 0 ? fmtCurSigned(a.tienThuongAm) : '—', cls: NEG },
           { label: L('net'), value: netCard !== 0 ? fmtCurSigned(netCard) : '—', cls: netCls(netCard) },
         ]}
@@ -154,6 +163,9 @@ export function KpiAnalysisCards({ a }: { a: KpiAnalysis }) {
             { label: L('tyLe'), value: r.pct, cls: 'text-muted-foreground' },
             { label: L('net'), value: r.net, cls: r.net.startsWith('+') ? POS : r.net.startsWith('-') ? 'text-red-500' : 'text-muted-foreground' },
             { label: L('tienThuongCong'), value: r.tienThuong, cls: POS },
+            { label: t('thongKeSanXuat.thuong.ql'), value: r.thuongQl, cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomTia'), value: r.thuongNhomTia, cls: POS },
+            { label: t('thongKeSanXuat.thuong.nhomCp'), value: r.thuongNhomCp, cls: POS },
             { label: L('tienPhatTru'), value: r.tienPhat, cls: NEG },
           ]}
         />

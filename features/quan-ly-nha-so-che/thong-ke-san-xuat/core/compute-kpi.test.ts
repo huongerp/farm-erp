@@ -9,7 +9,7 @@ import { sumPhamCapDisplayTotals } from '../../bao-cao-so-che/core/pham-cap-deri
 import type { FarmBaoCaoNhanCong } from '../../bao-cao-nhan-cong/core/types';
 import type { FarmBaoCaoSoChe } from '../../bao-cao-so-che/core/types';
 import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types';
-import { mergeThongKeSanXuatRows } from './compute';
+import { mergeThongKeSanXuatRows, computeThongKeSanXuatSummary } from './compute';
 
 const NGAY = '2025-05-01';
 const ID_CN = 'cn-1';
@@ -219,5 +219,59 @@ describe('mergeThongKeSanXuatRows — KPI enrich', () => {
         (r, i) => i >= 3 || r.danh_gia === 'Đạt' || r.danh_gia === 'Tốt'
       ) && (row.kpiSnapshot?.tongKpi ?? 0) > 0
     );
+  });
+});
+
+describe('mergeThongKeSanXuatRows — tách 4 nhóm thưởng', () => {
+  // Số liệu thật BCSC 02/11/2026 NSC fp2: Tiền thưởng / QL / nhóm tỉa / nhóm CP
+  const bcscFp2 = () =>
+    minimalBcsc({
+      kpi_thuong: [
+        kpiRow(0, { tien_thuong: 34607, thuong_ql: 34500, thuong_nhom_tia: 20000, thuong_nhom_cp: 15000 }),
+        kpiRow(1, { tien_thuong: 0, thuong_ql: 10000, thuong_nhom_tia: 0, thuong_nhom_cp: 35000 }),
+        kpiRow(2, { tien_thuong: 12140, thuong_ql: 5000, thuong_nhom_tia: 30000, thuong_nhom_cp: 0 }),
+      ],
+    });
+
+  it('snapshot cộng riêng từng nhóm, net = cả 4 nhóm', () => {
+    const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcscFp2()], [minimalDbdt()]);
+    const k = row.kpiSnapshot!;
+    expect(k.tongTienThuong).toBe(46747);
+    expect(k.tongThuongQl).toBe(49500);
+    expect(k.tongThuongNhomTia).toBe(50000);
+    expect(k.tongThuongNhomCp).toBe(50000);
+    expect(k.tongThuongNet).toBe(196247);
+  });
+
+  it('tiền thưởng KPI âm (phạt) trừ vào net', () => {
+    const bcsc = minimalBcsc({
+      kpi_thuong: [kpiRow(0, { tien_thuong: -20000, thuong_ql: 5000, thuong_nhom_tia: 0, thuong_nhom_cp: 0 })],
+    });
+    const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcsc], [minimalDbdt()]);
+    expect(row.kpiSnapshot!.tongTienThuong).toBe(-20000);
+    expect(row.kpiSnapshot!.tongThuongNet).toBe(-15000);
+  });
+
+  it('chỉ có thưởng nhóm (tien_thuong = 0) vẫn được tính vào tổng', () => {
+    const bcsc = minimalBcsc({
+      kpi_thuong: [kpiRow(3, { danh_gia: null, tien_thuong: 0, thuong_ql: 0, thuong_nhom_tia: 0, thuong_nhom_cp: 7000 })],
+    });
+    const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcsc], [minimalDbdt()]);
+    expect(row.kpiSnapshot!.tongThuongNhomCp).toBe(7000);
+    expect(row.kpiSnapshot!.tongThuongNet).toBe(7000);
+  });
+
+  it('summary cộng từng nhóm qua các ngày', () => {
+    const rows = mergeThongKeSanXuatRows(
+      [minimalBcnc(), minimalBcnc({ id: 'bcnc-2', ngay: '2025-05-02' })],
+      [bcscFp2(), { ...bcscFp2(), id: 'bcsc-2', ngay: '2025-05-02' }],
+      []
+    );
+    const s = computeThongKeSanXuatSummary(rows);
+    expect(s.tongTienThuong).toBe(93494);
+    expect(s.tongThuongQl).toBe(99000);
+    expect(s.tongThuongNhomTia).toBe(100000);
+    expect(s.tongThuongNhomCp).toBe(100000);
+    expect(s.tongThuongNet).toBe(392494);
   });
 });

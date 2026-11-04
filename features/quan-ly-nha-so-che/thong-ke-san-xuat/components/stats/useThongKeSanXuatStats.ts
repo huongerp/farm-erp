@@ -16,9 +16,14 @@ export interface ByChiNhanhRow {
   tongGioTangCaTich: number;
   ngayDatKpi: number;
   kpiRate: number | null;
+  /** Net cả 4 nhóm thưởng (KPI kể cả phạt + QL + nhóm tỉa + nhóm CP). */
   tongTienThuong: number;
+  /** Phần dương / âm của cột Tiền thưởng KPI (`tien_thuong`). */
   tienThuongDuong: number;
   tienThuongAm: number;
+  tongThuongQl: number;
+  tongThuongNhomTia: number;
+  tongThuongNhomCp: number;
   tongBuongSoChe: number;
   tongThungKH: number;
   tongThungTT: number;
@@ -41,16 +46,60 @@ export interface ChartItemGrouped {
   tt: number;
 }
 
+/** Tổng 4 nhóm thưởng của một tập ngày. `kpi` = cột Tiền thưởng KPI (âm là phạt). */
+export interface TongThuongNhom {
+  kpi: number;
+  /** Phần dương / âm của `tien_thuong` cộng theo TỪNG dòng KPI (khớp cách tách ở dòng Tổng). */
+  duong: number;
+  am: number;
+  ql: number;
+  nhomTia: number;
+  nhomCp: number;
+  /** kpi + ql + nhomTia + nhomCp */
+  net: number;
+}
+
 export interface KpiAnalysis {
   tongNgayCoBcsc: number;
   ngayDatKpi: number;
   ngayKhongDatKpi: number;
   ngayKhongCoBcsc: number;
+  /** Phần dương / âm của cột Tiền thưởng KPI trên mọi ngày. */
   tienThuongDuong: number;
   tienThuongAm: number;
+  /** Tổng 3 nhóm thưởng nhập tay trên mọi ngày. */
+  thuongQl: number;
+  thuongNhomTia: number;
+  thuongNhomCp: number;
+  /** Net cả 4 nhóm trên mọi ngày. */
   tienThuongNet: number;
+  /** 4 nhóm trên các ngày đạt đủ KPI / chưa đạt (có BCSC). */
+  nhomNgayDat: TongThuongNhom;
+  nhomNgayKhongDat: TongThuongNhom;
+  /** Net 4 nhóm trên ngày đạt; null khi không có ngày đạt. */
   tienThuongTrenNgayDat: number | null;
+  /** Net 4 nhóm trên ngày chưa đạt; null khi không có ngày chưa đạt. */
   tienPhatTrenNgayKhongDat: number | null;
+}
+
+/** Cộng 4 nhóm thưởng từ `kpiSnapshot` của các ngày. */
+export function tongThuongNhom(rows: ThongKeSanXuatRow[]): TongThuongNhom {
+  const t: TongThuongNhom = { kpi: 0, duong: 0, am: 0, ql: 0, nhomTia: 0, nhomCp: 0, net: 0 };
+  for (const r of rows) {
+    const k = r.kpiSnapshot;
+    if (!k) continue;
+    t.kpi += k.tongTienThuong;
+    for (const kr of k.rows) {
+      const v = Number(kr.tien_thuong ?? 0);
+      if (v > 0) t.duong += v;
+      else if (v < 0) t.am += v;
+    }
+    t.ql += k.tongThuongQl;
+    t.nhomTia += k.tongThuongNhomTia;
+    t.nhomCp += k.tongThuongNhomCp;
+    t.net += k.tongThuongNet;
+  }
+  return t;
 }
 
 export interface ThongKeSanXuatStats {
@@ -84,6 +133,7 @@ export function useThongKeSanXuatStats(filteredRows: ThongKeSanXuatRow[]): Thong
           tongCongQuyDoi: 0, tbCongQuyDoiNgay: null, tongGioTangCaTich: 0,
           ngayDatKpi: 0, kpiRate: null,
           tongTienThuong: 0, tienThuongDuong: 0, tienThuongAm: 0,
+          tongThuongQl: 0, tongThuongNhomTia: 0, tongThuongNhomCp: 0,
           tongBuongSoChe: 0, tongThungKH: 0, tongThungTT: 0,
         });
       }
@@ -96,9 +146,15 @@ export function useThongKeSanXuatStats(filteredRows: ThongKeSanXuatRow[]): Thong
       const kpiRows = row.kpiSnapshot?.rows ?? [];
       const duong = kpiRows.filter((k) => k.tien_thuong > 0).reduce((s, k) => s + k.tien_thuong, 0);
       const am = kpiRows.filter((k) => k.tien_thuong < 0).reduce((s, k) => s + k.tien_thuong, 0);
+      const ql = row.kpiSnapshot?.tongThuongQl ?? 0;
+      const nhomTia = row.kpiSnapshot?.tongThuongNhomTia ?? 0;
+      const nhomCp = row.kpiSnapshot?.tongThuongNhomCp ?? 0;
       b.tienThuongDuong += duong;
       b.tienThuongAm += am;
-      b.tongTienThuong += duong + am;
+      b.tongThuongQl += ql;
+      b.tongThuongNhomTia += nhomTia;
+      b.tongThuongNhomCp += nhomCp;
+      b.tongTienThuong += duong + am + ql + nhomTia + nhomCp;
     }
     const byChiNhanh = [...branchMap.values()].map((b) => ({
       ...b,
@@ -118,15 +174,19 @@ export function useThongKeSanXuatStats(filteredRows: ThongKeSanXuatRow[]): Thong
         else if (k.tien_thuong < 0) tienThuongAm += k.tien_thuong;
       }
     }
-    const thuongTrenNgayDat = filteredRows.filter((r) => r.kpiSnapshot?.tatCaKpiDat === true).reduce((s, r) => s + (r.kpiSnapshot?.tongTienThuong ?? 0), 0);
-    const phatTrenNgayKhong = filteredRows.filter((r) => r.bcsc && r.kpiSnapshot?.tatCaKpiDat === false).reduce((s, r) => s + (r.kpiSnapshot?.tongTienThuong ?? 0), 0);
+    const tatCa = tongThuongNhom(filteredRows);
+    const nhomNgayDat = tongThuongNhom(filteredRows.filter((r) => r.kpiSnapshot?.tatCaKpiDat === true));
+    const nhomNgayKhongDat = tongThuongNhom(filteredRows.filter((r) => r.bcsc && r.kpiSnapshot?.tatCaKpiDat === false));
 
     const kpiAnalysis: KpiAnalysis = {
       tongNgayCoBcsc: bcscRows.length,
       ngayDatKpi, ngayKhongDatKpi, ngayKhongCoBcsc,
-      tienThuongDuong, tienThuongAm, tienThuongNet: tienThuongDuong + tienThuongAm,
-      tienThuongTrenNgayDat: ngayDatKpi > 0 ? thuongTrenNgayDat : null,
-      tienPhatTrenNgayKhongDat: ngayKhongDatKpi > 0 ? phatTrenNgayKhong : null,
+      tienThuongDuong, tienThuongAm,
+      thuongQl: tatCa.ql, thuongNhomTia: tatCa.nhomTia, thuongNhomCp: tatCa.nhomCp,
+      tienThuongNet: tienThuongDuong + tienThuongAm + tatCa.ql + tatCa.nhomTia + tatCa.nhomCp,
+      nhomNgayDat, nhomNgayKhongDat,
+      tienThuongTrenNgayDat: ngayDatKpi > 0 ? nhomNgayDat.net : null,
+      tienPhatTrenNgayKhongDat: ngayKhongDatKpi > 0 ? nhomNgayKhongDat.net : null,
     };
 
     // ── KPI pie ──────────────────────────────────────────────────────────────

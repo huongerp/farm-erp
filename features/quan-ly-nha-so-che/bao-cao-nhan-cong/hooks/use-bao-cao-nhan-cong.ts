@@ -30,6 +30,7 @@ import {
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
 import { laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { useBaoCaoNhanCongPermissions } from './use-bao-cao-nhan-cong-permissions';
 
 export const QUERY_KEY_BAO_CAO_NHAN_CONG = ['baoCaoNhanCong'] as const;
 
@@ -277,12 +278,14 @@ export function useXoaViTriSoChe() {
 /**
  * Ô vị trí vừa chọn / gõ tên chưa có trong danh mục → thêm vào để lần sau có gợi ý.
  * Im lặng: ô đã nhận giá trị, đây chỉ là việc phụ; lỗi cũng bỏ qua.
+ * Chỉ cấp cao mới thêm (migration 068) — người khác không gọi insert để khỏi bị DB từ chối.
  */
 export function useThemViTriNeuMoi() {
   const qc = useQueryClient();
   const { data: dsViTri = [] } = useViTriSoChe();
+  const { canThemViTri } = useBaoCaoNhanCongPermissions();
   return (ten: string | null | undefined) => {
-    if (!ten || !laTenMoi(ten, dsViTri.map((x) => x.ten))) return;
+    if (!canThemViTri || !ten || !laTenMoi(ten, dsViTri.map((x) => x.ten))) return;
     themViTriNeuChuaCo(ten)
       .then(() => qc.invalidateQueries({ queryKey: QUERY_KEY_VI_TRI_SO_CHE }))
       .catch(() => undefined);

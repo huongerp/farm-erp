@@ -38,7 +38,7 @@ describe('buildRowSections', () => {
     const row = {
       ...rowTrong,
       bcncSnapshot: { cnDinhBien: 2, kDinhBien: 2.5, tongGioTangCaTich: 4, tongCongQuyDoi: 10 },
-      kpiSnapshot: { rows: [], tongTienThuong: -50000 },
+      kpiSnapshot: { rows: [], tongTienThuong: -60000, tongThuongQl: 10000, tongThuongNet: -50000 },
     } as unknown as ThongKeSanXuatRow;
     expect(metric(row, 'nhanCong', 'kDinhBien').tone).toBe('warning');
     expect(metric(row, 'nhanCong', 'cnDinhBien').tone).toBe('warning');

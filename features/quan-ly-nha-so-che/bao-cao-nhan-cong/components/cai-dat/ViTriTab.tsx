@@ -8,6 +8,7 @@ import { cn } from '../../../../../lib/utils';
 import { gonTen } from '../../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import type { VarViTriSoChe } from '../../core/types';
 import { useLuuViTriSoChe, useViTriSoChe, useXoaViTriSoChe } from '../../hooks/use-bao-cao-nhan-cong';
+import { useBaoCaoNhanCongPermissions } from '../../hooks/use-bao-cao-nhan-cong-permissions';
 
 const iconBtn = 'p-1.5 rounded-md text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent';
 
@@ -18,6 +19,7 @@ const ViTriTab: React.FC = () => {
   const { data: ds = [], isLoading } = useViTriSoChe();
   const luu = useLuuViTriSoChe();
   const xoa = useXoaViTriSoChe();
+  const { canThemViTri } = useBaoCaoNhanCongPermissions();
 
   const [tenMoi, setTenMoi] = useState('');
   const [dangSua, setDangSua] = useState<string | null>(null);
@@ -26,7 +28,7 @@ const ViTriTab: React.FC = () => {
 
   const them = () => {
     const ten = gonTen(tenMoi);
-    if (!ten) return;
+    if (!ten || !canThemViTri) return;
     luu.mutate({ id: null, data: { ten, dang_dung: true } }, { onSuccess: () => setTenMoi('') });
   };
 
@@ -57,26 +59,32 @@ const ViTriTab: React.FC = () => {
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground m-0">{t('baoCaoNhanCong.caiDat.viTriGioiThieu')}</p>
 
-      <form
-        className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex flex-wrap items-end gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          them();
-        }}
-      >
-        <div className="min-w-0 flex-1 sm:min-w-[16rem]">
-          <Input
-            label={t('baoCaoNhanCong.caiDat.tenViTri')}
-            value={tenMoi}
-            onChange={(e) => setTenMoi(e.target.value)}
-            placeholder={t('baoCaoNhanCong.caiDat.tenViTri')}
-          />
-        </div>
-        <Button type="submit" size="sm" disabled={!gonTen(tenMoi) || luu.isPending}>
-          <Plus size={14} className="mr-1.5" />
-          {t('baoCaoNhanCong.caiDat.themViTri')}
-        </Button>
-      </form>
+      {canThemViTri ? (
+        <form
+          className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            them();
+          }}
+        >
+          <div className="min-w-0 flex-1 sm:min-w-[16rem]">
+            <Input
+              label={t('baoCaoNhanCong.caiDat.tenViTri')}
+              value={tenMoi}
+              onChange={(e) => setTenMoi(e.target.value)}
+              placeholder={t('baoCaoNhanCong.caiDat.tenViTri')}
+            />
+          </div>
+          <Button type="submit" size="sm" disabled={!gonTen(tenMoi) || luu.isPending}>
+            <Plus size={14} className="mr-1.5" />
+            {t('baoCaoNhanCong.caiDat.themViTri')}
+          </Button>
+        </form>
+      ) : (
+        <p className="text-xs text-muted-foreground m-0 rounded-lg border border-border bg-muted/30 px-3 py-2">
+          {t('baoCaoNhanCong.caiDat.chiCapCaoThemViTri')}
+        </p>
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.loading')}</p>

@@ -5,7 +5,8 @@
 import { formatNumberVN, formatDateShort, getTodayISODate } from '../../../../lib/utils';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { useUIStore } from '../../../../store/useStore';
-import type { ThongKeSanXuatStats, KpiAnalysis, ByChiNhanhRow } from '../components/stats/useThongKeSanXuatStats';
+import type { ThongKeSanXuatStats, KpiAnalysis, ByChiNhanhRow, TongThuongNhom } from '../components/stats/useThongKeSanXuatStats';
+import { tongHopChiNhanh } from '../components/stats/stats-totals';
 import type { ThongKeSanXuatSummary, ThongKeSanXuatRow } from '../core/types';
 import { kpiThucTeDisplay } from '../core/kpi-display';
 import { escapeHtml as e } from '../../../../lib/escape-html';
@@ -51,7 +52,7 @@ const DAILY_COL_HEADERS = [
   'TL nải lỗi',
   'TL thu hồi',
   'KPI',
-  'Tiền thưởng',
+  'Thưởng (4 nhóm)',
   'Cân BQ (g)',
   'Buồng KH',
   'Buồng TT',
@@ -147,7 +148,7 @@ function mapDailyDetailCells(row: ThongKeSanXuatRow): string[] {
     kpiThucTeDisplay(k, 1),
     kpiThucTeDisplay(k, 2),
     kpiText,
-    k && k.tongTienThuong !== 0 ? fmtCurSigned(k.tongTienThuong) : k ? '0' : '—',
+    k && k.tongThuongNet !== 0 ? fmtCurSigned(k.tongThuongNet) : k ? '0' : '—',
     d?.can_nang_binh_quan_buong != null
       ? fmtInt(d.can_nang_binh_quan_buong * 1000)
       : '—',
@@ -168,7 +169,11 @@ function buildSummarySection(s: ThongKeSanXuatSummary): string {
     ['Tổng ngày dữ liệu', fmtInt(s.tongNgay)],
     ['Ngày đủ 3 báo cáo', `${fmtInt(s.ngayDu3Bc)} (${fmtPctNum(s.ngayDu3Bc, s.tongNgay)})`],
     ['Ngày đạt KPI / có BCSC', `${fmtInt(s.ngayDatKpi)} / ${fmtInt(s.ngayCoBcsc)} (${kpiPct}%)`],
-    ['Tiền thưởng KPI (net)', fmtCurSigned(s.tongTienThuong)],
+    ['Tiền thưởng KPI (âm = phạt)', fmtCurSigned(s.tongTienThuong)],
+    ['Thưởng QL', fmtCurSigned(s.tongThuongQl)],
+    ['Thưởng nhóm tỉa', fmtCurSigned(s.tongThuongNhomTia)],
+    ['Thưởng nhóm CP', fmtCurSigned(s.tongThuongNhomCp)],
+    ['Tổng thưởng net (4 nhóm)', fmtCurSigned(s.tongThuongNet)],
     ['Tổng công quy đổi', `${fmt1(s.tongCongQuyDoi)} (TB ${fmt1(s.tbCongQuyDoiNgay)}/ngày)`],
     ['Giờ tăng ca tích lũy', `${fmt1(s.tongGioTangCaTich)}h (TB ${fmt1(s.tbGioTangCaNgay)}h/ngày)`],
     ['TB nhân sự định biên / ngày', fmt1(s.tbCnDinhBien)],
@@ -191,7 +196,7 @@ function buildSummarySection(s: ThongKeSanXuatSummary): string {
 function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
   if (rows.length === 0) return '';
   const body = rows.map((r) => {
-    const net = r.tienThuongDuong + r.tienThuongAm;
+    const net = r.tongTienThuong;
     return `<tr>
       <td style="${td}">${e(r.ten)}</td>
       <td style="${tdC}">${fmtInt(r.tongNgay)}</td>
@@ -201,6 +206,9 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
       <td style="${tdC}">${r.ngayCoBcsc > 0 ? `${r.ngayDatKpi}/${r.ngayCoBcsc}` : '—'}</td>
       <td style="${tdC}">${r.kpiRate != null ? fmtPctNum(r.kpiRate, 100) : '—'}</td>
       <td style="${tdR};color:#16a34a">${r.tienThuongDuong > 0 ? fmtCur(r.tienThuongDuong) : '—'}</td>
+      <td style="${tdR};color:#16a34a">${fmtCur(r.tongThuongQl)}</td>
+      <td style="${tdR};color:#16a34a">${fmtCur(r.tongThuongNhomTia)}</td>
+      <td style="${tdR};color:#16a34a">${fmtCur(r.tongThuongNhomCp)}</td>
       <td style="${tdR};color:#dc2626">${r.tienThuongAm < 0 ? fmtCur(Math.abs(r.tienThuongAm)) : '—'}</td>
       <td style="${tdR};font-weight:600;color:${net > 0 ? '#16a34a' : net < 0 ? '#dc2626' : '#111'}">${net !== 0 ? fmtCurSigned(net) : '—'}</td>
     </tr>`;
@@ -211,10 +219,9 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
     gtc: rows.reduce((s, r) => s + r.tongGioTangCaTich, 0),
     dat: rows.reduce((s, r) => s + r.ngayDatKpi, 0),
     bcsc: rows.reduce((s, r) => s + r.ngayCoBcsc, 0),
-    duong: rows.reduce((s, r) => s + r.tienThuongDuong, 0),
-    am: rows.reduce((s, r) => s + r.tienThuongAm, 0),
+    ...tongHopChiNhanh(rows),
   };
-  const totNet = tot.duong + tot.am;
+  const totNet = tot.net;
   const foot = `<tr style="${trFoot}">
     <td style="${tdBold}">Tổng cộng</td>
     <td style="${tdC}">${fmtInt(tot.ngay)}</td>
@@ -223,8 +230,11 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
     <td style="${tdR}">${tot.gtc > 0 ? fmt1(tot.gtc) : '—'}</td>
     <td style="${tdC}">${tot.bcsc > 0 ? `${tot.dat}/${tot.bcsc}` : '—'}</td>
     <td style="${tdC}">${fmtPctNum(tot.dat, tot.bcsc)}</td>
-    <td style="${tdR};color:#16a34a">${tot.duong > 0 ? fmtCur(tot.duong) : '—'}</td>
-    <td style="${tdR};color:#dc2626">${tot.am < 0 ? fmtCur(Math.abs(tot.am)) : '—'}</td>
+    <td style="${tdR};color:#16a34a">${tot.tienThuongDuong > 0 ? fmtCur(tot.tienThuongDuong) : '—'}</td>
+    <td style="${tdR};color:#16a34a">${fmtCur(tot.thuongQl)}</td>
+    <td style="${tdR};color:#16a34a">${fmtCur(tot.thuongNhomTia)}</td>
+    <td style="${tdR};color:#16a34a">${fmtCur(tot.thuongNhomCp)}</td>
+    <td style="${tdR};color:#dc2626">${tot.tienThuongAm < 0 ? fmtCur(Math.abs(tot.tienThuongAm)) : '—'}</td>
     <td style="${tdR};font-weight:700;color:${totNet > 0 ? '#16a34a' : totNet < 0 ? '#dc2626' : '#111'}">${totNet !== 0 ? fmtCurSigned(totNet) : '—'}</td>
   </tr>`;
   return `
@@ -239,9 +249,12 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
       <th style="${thR}">Giờ TC</th>
       <th style="${th}">KPI đạt</th>
       <th style="${th}">% KPI</th>
-      <th style="${thR}">Thưởng (+)</th>
+      <th style="${thR}">Tiền thưởng KPI</th>
+      <th style="${thR}">Thưởng QL</th>
+      <th style="${thR}">Thưởng nhóm tỉa</th>
+      <th style="${thR}">Thưởng nhóm CP</th>
       <th style="${thR}">Phạt (−)</th>
-      <th style="${thR}">Net</th>
+      <th style="${thR}">Net (4 nhóm)</th>
     </tr></thead>
     <tbody>${body}</tbody>
     <tfoot>${foot}</tfoot>
@@ -251,17 +264,31 @@ function buildChiNhanhSection(rows: ByChiNhanhRow[]): string {
 
 function buildKpiSection(a: KpiAnalysis): string {
   const totNgay = a.tongNgayCoBcsc + a.ngayKhongCoBcsc;
-  const rows = [
-    ['Ngày đạt đủ KPI', a.ngayDatKpi, fmtPctNum(a.ngayDatKpi, a.tongNgayCoBcsc), a.tienThuongTrenNgayDat != null && a.tienThuongTrenNgayDat > 0 ? fmtCur(a.tienThuongTrenNgayDat) : '—', '—', a.tienThuongTrenNgayDat != null ? fmtCurSigned(a.tienThuongTrenNgayDat) : '—', '#16a34a'],
-    ['Ngày chưa đạt KPI (có BCSC)', a.ngayKhongDatKpi, fmtPctNum(a.ngayKhongDatKpi, a.tongNgayCoBcsc), '—', a.tienPhatTrenNgayKhongDat != null && a.tienPhatTrenNgayKhongDat < 0 ? fmtCur(Math.abs(a.tienPhatTrenNgayKhongDat)) : '—', a.tienPhatTrenNgayKhongDat != null && a.tienPhatTrenNgayKhongDat !== 0 ? fmtCurSigned(a.tienPhatTrenNgayKhongDat) : '—', '#dc2626'],
-    ['Không có BC sơ chế', a.ngayKhongCoBcsc, '—', '—', '—', '—', '#888'],
-  ] as const;
-  const body = rows.map(([label, count, pct, thuong, phat, net, color]) =>
+  const nhomCells = (n: TongThuongNhom, coNgay: boolean): string[] =>
+    coNgay
+      ? [
+          fmtCur(n.duong),
+          fmtCur(n.ql),
+          fmtCur(n.nhomTia),
+          fmtCur(n.nhomCp),
+          fmtCur(Math.abs(n.am)),
+          n.net !== 0 ? fmtCurSigned(n.net) : '—',
+        ]
+      : ['—', '—', '—', '—', '—', '—'];
+  const rows: [string, number, string, string[], string][] = [
+    ['Ngày đạt đủ KPI', a.ngayDatKpi, fmtPctNum(a.ngayDatKpi, a.tongNgayCoBcsc), nhomCells(a.nhomNgayDat, a.ngayDatKpi > 0), '#16a34a'],
+    ['Ngày chưa đạt KPI (có BCSC)', a.ngayKhongDatKpi, fmtPctNum(a.ngayKhongDatKpi, a.tongNgayCoBcsc), nhomCells(a.nhomNgayKhongDat, a.ngayKhongDatKpi > 0), '#dc2626'],
+    ['Không có BC sơ chế', a.ngayKhongCoBcsc, '—', nhomCells(a.nhomNgayKhongDat, false), '#888'],
+  ];
+  const body = rows.map(([label, count, pct, [thuong, ql, tia, cp, phat, net], color]) =>
     `<tr>
       <td style="${td};color:${color};font-weight:500">${label}</td>
       <td style="${tdC};font-weight:600">${fmtInt(count)}</td>
       <td style="${tdC}">${pct}</td>
       <td style="${tdR};color:#16a34a">${thuong}</td>
+      <td style="${tdR};color:#16a34a">${ql}</td>
+      <td style="${tdR};color:#16a34a">${tia}</td>
+      <td style="${tdR};color:#16a34a">${cp}</td>
       <td style="${tdR};color:#dc2626">${phat}</td>
       <td style="${tdR};font-weight:600;color:${color}">${net}</td>
     </tr>`
@@ -272,6 +299,9 @@ function buildKpiSection(a: KpiAnalysis): string {
     <td style="${tdC}">${fmtInt(totNgay)}</td>
     <td style="${tdC}">—</td>
     <td style="${tdR};color:#16a34a;font-weight:700">${a.tienThuongDuong > 0 ? fmtCurSigned(a.tienThuongDuong) : '—'}</td>
+    <td style="${tdR};color:#16a34a;font-weight:700">${fmtCurSigned(a.thuongQl)}</td>
+    <td style="${tdR};color:#16a34a;font-weight:700">${fmtCurSigned(a.thuongNhomTia)}</td>
+    <td style="${tdR};color:#16a34a;font-weight:700">${fmtCurSigned(a.thuongNhomCp)}</td>
     <td style="${tdR};color:#dc2626;font-weight:700">${a.tienThuongAm < 0 ? fmtCurSigned(a.tienThuongAm) : '—'}</td>
     <td style="${tdR};font-weight:700;color:${netColor}">${a.tienThuongNet !== 0 ? fmtCurSigned(a.tienThuongNet) : '—'}</td>
   </tr>`;
@@ -283,9 +313,12 @@ function buildKpiSection(a: KpiAnalysis): string {
       <th style="${thL}">Chỉ tiêu</th>
       <th style="${th}">Số ngày</th>
       <th style="${th}">Tỷ lệ</th>
-      <th style="${thR}">Tiền thưởng (+)</th>
+      <th style="${thR}">Tiền thưởng KPI (+)</th>
+      <th style="${thR}">Thưởng QL</th>
+      <th style="${thR}">Thưởng nhóm tỉa</th>
+      <th style="${thR}">Thưởng nhóm CP</th>
       <th style="${thR}">Tiền phạt (−)</th>
-      <th style="${thR}">Net</th>
+      <th style="${thR}">Net (4 nhóm)</th>
     </tr></thead>
     <tbody>${body}</tbody>
     <tfoot>${foot}</tfoot>
@@ -584,27 +617,31 @@ export async function exportThongKeSanXuatToXLSX(
     ['Tổng ngày', summary.tongNgay],
     ['Ngày đủ 3 BC', summary.ngayDu3Bc],
     ['Ngày đạt KPI', summary.ngayDatKpi],
-    ['Tiền thưởng net', summary.tongTienThuong],
+    ['Tiền thưởng KPI (âm = phạt)', summary.tongTienThuong],
+    ['Thưởng QL', summary.tongThuongQl],
+    ['Thưởng nhóm tỉa', summary.tongThuongNhomTia],
+    ['Thưởng nhóm CP', summary.tongThuongNhomCp],
+    ['Tổng thưởng net (4 nhóm)', summary.tongThuongNet],
     ['Công quy đổi tổng', summary.tongCongQuyDoi],
     ['Giờ tăng ca tổng', summary.tongGioTangCaTich],
     ['Buồng sơ chế tổng', summary.tongBuongSoChe],
     ['Thùng TT tổng', summary.tongSoThungTT],
     [],
     ['II. THEO CHI NHÁNH'],
-    ['Chi nhánh', 'Số ngày', 'Công QĐ', 'TB/ngày', 'Giờ TC', 'KPI đạt', 'Có BCSC', '% KPI', 'Thưởng (+)', 'Phạt (−)', 'Net'],
+    ['Chi nhánh', 'Số ngày', 'Công QĐ', 'TB/ngày', 'Giờ TC', 'KPI đạt', 'Có BCSC', '% KPI', 'Tiền thưởng KPI', 'Thưởng QL', 'Thưởng nhóm tỉa', 'Thưởng nhóm CP', 'Phạt (−)', 'Net'],
     ...stats.byChiNhanh.map((r) => [
       r.ten, r.tongNgay, r.tongCongQuyDoi, r.tbCongQuyDoiNgay ?? '', r.tongGioTangCaTich,
       r.ngayDatKpi, r.ngayCoBcsc,
       r.kpiRate != null ? `${formatNumberVN(r.kpiRate, { maxFractionDigits: 0 })}%` : '—',
-      r.tienThuongDuong, r.tienThuongAm, r.tienThuongDuong + r.tienThuongAm,
+      r.tienThuongDuong, r.tongThuongQl, r.tongThuongNhomTia, r.tongThuongNhomCp, r.tienThuongAm, r.tongTienThuong,
     ]),
     [],
     ['III. PHÂN TÍCH KPI & THƯỞNG/PHẠT'],
-    ['Chỉ tiêu', 'Số ngày', 'Tỷ lệ', 'Tiền thưởng (+)', 'Tiền phạt (−)', 'Net'],
-    ['Đạt đủ KPI', a.ngayDatKpi, fmtPctNum(a.ngayDatKpi, a.tongNgayCoBcsc), a.tienThuongTrenNgayDat ?? 0, 0, a.tienThuongTrenNgayDat ?? 0],
-    ['Chưa đạt KPI (có BCSC)', a.ngayKhongDatKpi, fmtPctNum(a.ngayKhongDatKpi, a.tongNgayCoBcsc), 0, a.tienPhatTrenNgayKhongDat ?? 0, a.tienPhatTrenNgayKhongDat ?? 0],
-    ['Không có BCSC', a.ngayKhongCoBcsc, '—', 0, 0, 0],
-    ['Tổng', a.tongNgayCoBcsc + a.ngayKhongCoBcsc, '—', a.tienThuongDuong, a.tienThuongAm, a.tienThuongNet],
+    ['Chỉ tiêu', 'Số ngày', 'Tỷ lệ', 'Tiền thưởng KPI (+)', 'Thưởng QL', 'Thưởng nhóm tỉa', 'Thưởng nhóm CP', 'Tiền phạt (−)', 'Net'],
+    ['Đạt đủ KPI', a.ngayDatKpi, fmtPctNum(a.ngayDatKpi, a.tongNgayCoBcsc), a.nhomNgayDat.duong, a.nhomNgayDat.ql, a.nhomNgayDat.nhomTia, a.nhomNgayDat.nhomCp, a.nhomNgayDat.am, a.nhomNgayDat.net],
+    ['Chưa đạt KPI (có BCSC)', a.ngayKhongDatKpi, fmtPctNum(a.ngayKhongDatKpi, a.tongNgayCoBcsc), a.nhomNgayKhongDat.duong, a.nhomNgayKhongDat.ql, a.nhomNgayKhongDat.nhomTia, a.nhomNgayKhongDat.nhomCp, a.nhomNgayKhongDat.am, a.nhomNgayKhongDat.net],
+    ['Không có BCSC', a.ngayKhongCoBcsc, '—', 0, 0, 0, 0, 0, 0],
+    ['Tổng', a.tongNgayCoBcsc + a.ngayKhongCoBcsc, '—', a.tienThuongDuong, a.thuongQl, a.thuongNhomTia, a.thuongNhomCp, a.tienThuongAm, a.tienThuongNet],
     [],
     ['IV. MỨC ĐỘ HOÀN THIỆN BÁO CÁO'],
     ['Chỉ tiêu', 'Số ngày', 'Tỷ lệ'],

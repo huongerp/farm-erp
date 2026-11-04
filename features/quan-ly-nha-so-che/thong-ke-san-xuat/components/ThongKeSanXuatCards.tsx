@@ -153,6 +153,22 @@ function ChiTietKpi({ row }: { row: ThongKeSanXuatRow }) {
                 </p>
               </div>
             </div>
+            {[
+              { key: 'thuong_ql', label: t('thongKeSanXuat.thuong.ql') },
+              { key: 'thuong_nhom_tia', label: t('thongKeSanXuat.thuong.nhomTia') },
+              { key: 'thuong_nhom_cp', label: t('thongKeSanXuat.thuong.nhomCp') },
+            ].map(({ key, label }) => {
+              const v = Number(r[key as 'thuong_ql' | 'thuong_nhom_tia' | 'thuong_nhom_cp'] ?? 0);
+              if (v === 0) return null;
+              return (
+                <div key={key} className="mt-1 flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+                  <p className={cn('text-sm font-semibold tabular-nums', v > 0 ? TONE_CLS.positive : TONE_CLS.negative)}>
+                    {currency(v)}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         );
       })}
@@ -235,7 +251,7 @@ function DayCard({
                   <Metric key={mt.id} metric={mt} />
                 ))}
               </div>
-              {section.id === 'soChe' && k && k.tongKpi > 0 && (
+              {section.id === 'soChe' && k && k.rows.length > 0 && (
                 <div className="flex items-center gap-2 pt-0.5">
                   <span className="text-xs text-muted-foreground">{t('thongKeSanXuat.table.kpi')}</span>
                   <KpiBadges kpiSnapshot={k} />
