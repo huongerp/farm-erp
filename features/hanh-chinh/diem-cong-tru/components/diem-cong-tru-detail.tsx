@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Lock, Printer, Scale, Unlock } from 'lucide-react';
+import { Lock, MessageSquareText, Printer, Scale, Unlock } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -10,9 +10,10 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { getDiemCongTruLoaiLabel } from '../core/constants';
 import { laBanGhiKhoa } from '../core/quyen-khoa';
 import type { DiemCongTruRecord } from '../core/types';
-import { useUpdateDiemCongTruTrangThai } from '../hooks/use-diem-cong-tru';
+import { useUpdateDiemCongTruQuanLyTraoDoi, useUpdateDiemCongTruTrangThai } from '../hooks/use-diem-cong-tru';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import DiemCongTruTrangThaiBadge from './diem-cong-tru-trang-thai-badge';
+import DiemCongTruTraoDoiDialog from './diem-cong-tru-trao-doi-dialog';
 
 interface Props {
   data: DiemCongTruRecord;
@@ -33,6 +34,8 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const trangThaiMutation = useUpdateDiemCongTruTrangThai();
+  const [traoDoiOpen, setTraoDoiOpen] = useState(false);
+  const traoDoiMutation = useUpdateDiemCongTruQuanLyTraoDoi(() => setTraoDoiOpen(false));
   const subtitle = `${data.ten_nhan_vien || data.ma_nhan_vien || '—'} · ${formatPeriod(data.nam, data.thang)}`;
   const dangKhoa = laBanGhiKhoa(data);
 
@@ -61,6 +64,12 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
               await trangThaiMutation.mutateAsync({ id: data.id, trang_thai: dangKhoa ? 'mo' : 'khoa' }).catch(() => {});
             },
           }),
+      });
+      actions.push({
+        label: t('diemCongTru.detail.traoDoi'),
+        icon: <MessageSquareText size={16} />,
+        variant: 'secondary',
+        onClick: () => setTraoDoiOpen(true),
       });
     }
     return actions;
@@ -174,6 +183,14 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
                 <DetailField label={t('diemCongTru.store.moTaCol')} value={data.mo_ta} />
               </div>
             ) : null}
+            {data.quan_ly_trao_doi ? (
+              <div className="col-span-1 sm:col-span-2">
+                <DetailField
+                  label={t('diemCongTru.detail.traoDoi')}
+                  value={<span className="whitespace-pre-wrap">{data.quan_ly_trao_doi}</span>}
+                />
+              </div>
+            ) : null}
             <DetailField
               label={t('diemCongTru.detail.createdAt')}
               value={formatDateTimeShort(data.tg_tao)}
@@ -185,6 +202,13 @@ const DiemCongTruDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, c
           </div>
         </DetailSection>
       </div>
+      <DiemCongTruTraoDoiDialog
+        open={traoDoiOpen}
+        initialValue={data.quan_ly_trao_doi ?? ''}
+        isSaving={traoDoiMutation.isPending}
+        onClose={() => setTraoDoiOpen(false)}
+        onSave={(noiDung) => traoDoiMutation.mutate({ id: data.id, noiDung })}
+      />
     </GenericDrawer>
   );
 };

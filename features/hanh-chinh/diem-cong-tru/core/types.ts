@@ -17,6 +17,8 @@ export interface DiemCongTruRecord {
   ma_hang_muc?: string;
   diem: number;
   mo_ta?: string;
+  /** Nội dung quản lý trao đổi — chỉ quản trị module / cấp bậc 1 được ghi (trigger DB). */
+  quan_ly_trao_doi?: string;
   trang_thai: DiemCongTruTrangThai;
   tg_tao: string;
   tg_cap_nhat: string;

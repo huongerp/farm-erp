@@ -25,7 +25,7 @@ import i18n from '../../../../lib/i18n';
 const TABLE = 'fp_hr_diem_cong_tru';
 
 const ROW_COLUMNS =
-  'id,id_nhan_vien,nam,thang,loai,id_hang_muc,ten_hang_muc,diem,mo_ta,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,id_nhan_vien,nam,thang,loai,id_hang_muc,ten_hang_muc,diem,mo_ta,ghi_chu,trang_thai,quan_ly_trao_doi,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 interface DbRow {
   id: number;
@@ -39,6 +39,7 @@ interface DbRow {
   mo_ta: string | null;
   ghi_chu: string | null;
   trang_thai: string | null;
+  quan_ly_trao_doi: string | null;
   id_nguoi_tao: number | null;
   tg_tao: string | null;
   tg_cap_nhat: string | null;
@@ -68,6 +69,7 @@ function rowToItem(
     diem: Number(row.diem),
     mo_ta: moTa,
     trang_thai: row.trang_thai === 'khoa' ? 'khoa' : 'mo',
+    quan_ly_trao_doi: row.quan_ly_trao_doi?.trim() || undefined,
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
   };
@@ -291,5 +293,18 @@ export async function updateDiemCongTruTrangThai(
   const { data, error } = await db.from(TABLE).update({ trang_thai }).eq('id', idNum).select('id');
   if (error) throwDbError(error);
   // RLS lọc mất dòng → PostgREST trả mảng rỗng thay vì lỗi.
+  if (!data || data.length === 0) throw new Error(i18n.t('diemCongTru.service.notFound'));
+}
+
+/** Ghi "Quản lý trao đổi" — migration 069: trigger chặn người không phải quản trị / cấp bậc 1. */
+export async function updateDiemCongTruQuanLyTraoDoi(id: string, noiDung: string): Promise<void> {
+  const idNum = Number(id);
+  if (!Number.isFinite(idNum)) throw new Error(i18n.t('diemCongTru.service.notFound'));
+  const { data, error } = await db
+    .from(TABLE)
+    .update({ quan_ly_trao_doi: noiDung.trim() || null })
+    .eq('id', idNum)
+    .select('id');
+  if (error) throwDbError(error);
   if (!data || data.length === 0) throw new Error(i18n.t('diemCongTru.service.notFound'));
 }

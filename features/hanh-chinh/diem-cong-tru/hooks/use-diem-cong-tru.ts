@@ -11,6 +11,7 @@ import {
   getDiemCongTruPage,
   getDiemCongTruById,
   updateDiemCongTruTrangThai,
+  updateDiemCongTruQuanLyTraoDoi,
 } from '../services/diem-cong-tru-service';
 import type { DiemCongTruTrangThai } from '../core/types';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
@@ -98,6 +99,21 @@ export const useUpdateDiemCongTruTrangThai = (onSuccess?: () => void) => {
       toast.success(
         i18n.t(variables.trang_thai === 'khoa' ? 'diemCongTru.toast.lockSuccess' : 'diemCongTru.toast.unlockSuccess')
       );
+      if (onSuccess) onSuccess();
+    },
+    onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+/** Ghi nội dung quản lý trao đổi — chỉ quản trị module hoặc cấp bậc 1 (DB chặn lần nữa). */
+export const useUpdateDiemCongTruQuanLyTraoDoi = (onSuccess?: () => void) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, noiDung }: { id: string; noiDung: string }) =>
+      updateDiemCongTruQuanLyTraoDoi(id, noiDung),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['diemCongTruRecords'] });
+      toast.success(i18n.t('diemCongTru.toast.traoDoiSuccess'));
       if (onSuccess) onSuccess();
     },
     onError: (err: unknown) => toast.error((err as Error).message),

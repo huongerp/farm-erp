@@ -23,4 +23,5 @@ export {
   getDiemCongTruPage,
   getDiemCongTruById,
   updateDiemCongTruTrangThai,
+  updateDiemCongTruQuanLyTraoDoi,
 } from './diem-cong-tru-db.service';
