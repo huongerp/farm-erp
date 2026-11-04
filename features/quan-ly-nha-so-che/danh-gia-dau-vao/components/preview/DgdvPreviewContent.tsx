@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import { HangKyTen, KhungPhieu, TD_IN, TH_IN } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
+import { sangSlDat } from '../../core/chi-tiet-dong';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { tomTatChuyenLuoi } from '../../utils/export-luoi';
 import { nhanTiLeKsc } from '../../utils/export-danh-sach';
@@ -71,8 +72,10 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
               <td className={tdSo}>{formatNumberVN(g.slBuong)}</td>
               {luoi.cot.map((c) => (
                 <React.Fragment key={c.id}>
-                  <td className={tdSo}>{fmt(g.tongTheoCot[c.id] ?? 0)}</td>
-                  <td className={td} colSpan={3} />
+                  <td className={tdSo}>{fmt(g.datTheoCot[c.id] ?? 0)}</td>
+                  <td className={td} />
+                  <td className={tdSo}>{fmt(g.huyTheoCot[c.id] ?? 0)}</td>
+                  <td className={td} />
                 </React.Fragment>
               ))}
               <td className={td} />
@@ -99,7 +102,7 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
                     const o = d.o[c.id];
                     return (
                       <React.Fragment key={c.id}>
-                        <td className={tdSo}>{o ? fmt(o.so_luong) : ''}</td>
+                        <td className={tdSo}>{o ? fmt(sangSlDat(o.so_luong, o.so_luong_huy)) : ''}</td>
                         <td className={td}>{o?.danh_gia ?? ''}</td>
                         <td className={tdSo}>{o ? fmt(o.so_luong_huy) : ''}</td>
                         <td className={td}>{o?.ly_do_huy ?? ''}</td>
@@ -122,8 +125,10 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
             <td className={tdSo}>{formatNumberVN(luoi.tongThu)}</td>
             {luoi.cot.map((c) => (
               <React.Fragment key={c.id}>
-                <td className={tdSo}>{formatNumberVN(luoi.tongTheoCot[c.id] ?? 0)}</td>
-                <td className={td} colSpan={3} />
+                <td className={tdSo}>{formatNumberVN(luoi.datTheoCot[c.id] ?? 0)}</td>
+                <td className={td} />
+                <td className={tdSo}>{formatNumberVN(luoi.huyTheoCot[c.id] ?? 0)}</td>
+                <td className={td} />
               </React.Fragment>
             ))}
             <td className={td} />

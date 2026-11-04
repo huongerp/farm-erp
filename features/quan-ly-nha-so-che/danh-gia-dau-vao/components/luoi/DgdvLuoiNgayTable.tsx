@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../../lib/utils';
 import type { DgdvCotHienThi, DgdvLoNgay, DgdvLuoiNgay } from '../../core/bang-tinh';
 import type { FarmDgdvDong } from '../../core/types';
+import { sangSlDat } from '../../core/chi-tiet-dong';
 import { styleTieuDeCot } from '../../utils/mau-day';
 import { khoaCanhBao } from '../../utils/cap-nhat-luoi';
 
@@ -40,7 +41,7 @@ const OCotDay: React.FC<{ o: FarmDgdvDong | undefined; canhBao: boolean }> = ({ 
   const loiCls = canhBao && 'ring-2 ring-rose-500 ring-inset bg-rose-50 dark:bg-rose-950/40';
   return (
     <>
-      <td className={cn(TD, 'text-right tabular-nums')}>{o ? fmt(o.so_luong) : ''}</td>
+      <td className={cn(TD, 'text-right tabular-nums')}>{o ? fmt(sangSlDat(o.so_luong, o.so_luong_huy)) : ''}</td>
       <td className={TD}>{o?.danh_gia ?? ''}</td>
       <td className={cn(TD, 'text-right tabular-nums', loiCls)} title={canhBao ? t('danhGiaDauVao.luoi.canhBaoLoi') : undefined}>
         {o ? fmt(o.so_luong_huy) : ''}
@@ -147,8 +148,10 @@ const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, canhBao, anDauKhoi, dauKhoiP
                   <td className={cn(TD, W_SL, XANH, LEFT_SL, 'sticky z-10 text-right tabular-nums')}>{formatNumberVN(g.slBuong)}</td>
                   {luoi.cot.map((c) => (
                     <React.Fragment key={c.id}>
-                      <td className={cn(TD, 'text-right tabular-nums')}>{fmt(g.tongTheoCot[c.id] ?? 0)}</td>
-                      <td className={TD} colSpan={3} />
+                      <td className={cn(TD, 'text-right tabular-nums')}>{fmt(g.datTheoCot[c.id] ?? 0)}</td>
+                      <td className={TD} />
+                      <td className={cn(TD, 'text-right tabular-nums')}>{fmt(g.huyTheoCot[c.id] ?? 0)}</td>
+                      <td className={TD} />
                     </React.Fragment>
                   ))}
                   <td className={TD} />
@@ -204,8 +207,10 @@ const DgdvLuoiNgayTable: React.FC<Props> = ({ luoi, canhBao, anDauKhoi, dauKhoiP
                 </td>
                 {luoi.cot.map((c) => (
                   <React.Fragment key={c.id}>
-                    <td className={cn(TD, 'text-right tabular-nums')}>{formatNumberVN(luoi.tongTheoCot[c.id] ?? 0)}</td>
-                    <td className={TD} colSpan={3} />
+                    <td className={cn(TD, 'text-right tabular-nums')}>{formatNumberVN(luoi.datTheoCot[c.id] ?? 0)}</td>
+                    <td className={TD} />
+                    <td className={cn(TD, 'text-right tabular-nums')}>{formatNumberVN(luoi.huyTheoCot[c.id] ?? 0)}</td>
+                    <td className={TD} />
                   </React.Fragment>
                 ))}
                 <td className={TD} />

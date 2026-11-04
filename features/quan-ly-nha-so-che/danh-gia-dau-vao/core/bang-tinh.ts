@@ -9,6 +9,10 @@
  *   SL buồng (lô)  = Σ so_luong các dây (mọi dòng) + dut_day
  *   Tổng thu ngày  = Σ SL buồng các lô của MỌI chuyến trong ngày
  *   KSC ngày       = Σ so_luong_huy
+ *
+ * Hiển thị (lưới / bản in / Excel): `so_luong` lưu đã GỒM huỷ, nên ô cột «SL» hiện SL ĐẠT
+ * (= lưu − huỷ, `sangSlDat`) cạnh cột «Huỷ» — `datTheoCot` / `huyTheoCot`. Nhờ vậy người đọc tự cộng
+ * được: Tổng thu = Σ đạt + Σ huỷ + đứt dây.
  */
 import type { DgdvFormValues } from './schema';
 import type {
@@ -24,6 +28,7 @@ import type {
 import { TRANG_THAI_DGDV } from './types';
 import { cacNgayTrongKhoang, soSanhTuan } from './tuan';
 import { gonTen, khoaTen } from './chuan-hoa-ten';
+import { sangSlDat } from './chi-tiet-dong';
 
 // ---- Tổng theo ô / lô / phiếu / ngày ---------------------------------------------
 
@@ -83,26 +88,43 @@ export function tongNgay(dsPhieu: DgdvPhieuDayDu[], ngay: string, idChiNhanh?: s
   return { tongThu, ksc };
 }
 
-/** Σ so_luong theo cột dây của phiếu: id_cot → số. Cột không có ô = 0. */
-export function tongCot(phieu: Pick<DgdvPhieuDayDu, 'cot' | 'lo'>): Record<string, number> {
-  const kq: Record<string, number> = {};
-  for (const c of phieu.cot) kq[c.id] = 0;
+/** Số hiển thị theo cột dây (id_cot → số): Σ đạt + Σ huỷ = Σ so_luong của cột. */
+export interface DgdvSoTheoCot {
+  /** Σ SL đạt (`so_luong` − `so_luong_huy`, `sangSlDat`) */
+  datTheoCot: Record<string, number>;
+  /** Σ so_luong_huy */
+  huyTheoCot: Record<string, number>;
+}
+
+/** Bộ số theo cột với mọi cột = 0. */
+function soTheoCotRong(idsCot: string[]): DgdvSoTheoCot {
+  const kq: DgdvSoTheoCot = { datTheoCot: {}, huyTheoCot: {} };
+  for (const id of idsCot) {
+    kq.datTheoCot[id] = 0;
+    kq.huyTheoCot[id] = 0;
+  }
+  return kq;
+}
+
+/** Đạt + huỷ theo cột dây của phiếu. Cột không có ô = 0. */
+export function tongCot(phieu: Pick<DgdvPhieuDayDu, 'cot' | 'lo'>): DgdvSoTheoCot {
+  const kq = soTheoCotRong(phieu.cot.map((c) => c.id));
   for (const lo of phieu.lo) congDongVaoCot(kq, lo.dong);
   return kq;
 }
 
-function congDongVaoCot(kq: Record<string, number>, dong: FarmDgdvDong[]): void {
+function congDongVaoCot(kq: DgdvSoTheoCot, dong: FarmDgdvDong[]): void {
   for (const d of dong) {
-    if (!(d.id_cot in kq)) continue;
-    kq[d.id_cot] += d.so_luong;
+    if (!(d.id_cot in kq.datTheoCot)) continue;
+    kq.datTheoCot[d.id_cot] += sangSlDat(d.so_luong, d.so_luong_huy);
+    kq.huyTheoCot[d.id_cot] += d.so_luong_huy;
   }
 }
 
-export interface DgdvTongToTruongNgay extends DgdvTongLoNgay {
+export interface DgdvTongToTruongNgay extends DgdvTongLoNgay, DgdvSoTheoCot {
   ten_to_truong: string | null;
   /** id fp_farm_dgdv_lo theo stt */
   ids_phieu_lo: string[];
-  tongTheoCot: Record<string, number>;
 }
 
 /** Lô theo stt (cùng stt thì theo id) — không đổi mảng gốc. */
@@ -125,8 +147,7 @@ function gomTheoToTruong(dsLo: DgdvLoDayDu[]): DgdvLoDayDu[][] {
 /** Dòng nhóm tổ trưởng của phiếu: tự cộng các lô của người đó. */
 export function tongToTruong(phieu: Pick<DgdvPhieuDayDu, 'cot' | 'lo'>): DgdvTongToTruongNgay[] {
   return gomTheoToTruong(phieu.lo).map((dsLo) => {
-    const tongTheoCot: Record<string, number> = {};
-    for (const c of phieu.cot) tongTheoCot[c.id] = 0;
+    const theoCot = soTheoCotRong(phieu.cot.map((c) => c.id));
     const t: DgdvTongLoNgay = { soLuong: 0, dutDay: 0, slBuong: 0, soLuongLoi: 0 };
     for (const lo of dsLo) {
       const x = tongLo(lo);
@@ -134,13 +155,13 @@ export function tongToTruong(phieu: Pick<DgdvPhieuDayDu, 'cot' | 'lo'>): DgdvTon
       t.dutDay += x.dutDay;
       t.slBuong += x.slBuong;
       t.soLuongLoi += x.soLuongLoi;
-      congDongVaoCot(tongTheoCot, lo.dong);
+      congDongVaoCot(theoCot, lo.dong);
     }
     return {
       ...t,
       ten_to_truong: gonTen(dsLo.find((l) => gonTen(l.to_truong))?.to_truong),
       ids_phieu_lo: dsLo.map((l) => l.id),
-      tongTheoCot,
+      ...theoCot,
     };
   });
 }
@@ -321,12 +342,11 @@ export interface DgdvDongNgay {
   o: Record<string, FarmDgdvDong>;
 }
 
-export interface DgdvLoNgay extends DgdvTongLoNgay {
+export interface DgdvLoNgay extends DgdvTongLoNgay, DgdvSoTheoCot {
   id_phieu_lo: string;
   id_lo: string;
   ten_lo: string | null;
   ghi_chu: string | null;
-  tongTheoCot: Record<string, number>;
   dong: DgdvDongNgay[];
 }
 
@@ -334,7 +354,7 @@ export interface DgdvNhomToTruongLuoi extends DgdvTongToTruongNgay {
   lo: DgdvLoNgay[];
 }
 
-export interface DgdvLuoiNgay extends DgdvTongNgay {
+export interface DgdvLuoiNgay extends DgdvTongNgay, DgdvSoTheoCot {
   ngay: string;
   /** id phiếu; lưới tổng ngày thì là id ảo `tong:…` */
   id_phieu: string;
@@ -357,7 +377,6 @@ export interface DgdvLuoiNgay extends DgdvTongNgay {
   /** các tuần thu hoạch có trong phiếu (đầu khối «Tuần thu hoạch») */
   tuanThuHoach: TuanFarm[];
   nhomToTruong: DgdvNhomToTruongLuoi[];
-  tongTheoCot: Record<string, number>;
 }
 
 export interface DgdvTuyChonLuoi {
@@ -409,16 +428,15 @@ function dungLo(lo: DgdvLoDayDu, idsCot: string[], soDongToiThieu: number): Dgdv
     }
     o[d.id_cot] = d;
   }
-  const tongTheoCot: Record<string, number> = {};
-  for (const id of idsCot) tongTheoCot[id] = 0;
-  congDongVaoCot(tongTheoCot, lo.dong);
+  const theoCot = soTheoCotRong(idsCot);
+  congDongVaoCot(theoCot, lo.dong);
   return {
     ...tongLo(lo),
     id_phieu_lo: lo.id,
     id_lo: lo.id_lo,
     ten_lo: lo.ten_lo,
     ghi_chu: lo.ghi_chu,
-    tongTheoCot,
+    ...theoCot,
     dong: [...theoDong.entries()].sort(([a], [b]) => a - b).map(([stt_dong, o]) => ({ stt_dong, o })),
   };
 }
@@ -461,7 +479,7 @@ export function dungLuoiNgay(
     cot,
     tuanThuHoach: nhomCot.flatMap((g) => (g.tuanThuHoach ? [g.tuanThuHoach] : [])),
     nhomToTruong,
-    tongTheoCot: tongCot(phieu),
+    ...tongCot(phieu),
   };
 }
 

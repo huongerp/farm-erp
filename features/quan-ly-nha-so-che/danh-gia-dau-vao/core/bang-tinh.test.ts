@@ -164,12 +164,36 @@ describe('tổng theo ngày (khớp fn_dgdv_tong_ngay)', () => {
     expect(tongNgay([p1, { ...p2, ngay: NGAY_KHAC }], NGAY_KHAC)).toEqual({ tongThu: 47, ksc: 2 });
   });
 
-  it('tổng theo cột dây', () => {
-    const t = tongCot(phieuMau());
-    expect(t[C(1)]).toBe(13 + 24);
-    expect(t[C(2)]).toBe(30 + 41);
-    expect(t[C(3)]).toBe(32 + 50);
-    expect(t[C(9)]).toBe(1);
+  it('theo cột dây: đạt (lưu − huỷ) và huỷ tách riêng', () => {
+    const { datTheoCot, huyTheoCot } = tongCot(phieuMau());
+    expect(datTheoCot[C(1)]).toBe(13 + 24);
+    expect(datTheoCot[C(2)]).toBe(30 + 41);
+    expect([datTheoCot[C(3)], huyTheoCot[C(3)]]).toEqual([32 + 49, 1]);
+    expect([datTheoCot[C(5)], huyTheoCot[C(5)]]).toEqual([81, 2]);
+    expect(datTheoCot[C(9)]).toBe(1);
+    expect(huyTheoCot[C(1)]).toBe(0);
+  });
+
+  it('ca thật: ô lưu 5 / huỷ 1 và ô lưu 1 / huỷ 1 cùng cột → đạt 4, huỷ 2, SL buồng 6', () => {
+    const p: DgdvPhieuDayDu = {
+      ...phieuMau(),
+      cot: [cot(1)],
+      lo: [lo('X1', 'X1', 1, 'nv1', 0, [o('X1', C(1), 5, { so_luong_huy: 1 }), o('X1', C(1), 1, { stt_dong: 2, so_luong_huy: 1 })])],
+    };
+    const x = dungLuoiNgay(p, mauTheoId, { nhanXeDoi: 'xé đôi' }).nhomToTruong[0].lo[0];
+    expect([x.datTheoCot[C(1)], x.huyTheoCot[C(1)], x.slBuong]).toEqual([4, 2, 6]);
+  });
+
+  it('bất biến: Σ đạt + Σ huỷ + đứt dây = SL buồng (lô, tổ trưởng) và = Tổng thu (lưới)', () => {
+    const luoi = dungLuoiNgay(phieuMau(), mauTheoId, { nhanXeDoi: 'xé đôi' });
+    const cong = (x: { datTheoCot: Record<string, number>; huyTheoCot: Record<string, number>; dutDay: number }) =>
+      luoi.cot.reduce((s, c) => s + x.datTheoCot[c.id] + x.huyTheoCot[c.id], x.dutDay);
+    for (const g of luoi.nhomToTruong) {
+      expect(cong(g)).toBe(g.slBuong);
+      for (const l of g.lo) expect(cong(l)).toBe(l.slBuong);
+    }
+    const dutDay = luoi.nhomToTruong.reduce((s, g) => s + g.dutDay, 0);
+    expect(cong({ ...luoi, dutDay })).toBe(luoi.tongThu);
   });
 
   it('dòng tổ trưởng gom lô theo tên tổ trưởng (không phân biệt hoa thường), xếp theo stt', () => {
@@ -178,7 +202,8 @@ describe('tổng theo ngày (khớp fn_dgdv_tong_ngay)', () => {
       ['Tổ trưởng A', ['L1', 'L4'], 307, 2],
       ['Tổ trưởng B', ['L2', 'L3'], 93, 1],
     ]);
-    expect(g[0].tongTheoCot[C(1)]).toBe(37);
+    expect(g[0].datTheoCot[C(1)]).toBe(37);
+    expect([g[0].datTheoCot[C(5)], g[0].huyTheoCot[C(5)]]).toEqual([81, 2]);
   });
 });
 
@@ -212,7 +237,10 @@ describe('cộng nhiều chuyến thành lưới tổng ngày', () => {
     const den42 = tong.cot[0].id;
     expect(a32.dong.map((d) => d.o[den42]?.so_luong)).toEqual([10, 3, 20, 5]);
     expect(a32.dong[2].o[den42].danh_gia).toBe('Thiếu lá');
-    expect(a32.tongTheoCot[den42]).toBe(38);
+    expect(a32.datTheoCot[den42]).toBe(38);
+    // B1: ô lưu 11, huỷ 2 → đạt 9
+    const b1 = luoi.nhomToTruong.flatMap((g) => g.lo).find((l) => l.ten_lo === 'B1')!;
+    expect([b1.datTheoCot[tong.cot[9].id], b1.huyTheoCot[tong.cot[9].id]]).toEqual([9, 2]);
     // tổ trưởng lấy bản đầu tiên có chữ (chuyến 1)
     expect(tong.lo[0].to_truong).toBe('Tổ trưởng A');
   });
@@ -244,7 +272,7 @@ describe('mô hình lưới', () => {
     const a32 = luoi.nhomToTruong[0].lo[0];
     expect(a32.dong.map((d) => d.stt_dong)).toEqual([1, 2]);
     expect(a32.dong[1].o[C(1)].so_luong).toBe(3);
-    expect(a32.tongTheoCot[C(1)]).toBe(13);
+    expect(a32.datTheoCot[C(1)]).toBe(13);
     // lô chỉ có 1 dòng vẫn đủ số dòng tối thiểu
     expect(luoi.nhomToTruong[1].lo[0].dong).toHaveLength(1);
   });

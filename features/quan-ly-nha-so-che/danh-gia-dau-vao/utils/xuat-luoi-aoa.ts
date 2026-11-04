@@ -4,6 +4,7 @@
  * tiêu đề · dòng KSC/Tổng thu/Tuần/Ngày · 3 dòng tiêu đề cột · tổ trưởng → lô → dòng · tổng cộng.
  */
 import type { DgdvKhoiNgay, DgdvLuoiNgay } from '../core/bang-tinh';
+import { sangSlDat } from '../core/chi-tiet-dong';
 import type { TuanFarm } from '../core/types';
 
 export interface DgdvNhanXuat {
@@ -83,7 +84,12 @@ function dungKhoi(luoi: DgdvLuoiNgay, nhan: DgdvNhanXuat, r0: number, out: DgdvA
     dong([
       g.ten_to_truong ?? nhan.chuaCoToTruong,
       g.slBuong,
-      ...luoi.cot.flatMap((cot) => [soHoacRong(g.tongTheoCot[cot.id] ?? 0), '', '', '']),
+      ...luoi.cot.flatMap((cot) => [
+        soHoacRong(g.datTheoCot[cot.id] ?? 0),
+        '',
+        soHoacRong(g.huyTheoCot[cot.id] ?? 0),
+        '',
+      ]),
       '',
     ]);
     for (const lo of g.lo) {
@@ -96,7 +102,7 @@ function dungKhoi(luoi: DgdvLuoiNgay, nhan: DgdvNhanXuat, r0: number, out: DgdvA
           ...luoi.cot.flatMap((cot) => {
             const o = d.o[cot.id];
             return o
-              ? [soHoacRong(o.so_luong), o.danh_gia ?? '', soHoacRong(o.so_luong_huy), o.ly_do_huy ?? '']
+              ? [soHoacRong(sangSlDat(o.so_luong, o.so_luong_huy)), o.danh_gia ?? '', soHoacRong(o.so_luong_huy), o.ly_do_huy ?? '']
               : ['', '', '', ''];
           }),
           i === 0 ? (lo.ghi_chu ?? '') : '',
@@ -109,7 +115,12 @@ function dungKhoi(luoi: DgdvLuoiNgay, nhan: DgdvNhanXuat, r0: number, out: DgdvA
     }
   }
 
-  dong([nhan.tongCong, luoi.tongThu, ...luoi.cot.flatMap((cot) => [luoi.tongTheoCot[cot.id] ?? 0, '', '', '']), '']);
+  dong([
+    nhan.tongCong,
+    luoi.tongThu,
+    ...luoi.cot.flatMap((cot) => [luoi.datTheoCot[cot.id] ?? 0, '', luoi.huyTheoCot[cot.id] ?? 0, '']),
+    '',
+  ]);
 }
 
 /** Toàn bộ khoảng ngày → một sheet; ngày chưa có phiếu bị bỏ qua. Giữa hai khối cách một dòng trống. */

@@ -63,11 +63,11 @@ describe('xuất Excel Bảng đánh giá', () => {
     expect(aoa[2]).toEqual(['Lô', 'SL', 'Tuần 43', '', '', '', 'GC']);
     expect(aoa[3][2]).toBe('Đỏ');
     expect(aoa[4].slice(2, 6)).toEqual(['SL dây', 'ĐG', 'Lỗi', 'Lý do']);
-    // tổ trưởng → lô (2 dòng) → tổng
-    expect(aoa[5].slice(0, 3)).toEqual(['Anh A', 17, 15]);
-    expect(aoa[6]).toEqual(['Lô 1 (đứt dây 2)', 17, 10, 'Thiếu lá', 1, 'Chín bệnh', 'gc']);
+    // tổ trưởng → lô (2 dòng) → tổng; SL dây = đạt (lưu 10 − huỷ 1 = 9): 9 + 5 + huỷ 1 + đứt 2 = 17
+    expect(aoa[5]).toEqual(['Anh A', 17, 14, '', 1, '', '']);
+    expect(aoa[6]).toEqual(['Lô 1 (đứt dây 2)', 17, 9, 'Thiếu lá', 1, 'Chín bệnh', 'gc']);
     expect(aoa[7]).toEqual(['', '', 5, '', '', '', '']);
-    expect(aoa[8].slice(0, 3)).toEqual(['Tổng', 17, 15]);
+    expect(aoa[8]).toEqual(['Tổng', 17, 14, '', 1, '', '']);
     // khối ngày 22/10 sau một dòng trống; 23/10 không có phiếu → hết
     expect(aoa[9]).toEqual([]);
     expect(aoa[10][0]).toBe('BANG FP5');
