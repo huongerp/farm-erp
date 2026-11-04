@@ -1,6 +1,6 @@
 /**
  * Nội dung in phiếu điểm cộng / trừ — khung chuẩn hệ thống (PhieuInParts): bảng thông tin
- * (nhân viên, kỳ, loại, hạng mục, điểm, ngày tạo), mô tả (khi có), ô ký người lập / người lao động / quản lý.
+ * (nhân viên, kỳ, loại, hạng mục, điểm, ngày tạo), mô tả + quản lý trao đổi (khi có), ô ký người lập / người lao động / quản lý.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,12 @@ const DiemCongTruPreviewContent: React.FC<Props> = ({ item }) => {
         <p className="mt-2 mb-0 whitespace-pre-line break-words">
           <span className="font-semibold">{t('diemCongTru.store.moTaCol')}: </span>
           {item.mo_ta}
+        </p>
+      )}
+      {item.quan_ly_trao_doi?.trim() && (
+        <p className="mt-2 mb-0 whitespace-pre-line break-words">
+          <span className="font-semibold">{t('diemCongTru.store.traoDoiCol')}: </span>
+          {item.quan_ly_trao_doi}
         </p>
       )}
 
