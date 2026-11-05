@@ -20,9 +20,9 @@ import { cacTuanQuanh, docKhoaTuanFarm, khoaTuanFarm, nhanTuanFarm, soSanhTuan, 
 import { ChipDay, nhanKemChamMau } from '../ChipDay';
 import FooterLuuTiep from './FooterLuuTiep';
 
-/** Combobox tuần thu hoạch: tuần của ngày phiếu − 4 … + 2. */
-const TUAN_TH_TRUOC = 4;
-const TUAN_TH_SAU = 2;
+/** Combobox tuần thu hoạch: tuần của ngày phiếu − 26 … + 26 (≈ 1 năm, tự qua năm). */
+const TUAN_TH_TRUOC = 26;
+const TUAN_TH_SAU = 26;
 /** Giá trị option «Không có» của màu 2 (lưu là null). */
 const KHONG_MAU_2 = '__khong__';
 
@@ -71,7 +71,7 @@ const CotDayDrawer: React.FC<Props> = ({ giaTri, macDinh, tuanCuaNgay, mauOption
     () => (v.th_nam && v.th_tuan ? { nam: Number(v.th_nam), tuan: Number(v.th_tuan) } : null),
     [v.th_nam, v.th_tuan]
   );
-  /** Tuần chọn được: tuần của ngày phiếu −4 … +2 (+ tuần đang lưu của dây nếu nằm ngoài dải — không làm mất giá trị). */
+  /** Tuần chọn được: tuần của ngày phiếu −26 … +26 (+ tuần đang lưu của dây nếu nằm ngoài dải — không làm mất giá trị). */
   const tuanOptions = useMemo(() => {
     const dai = cacTuanQuanh(tuanCuaNgay, TUAN_TH_TRUOC, TUAN_TH_SAU);
     const ds = th && !dai.some((x) => soSanhTuan(x, th) === 0) ? [...dai, th] : dai;
