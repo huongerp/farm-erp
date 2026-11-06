@@ -27,6 +27,7 @@ const EmployeeProfilePreviewPage: React.FC = () => {
     <PhieuInPage
       title={employee ? `${t('employee.pdf.title')} - ${employee.ho_ten} (${employee.ma_nhan_vien})` : t('employee.pdf.title')}
       mauKey="ho-so-nhan-vien"
+      duongDanGoc={id ? `/ho-so-nhan-vien/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={employee ? `Ho_so_${employee.ma_nhan_vien}` : 'ho-so-nhan-vien'}
       duongDanVe="/nhan-vien"

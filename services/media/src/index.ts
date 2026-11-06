@@ -4,6 +4,8 @@
  *
  *   POST /upload   (Bearer JWT app) multipart: file, thu_muc → { url: '/media/f/...' }
  *   GET  /f/<...>  ảnh đã lưu — tên file 128 bit ngẫu nhiên, cache 1 năm (file không bao giờ đổi)
+ *   GET  /logo?url=<logo công ty>  (Bearer JWT app) → { dataUrl } — tải hộ logo ở tên miền khác
+ *        cho bản in / PDF; CHỈ nhận URL đang lưu ở thông tin công ty (core/logo.ts).
  */
 import { randomBytes } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
@@ -13,6 +15,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { jwtVerify } from 'jose';
 import { config } from './config.ts';
+import { kieuAnh, laUrlLogoDuocPhep, LOGO_HET_GIO_MS, LOGO_TOI_DA_BYTE } from './core/logo.ts';
 import { docDuongDanPhucVu, laThuMucHopLe, taoDuongDanLuu, urlCongKhai } from './core/duong-dan.ts';
 import { chuanHoaAnh, KhongPhaiAnhLoi } from './xu-ly-anh.ts';
 
@@ -94,6 +97,48 @@ app.get('/f/*', async (c) => {
     });
   } catch {
     return c.body(null, 404);
+  }
+});
+
+/** Logo công ty đang lưu, đọc bằng token của người gọi (RLS của PostgREST quyết định). */
+async function dsLogoCongTy(authHeader: string): Promise<string[]> {
+  const r = await fetch(`${config.postgrestUrl}/fp_var_tt_cong_ty?select=logo`, {
+    headers: { Authorization: authHeader, Accept: 'application/json' },
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!r.ok) return [];
+  const rows = (await r.json()) as { logo?: unknown }[];
+  return rows.map((x) => x.logo).filter((x): x is string => typeof x === 'string');
+}
+
+app.get('/logo', async (c) => {
+  const auth = c.req.header('Authorization');
+  const nv = await nhanVienTuHeader(auth);
+  if (!nv || !auth) return c.json({ loi: 'chua_dang_nhap', thongDiep: 'Phiên đăng nhập hết hạn, hãy đăng nhập lại.' }, 401);
+  const url = (c.req.query('url') ?? '').trim();
+  let dsLogo: string[] = [];
+  try {
+    dsLogo = await dsLogoCongTy(auth);
+  } catch (e) {
+    console.error('[media] không đọc được logo công ty:', e);
+  }
+  if (!laUrlLogoDuocPhep(url, dsLogo)) {
+    return c.json({ loi: 'khong_duoc_phep', thongDiep: 'Chỉ tải được logo đã khai ở Thông tin công ty.' }, 400);
+  }
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(LOGO_HET_GIO_MS), redirect: 'follow' });
+    if (!r.ok) return c.json({ loi: 'nguon_loi', thongDiep: `Máy chủ nguồn trả ${r.status}.` }, 502);
+    const kieu = kieuAnh(r.headers.get('content-type'));
+    if (!kieu) return c.json({ loi: 'khong_phai_anh', thongDiep: 'Đường dẫn logo không phải ảnh.' }, 502);
+    if (Number(r.headers.get('content-length') ?? 0) > LOGO_TOI_DA_BYTE) {
+      return c.json({ loi: 'qua_lon', thongDiep: 'Logo quá lớn (trên 3 MB).' }, 502);
+    }
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (buf.length > LOGO_TOI_DA_BYTE) return c.json({ loi: 'qua_lon', thongDiep: 'Logo quá lớn (trên 3 MB).' }, 502);
+    c.header('Cache-Control', 'private, max-age=3600');
+    return c.json({ dataUrl: `data:${kieu};base64,${buf.toString('base64')}` });
+  } catch {
+    return c.json({ loi: 'nguon_loi', thongDiep: 'Không tải được logo từ máy chủ nguồn.' }, 502);
   }
 });
 

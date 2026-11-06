@@ -28,6 +28,7 @@ const PayslipPreviewPage: React.FC = () => {
     <PhieuInPage
       title={record ? `${t('bangLuong.preview.title')} - ${record.ten_nhan_vien || record.ma_nhan_vien || record.id} · ${t('bangLuong.preview.kyLuong', kyLuongIn(record.thang, record.nam))}` : t('bangLuong.preview.title')}
       mauKey="phieu-luong"
+      duongDanGoc={id ? `/phieu-luong/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={record ? `Phieu_luong_${record.ma_nhan_vien || record.id}_${record.nam}-${String(record.thang).padStart(2, "0")}` : 'phieu-luong'}
       duongDanVe="/hanh-chinh/bang-luong"

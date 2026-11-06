@@ -1,49 +1,62 @@
+/**
+ * Cài đặt in lưu trên MÁY (localStorage `phieu-in-cai-dat`) theo mẫu (`mauKey`, vd `phieu-kho`).
+ * CHỈ lưu phần khác mặc định của mẫu (`phanKhacMacDinh`) — đổi mặc định trong code thì người
+ * chưa từng chỉnh vẫn nhận mặc định mới. Bản lưu cũ (v1, có `leMm`) được `chuanHoaCaiDatIn` đọc
+ * thành lề đều, lần chỉnh sau ghi lại theo dạng mới.
+ */
+import { useCallback, useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CaiDatIn } from './cai-dat-in';
+import { chuanHoaCaiDatIn, phanKhacMacDinh, type CaiDatIn, type MacDinhMau } from './cai-dat-in';
 
-/**
- * Cài đặt in người dùng đã đổi, khoá theo mẫu (`mauKey`, vd `phieu-kho`). Chỉ lưu phần ĐÃ
- * ĐỔI — phần còn lại lấy mặc định của mẫu lúc dùng (`chuanHoaCaiDatIn`), nên đổi mặc định
- * trong code vẫn ăn với người chưa từng chỉnh.
- */
 interface CaiDatInState {
   theoMau: Record<string, Partial<CaiDatIn>>;
-  datCaiDat: (mauKey: string, patch: Partial<Omit<CaiDatIn, 'cot'>>) => void;
-  datCot: (mauKey: string, bang: string, rong: number[]) => void;
-  datLaiCot: (mauKey: string, bang?: string) => void;
-  khoiPhucMacDinh: (mauKey: string) => void;
+  dat: (mauKey: string, phan: Partial<CaiDatIn>) => void;
+  xoa: (mauKey: string) => void;
 }
 
 export const useCaiDatInStore = create<CaiDatInState>()(
   persist(
     (set) => ({
       theoMau: {},
-      datCaiDat: (mauKey, patch) =>
-        set((s) => ({ theoMau: { ...s.theoMau, [mauKey]: { ...s.theoMau[mauKey], ...patch } } })),
-      datCot: (mauKey, bang, rong) =>
+      dat: (mauKey, phan) =>
         set((s) => {
-          const cu = s.theoMau[mauKey] ?? {};
-          return { theoMau: { ...s.theoMau, [mauKey]: { ...cu, cot: { ...cu.cot, [bang]: rong } } } };
+          const theoMau = { ...s.theoMau };
+          if (Object.keys(phan).length === 0) delete theoMau[mauKey];
+          else theoMau[mauKey] = phan;
+          return { theoMau };
         }),
-      datLaiCot: (mauKey, bang) =>
+      xoa: (mauKey) =>
         set((s) => {
-          const cu = s.theoMau[mauKey];
-          if (!cu?.cot) return s;
-          let cot: Record<string, number[]> | undefined;
-          if (bang != null) {
-            cot = { ...cu.cot };
-            delete cot[bang];
-          }
-          return { theoMau: { ...s.theoMau, [mauKey]: { ...cu, cot } } };
-        }),
-      khoiPhucMacDinh: (mauKey) =>
-        set((s) => {
-          const next = { ...s.theoMau };
-          delete next[mauKey];
-          return { theoMau: next };
+          const theoMau = { ...s.theoMau };
+          delete theoMau[mauKey];
+          return { theoMau };
         }),
     }),
     { name: 'phieu-in-cai-dat', version: 1 }
   )
 );
+
+/** Cài đặt in đã chuẩn hoá của một mẫu + hàm đổi (nhận hàm sửa trên bản mới nhất). */
+export function useCaiDatIn(mauKey: string, macDinh: MacDinhMau = {}) {
+  const luu = useCaiDatInStore((s) => s.theoMau[mauKey]);
+  const dat = useCaiDatInStore((s) => s.dat);
+  const xoa = useCaiDatInStore((s) => s.xoa);
+  const khoaMacDinh = JSON.stringify(macDinh);
+  // So theo NỘI DUNG mặc định, không theo tham chiếu object (trang hay truyền literal mới mỗi render).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const md = useMemo(() => macDinh, [khoaMacDinh]);
+  const caiDat = useMemo(() => chuanHoaCaiDatIn(luu, md), [luu, md]);
+
+  const doi = useCallback(
+    (sua: (c: CaiDatIn) => CaiDatIn) => {
+      const cu = chuanHoaCaiDatIn(useCaiDatInStore.getState().theoMau[mauKey], md);
+      dat(mauKey, phanKhacMacDinh(chuanHoaCaiDatIn(sua(cu), md), md));
+    },
+    [dat, mauKey, md]
+  );
+  const khoiPhuc = useCallback(() => xoa(mauKey), [xoa, mauKey]);
+  const coThayDoi = !!luu && Object.keys(phanKhacMacDinh(caiDat, md)).length > 0;
+
+  return { caiDat, doi, khoiPhuc, coThayDoi };
+}

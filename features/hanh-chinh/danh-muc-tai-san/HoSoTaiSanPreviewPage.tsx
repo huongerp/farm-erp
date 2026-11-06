@@ -28,6 +28,7 @@ const HoSoTaiSanPreviewPage: React.FC = () => {
     <PhieuInPage
       title={record ? `${t('danhSachTaiSan.preview.title')} - ${record.ma_tai_san} · ${record.ten_tai_san}` : t('danhSachTaiSan.preview.title')}
       mauKey="ho-so-tai-san"
+      duongDanGoc={id ? `/ho-so-tai-san/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={record ? getFileName(record) : 'ho-so-tai-san'}
       duongDanVe="/hanh-chinh/danh-muc-tai-san"

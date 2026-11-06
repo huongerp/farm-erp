@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useDotKiemKePTById, useChiTietKiemKePT } from './hooks/use-kiem-ke-pt';
 import { exportPhieuKiemKePTToXLSX, getFileName } from './utils/export-phieu-kiem-ke-pt';
 import PhieuKiemKePTPreviewContent from './components/PhieuKiemKePTPreviewContent';
@@ -20,6 +21,7 @@ const PhieuKiemKePTPreviewPage: React.FC = () => {
   const { data: dot, isLoading, isError, error, refetch } = useDotKiemKePTById(id ?? null);
   const { data: chiTiet = [], isLoading: chiTietLoading } = useChiTietKiemKePT(id ?? null);
 
+  const dauChim = useDauChim(dot?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('kiemKeKhoPT.preview.loadError'))
     : !isLoading && !dot
@@ -30,6 +32,8 @@ const PhieuKiemKePTPreviewPage: React.FC = () => {
     <PhieuInPage
       title={dot ? `${t('kiemKeKhoPT.preview.title')} - ${dot.ma_dot} · ${dot.ten_dot}` : t('kiemKeKhoPT.preview.title')}
       mauKey="kiem-ke-kho-pt"
+      dauChim={dauChim}
+      duongDanGoc={id ? `${bt.basePath}/kiem-ke-kho-phan-thuoc/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={dot ? getFileName(dot) : 'kiem-ke-kho-pt'}
       duongDanVe={`${bt.basePath}/kiem-ke-kho-phan-thuoc`}

@@ -5,6 +5,7 @@ import React, { useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useCongViecList } from './hooks/use-cong-viec';
 import { useEmployeesRefQuery } from '../../../lib/hooks/use-ref-queries';
 import CongViecPreviewContent from './components/CongViecPreviewContent';
@@ -46,6 +47,7 @@ const CongViecPreviewPage: React.FC = () => {
     [employeeNameMap]
   );
 
+  const dauChim = useDauChim(record?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('congViec.preview.loadError'))
     : !isLoading && !record
@@ -56,6 +58,8 @@ const CongViecPreviewPage: React.FC = () => {
     <PhieuInPage
       title={record ? `${t('congViec.preview.title')} - ${record.tieu_de}` : t('congViec.preview.title')}
       mauKey="cong-viec"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/hanh-chinh/cong-viec/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={record ? `Cong_viec_${record.id}` : 'cong-viec'}
       duongDanVe="/hanh-chinh/cong-viec"

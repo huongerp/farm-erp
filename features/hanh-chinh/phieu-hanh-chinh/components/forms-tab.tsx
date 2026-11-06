@@ -39,6 +39,7 @@ import {
   exportFileNamePhieuHanhChinhDanhSach,
   LIST_EXPORT_SHEET_NAME,
 } from '../utils/export-phieu-hanh-chinh-danh-sach';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 interface Props {
   /** Được xem phiếu của mọi người + duyệt (quản trị / cấp bậc 1). */
@@ -309,8 +310,11 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
 
   // Duyệt / từ chối chỉ dành cho người có viewAll — nếu không, nhân viên thường
   // có quyền sửa (để sửa phiếu của mình) sẽ thấy nút Duyệt sau khi gộp tab.
-  const bulkActions = selectedIds.size > 0 && canUpdate ? (
+  const bulkActions = selectedIds.size > 0 ? (
     <div className="flex items-center gap-2">
+      <NutInHangLoat mau="phieu-hanh-chinh" ids={Array.from(selectedIds)} />
+      {canUpdate && (
+      <>
       {viewAll && (
         <>
           <button
@@ -349,6 +353,8 @@ const AdminFormFormsTab: React.FC<Props> = ({ viewAll, dangTaiPhamVi, deepLinkIt
       >
         <Ban size={14} /> {t('adminForm.actions.cancel')}
       </button>
+      </>
+      )}
     </div>
   ) : null;
 

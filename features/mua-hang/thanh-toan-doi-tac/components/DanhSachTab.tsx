@@ -21,6 +21,7 @@ import ThanhToanDoiTacToolbar from './ThanhToanDoiTacToolbar';
 import ThanhToanDoiTacList from './ThanhToanDoiTacList';
 import ThanhToanDoiTacForm from './ThanhToanDoiTacForm';
 import ThanhToanDoiTacDetail from './ThanhToanDoiTacDetail';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 
 function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhToanDoiTacFormValues>): ThanhToanDoiTacFormValues {
@@ -209,9 +210,10 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
-  const bulkActions = canApprove ? (
+  const bulkActions = (
     <>
-      {statusDaThanhToan && (
+      <NutInHangLoat mau="thanh-toan-doi-tac" ids={Array.from(selectedIds)} />
+      {canApprove && statusDaThanhToan && (
         <BulkActionButton
           icon={CheckCircle2}
           tone="success"
@@ -220,7 +222,7 @@ const DanhSachTab: React.FC = () => {
           disabled={chuyenManyMutation.isPending}
         />
       )}
-      {statusDaHuy && (
+      {canApprove && statusDaHuy && (
         <BulkActionButton
           icon={XCircle}
           tone="danger"
@@ -230,7 +232,7 @@ const DanhSachTab: React.FC = () => {
         />
       )}
     </>
-  ) : undefined;
+  );
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">

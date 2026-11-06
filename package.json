@@ -43,6 +43,7 @@
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
     "napas-qr": "^1.0.4",
+    "pagedjs": "^0.4.3",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",

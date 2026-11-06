@@ -25,6 +25,7 @@ const DiemCongTruPreviewPage: React.FC = () => {
     <PhieuInPage
       title={item ? `${t('diemCongTru.preview.title')} - DCT-${item.id}` : t('diemCongTru.preview.title')}
       mauKey="diem-cong-tru"
+      duongDanGoc={id ? `/hanh-chinh/diem-cong-tru/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={item ? `diem-cong-tru-DCT-${item.id}` : 'diem-cong-tru'}
       duongDanVe="/hanh-chinh/diem-cong-tru"

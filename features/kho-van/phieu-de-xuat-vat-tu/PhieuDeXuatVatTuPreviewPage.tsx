@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { usePhieuDeXuatVatTuById } from './hooks/use-phieu-de-xuat-vat-tu';
 import { exportPhieuDeXuatVatTuToXLSX, fileName } from './utils/export-phieu-de-xuat-vat-tu';
 import PhieuDeXuatVatTuPreviewContent from './components/PhieuDeXuatVatTuPreviewContent';
@@ -17,6 +18,7 @@ const PhieuDeXuatVatTuPreviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: phieu, isLoading, isError, error, refetch } = usePhieuDeXuatVatTuById(id ?? undefined);
 
+  const dauChim = useDauChim(phieu?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('phieuDeXuatVatTu.preview.loadError'))
     : !isLoading && !phieu
@@ -27,6 +29,8 @@ const PhieuDeXuatVatTuPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('phieuDeXuatVatTu.preview.title')} - ${phieu.so_phieu}` : t('phieuDeXuatVatTu.preview.title')}
       mauKey="phieu-de-xuat-vat-tu"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/mua-hang/phieu-de-xuat-vat-tu/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={phieu ? fileName(phieu) : 'phieu-de-xuat-vat-tu'}
       duongDanVe="/mua-hang/phieu-de-xuat-vat-tu"

@@ -60,6 +60,7 @@ const PhieuBaoTriPreviewPage = lazyWithFeatureI18n(
   'bao-tri-sua-chua',
   () => import('./features/hanh-chinh/bao-tri-sua-chua/PhieuBaoTriPreviewPage')
 );
+const TrangInHangLoat = lazy(() => import('./components/shared/phieu-in/TrangInHangLoat'));
 const PhieuCPTHPreviewPage = lazyWithFeatureI18n(
   'cap-phat-thu-hoi',
   () => import('./features/hanh-chinh/cap-phat-thu-hoi/PhieuCPTHPreviewPage')
@@ -289,6 +290,7 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/in-hang-loat" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><TrangInHangLoat /></Suspense></ProtectedRoute>} />
         <Route path="/hanh-chinh/cap-phat-thu-hoi/preview/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PhieuCPTHPreviewPage /></Suspense></ProtectedRoute>} />
         <Route
           path="/hanh-chinh/diem-cong-tru/preview/:id"

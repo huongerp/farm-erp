@@ -46,6 +46,7 @@ import {
   exportFileNamePhieuDeXuatVatTuList,
 } from '../utils/export-phieu-de-xuat-vat-tu-danh-sach';
 import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -317,7 +318,10 @@ const DanhSachTab: React.FC = () => {
   };
 
   const bulkActions =
-    selectedIds.size > 0 && canApprove ? (
+    selectedIds.size > 0 ? (
+      <>
+        <NutInHangLoat mau="phieu-de-xuat-vat-tu" ids={Array.from(selectedIds)} />
+        {canApprove && (
       <button
         type="button"
         onClick={handleApproveMany}
@@ -326,6 +330,8 @@ const DanhSachTab: React.FC = () => {
         <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
         <span className="text-xs font-medium">{t('phieuDeXuatVatTu.bulkApproveAction')}</span>
       </button>
+        )}
+      </>
     ) : null;
 
   return (

@@ -130,6 +130,10 @@ export default defineConfig(({ mode }) => {
             if (id.includes('xlsx')) return 'vendor-xlsx';
             if (id.includes('jspdf')) return 'vendor-jspdf';
             if (id.includes('html2canvas')) return 'vendor-html2canvas';
+            // paged.js (trang in) + phụ thuộc: chỉ nạp khi mở trang in. Để rollup tự xếp thì bị gộp vào chunk chính.
+            if (/\/node_modules\/(pagedjs|css-tree|clear-cut|event-emitter|@babel\/polyfill|mdn-data|d|es5-ext|es6-symbol|es6-iterator|ext|type)\//.test(id)) {
+              return 'vendor-pagedjs';
+            }
             if (id.includes('react-router')) return 'react-router';
             if (id.includes('react-dom') || id.includes('/react/')) return 'react-vendor';
             if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n';

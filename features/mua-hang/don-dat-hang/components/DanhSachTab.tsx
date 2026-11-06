@@ -40,6 +40,7 @@ import {
   getExportColumnsDonDatHangList,
   exportFileNameDonDatHangList,
 } from '../utils/export-don-dat-hang-danh-sach';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 /** Đồng bộ Google Sheet tự động — nguồn v_xuat_don_dat_hang (services/sheets/src/core/nguon-dong-bo.ts). */
 const DONG_BO_DON_DAT_HANG = { moduleId: 'mua-hang/don-dat-hang' };
@@ -299,8 +300,11 @@ const DanhSachTab: React.FC = () => {
   };
 
   const bulkActions =
-    selectedIds.size > 0 && canApprove ? (
+    selectedIds.size > 0 ? (
       <div className="flex items-center gap-1.5">
+        <NutInHangLoat mau="don-dat-hang" ids={Array.from(selectedIds)} />
+        {canApprove && (
+          <>
         <button
           type="button"
           onClick={() => handleApproveMany(TRANG_THAI_DA_XAC_NHAN)}
@@ -317,6 +321,8 @@ const DanhSachTab: React.FC = () => {
           <XCircle size={14} className="stroke-[2.5px] shrink-0" />
           <span className="text-xs font-medium">{t('donDatHang.bulkRejectAction')}</span>
         </button>
+          </>
+        )}
       </div>
     ) : null;
 

@@ -3,6 +3,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useGiamSatChatLuongById, useThungMau } from './hooks/use-giam-sat-chat-luong';
 import PhieuGsclPreview from './components/preview/PhieuGsclPreview';
 
@@ -15,6 +16,7 @@ const GiamSatChatLuongPreviewPage: React.FC = () => {
   const { data, isLoading, isError, error, refetch } = useGiamSatChatLuongById(id);
   const { data: thung = [], isLoading: thungLoading } = useThungMau(id);
 
+  const dauChim = useDauChim(data?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('giamSatChatLuong.preview.notFound'))
     : !isLoading && !data
@@ -25,6 +27,8 @@ const GiamSatChatLuongPreviewPage: React.FC = () => {
     <PhieuInPage
       title={data ? `${t('giamSatChatLuong.preview.title')} - ${data.so_phieu}` : t('giamSatChatLuong.preview.title')}
       mauKey="giam-sat-chat-luong"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/quan-ly-nha-so-che/giam-sat-chat-luong/preview/${id}` : null}
       macDinh={MAC_DINH}
       coChuGocPt={9}
       tenFile={`Phieu-giam-sat-chat-luong-${data?.so_phieu ?? id ?? ''}`}

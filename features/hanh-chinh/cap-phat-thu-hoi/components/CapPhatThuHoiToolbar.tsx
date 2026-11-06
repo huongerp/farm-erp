@@ -13,6 +13,7 @@ import { LOAI_PHIEU_OPTIONS } from '../core/constants';
 import { useCapPhatThuHoiFilterCounts } from '../hooks/use-cap-phat-thu-hoi-filter-counts';
 import type { PhieuCapPhatThuHoi } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 interface Props {
   items?: PhieuCapPhatThuHoi[];
@@ -213,6 +214,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      bulkActions={<NutInHangLoat mau="cap-phat-thu-hoi" ids={Array.from(selectedIds)} />}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileFilterExtra={mobileFilterExtra}

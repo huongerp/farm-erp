@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useDeXuatMuaHangById } from './hooks/use-de-xuat-mua-hang';
 import { exportDeXuatMuaHangToXLSX, fileName } from './utils/export-de-xuat-mua-hang';
 import DeXuatMuaHangPreviewContent from './components/DeXuatMuaHangPreviewContent';
@@ -19,6 +20,7 @@ const DeXuatMuaHangPreviewPage: React.FC = () => {
   const bt = useKhoBienThe();
   const { data: phieu, isLoading, isError, error, refetch } = useDeXuatMuaHangById(id ?? undefined);
 
+  const dauChim = useDauChim(phieu?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('deXuatMuaHang.preview.loadError'))
     : !isLoading && !phieu
@@ -29,6 +31,8 @@ const DeXuatMuaHangPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('deXuatMuaHang.preview.title')} - ${phieu.so_phieu}` : t('deXuatMuaHang.preview.title')}
       mauKey="de-xuat-mua-hang"
+      dauChim={dauChim}
+      duongDanGoc={id ? `${bt.basePath}/de-xuat-mua-hang/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={phieu ? fileName(phieu) : 'de-xuat-mua-hang'}
       duongDanVe={`${bt.basePath}/de-xuat-mua-hang`}

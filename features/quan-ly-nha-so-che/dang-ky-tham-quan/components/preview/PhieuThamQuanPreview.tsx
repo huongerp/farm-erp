@@ -7,14 +7,14 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn, formatYmdToDisplay } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
-import { usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
+import { DongLien, usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
 import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import { MUC_DICH_THAM_QUAN, PHUONG_TIEN, type DangKyThamQuan } from '../../core/types';
 import { dongKhachIn } from '../../core/khach';
 import { SO_DONG_KHACH_TOI_THIEU, tachGioPhutNgay, type GioPhutNgay } from '../../core/mau-in';
 
 /** Cỡ chữ gốc (pt) theo khổ — truyền cho khung in. */
-export const coChuPhieuThamQuan = (kho: 'a4' | 'a5') => (kho === 'a5' ? 9 : 11);
+export const coChuPhieuThamQuan = (kho: 'a3' | 'a4' | 'a5') => (kho === 'a5' ? 9 : 11);
 
 const O: React.FC<{ on: boolean }> = ({ on }) => (
   <span className="inline-flex h-[1.05em] w-[1.05em] shrink-0 items-center justify-center border border-gray-700 text-[0.85em] font-bold leading-none align-[-0.15em]">
@@ -58,7 +58,7 @@ const COT_KHACH: { key: string; rong: string; can?: 'center' }[] = [
 const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phieu }) => {
   const { t } = useTranslation();
   const company = useUIStore((s) => s.companyInfo);
-  const { compact } = usePhieuIn();
+  const { compact, logo } = usePhieuIn();
   const farm = phieu?.ten_chi_nhanh ?? '';
   const dong = dongKhachIn(phieu?.khach ?? [], SO_DONG_KHACH_TOI_THIEU);
   const tu = tachGioPhutNgay(phieu?.tg_bat_dau);
@@ -70,13 +70,14 @@ const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phie
   return (
     <div
       className="phieu-in-content bg-white text-gray-900 font-sans box-border flex flex-col"
-      style={{ minHeight: 'var(--in-trang-h, auto)', fontSize: compact ? '9pt' : '11pt' }}
+      style={{ fontSize: compact ? '9pt' : '11pt' }}
     >
+      <DongLien />
       {/* Phiếu A5 ngang bó 1 trang — băng hình thu nhỏ để ô ký không tràn sang trang 2. */}
       <BangHinhPhieuIn rongMm={62} />
       {/* Đầu phiếu: công ty bên trái, số phiếu / ngày bên phải — một dòng cho gọn khổ A5. */}
       <div className="flex items-center gap-2 text-[0.8em] text-gray-600">
-        {company.appLogo && <img src={company.appLogo} alt="" className="h-[1.8em] w-[1.8em] object-contain shrink-0" />}
+        {logo && <img src={logo} data-in-logo alt="" className="h-[1.8em] w-[1.8em] object-contain shrink-0" />}
         <span className="flex-1 min-w-0 font-semibold uppercase leading-tight break-words">{company.companyName}</span>
         {phieu && (
           <span className="shrink-0 tabular-nums">
@@ -162,7 +163,7 @@ const PhieuThamQuanPreview: React.FC<{ phieu: DangKyThamQuan | null }> = ({ phie
       </p>
 
       {/* Hai ô ký đẩy xuống cuối trang; ngày ký lấy theo ngày đăng ký. */}
-      <div className="mt-auto pt-1 grid grid-cols-2 gap-6 text-center leading-tight break-inside-avoid">
+      <div data-in-chu-ky className="mt-auto pt-1 grid grid-cols-2 gap-6 text-center leading-tight break-inside-avoid">
         <div>
           <p className="m-0 italic">
             {t('dangKyThamQuan.preview.ngay')} <Cham className="w-[6.5em]">{phieu ? formatYmdToDisplay(phieu.ngay_dang_ky) : ''}</Cham>

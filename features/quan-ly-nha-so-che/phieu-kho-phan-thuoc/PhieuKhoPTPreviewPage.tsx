@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { usePhieuKhoPTById } from './hooks/use-phieu-kho-pt';
 import { exportPhieuKhoPTToXLSX, fileName } from './utils/export-phieu-kho-pt';
 import PhieuKhoPTPreviewContent from './components/PhieuKhoPTPreviewContent';
@@ -19,6 +20,7 @@ const PhieuKhoPTPreviewPage: React.FC = () => {
   const bt = useKhoBienThe();
   const { data: phieu, isLoading, isError, error, refetch } = usePhieuKhoPTById(id ?? undefined);
 
+  const dauChim = useDauChim(phieu?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('phieuKhoPhanThuoc.preview.loadError'))
     : !isLoading && !phieu
@@ -29,6 +31,8 @@ const PhieuKhoPTPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('phieuKhoPhanThuoc.preview.title')} - ${phieu.so_phieu}` : t('phieuKhoPhanThuoc.preview.title')}
       mauKey="phieu-kho-pt"
+      dauChim={dauChim}
+      duongDanGoc={id ? `${bt.basePath}/phieu-kho-phan-thuoc/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={phieu ? fileName(phieu) : 'phieu-kho-pt'}
       duongDanVe={`${bt.basePath}/phieu-kho-phan-thuoc`}

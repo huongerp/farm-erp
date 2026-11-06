@@ -6,6 +6,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useDangKyThamQuanById } from './hooks/use-dang-ky-tham-quan';
 import { ID_PHIEU_TRANG, MAC_DINH_IN, tenFileIn } from './core/mau-in';
 import PhieuThamQuanPreview, { coChuPhieuThamQuan } from './components/preview/PhieuThamQuanPreview';
@@ -16,6 +17,7 @@ const DangKyThamQuanPreviewPage: React.FC = () => {
   const trang = id === ID_PHIEU_TRANG;
   const { data, isLoading, isError, error, refetch } = useDangKyThamQuanById(trang ? undefined : id);
 
+  const dauChim = useDauChim(data?.trang_thai);
   const loi = trang
     ? null
     : isError
@@ -29,6 +31,8 @@ const DangKyThamQuanPreviewPage: React.FC = () => {
     <PhieuInPage
       title={data ? `${tieuDe} - ${data.nguoi_dai_dien ?? data.id}` : tieuDe}
       mauKey="dang-ky-tham-quan"
+      dauChim={dauChim}
+      duongDanGoc={id && !trang ? `/quan-ly-nha-so-che/dang-ky-tham-quan/preview/${id}` : null}
       macDinh={MAC_DINH_IN}
       coChuGocPt={coChuPhieuThamQuan}
       tenFile={tenFileIn(trang ? null : (data ?? null))}

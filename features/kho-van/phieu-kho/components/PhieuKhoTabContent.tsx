@@ -44,6 +44,7 @@ import {
   getExportColumnsPhieuKhoList,
   exportFileNamePhieuKhoTab,
 } from '../utils/export-phieu-kho-danh-sach';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 interface Props {
   loai: LoaiPhieuKhoTab;
@@ -342,7 +343,10 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   };
 
   const bulkActions =
-    selectedIds.size > 0 && canApprove ? (
+    selectedIds.size > 0 ? (
+      <>
+        <NutInHangLoat mau="phieu-kho" ids={Array.from(selectedIds)} />
+        {canApprove && (
       <button
         type="button"
         onClick={handleApproveMany}
@@ -351,6 +355,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
         <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
         <span className="text-xs font-medium">{t('phieuKho.bulkApproveAction')}</span>
       </button>
+        )}
+      </>
     ) : null;
 
   const canEditItem = useCallback(

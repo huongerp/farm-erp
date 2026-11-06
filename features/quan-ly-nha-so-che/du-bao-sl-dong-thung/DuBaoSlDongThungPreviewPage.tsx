@@ -28,6 +28,7 @@ const DuBaoSlDongThungPreviewPage: React.FC = () => {
     <PhieuInPage
       title={data ? `${t('duBaoSlDongThung.preview.title')} - ${formatYmdToDisplay(data.ngay?.slice(0, 10))}` : t('duBaoSlDongThung.preview.title')}
       mauKey="du-bao-sl-dong-thung"
+      duongDanGoc={id ? `/quan-ly-nha-so-che/du-bao-sl-dong-thung/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={data ? fileName(data) : 'du-bao-sl-dong-thung'}
       duongDanVe="/quan-ly-nha-so-che/du-bao-sl-dong-thung"

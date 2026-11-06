@@ -19,6 +19,7 @@ import { useBaoTriSuaChuaFilterCounts } from '../hooks/use-bao-tri-sua-chua-filt
 import { buildTaiSanChiNhanhMap } from '../utils/filter-phieu-chi-phi';
 import type { PhieuBaoTriSuaChua } from '../core/types';
 import type { ActionItem } from '../../../../components/ui/MobileActionsSheet';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 interface Props {
   items?: PhieuBaoTriSuaChua[];
@@ -291,6 +292,7 @@ const BaoTriSuaChuaToolbar: React.FC<Props> = ({
       actions={renderActionsWithExport}
       bulkActions={
         <>
+          <NutInHangLoat mau="phieu-bao-tri" ids={Array.from(selectedIds)} />
           {bulkExport}
           {extraBulkActions}
         </>

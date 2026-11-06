@@ -6,6 +6,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate, formatDateTime } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
+import { DongLien, usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
 import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { PhieuBaoTriSuaChua, TrangThaiPhieu } from '../../core/types';
 import { duLieuPhieuIn } from '../../core/phieu-in';
@@ -37,6 +38,7 @@ const PhieuBaoTriPreview: React.FC<{ phieu: PhieuBaoTriSuaChua }> = ({ phieu }) 
   const { t: tg } = useTranslation();
   const t = (k: string) => tg(`baoTriSuaChua.print.${k}`);
   const info = useUIStore((s) => s.companyInfo);
+  const { logo } = usePhieuIn();
   const d = duLieuPhieuIn(phieu, tg, { tien: formatCurrency, ngayGio: formatDate });
   const mau = MAU_DAU[d.trangThai];
   const lienHe = [
@@ -47,12 +49,13 @@ const PhieuBaoTriPreview: React.FC<{ phieu: PhieuBaoTriSuaChua }> = ({ phieu }) 
 
   return (
     <div
-      className="phieu-in-content relative flex flex-col overflow-hidden bg-white text-[#111] min-h-[var(--in-trang-h,auto)]"
+      className="phieu-in-content relative flex flex-col overflow-hidden bg-white text-[#111]"
       style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.45 }}
     >
+      <DongLien />
       <BangHinhPhieuIn compact={false} />
       <div className="flex items-start gap-2.5">
-        {info.appLogo && <img src={info.appLogo} alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
+        {logo && <img src={logo} data-in-logo alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
         <div className="flex-1 min-w-0">
           <div className="font-bold uppercase text-[12.5pt]">{info.companyName}</div>
           {lienHe.map((s) => (
@@ -114,7 +117,7 @@ const PhieuBaoTriPreview: React.FC<{ phieu: PhieuBaoTriSuaChua }> = ({ phieu }) 
       </div>
 
       <p className="text-right italic mt-[26px] mb-1.5">{t('ngayKy')}</p>
-      <div className="grid grid-cols-3 text-center break-inside-avoid">
+      <div data-in-chu-ky className="grid grid-cols-3 text-center break-inside-avoid">
         {(
           [
             ['nguoiDeNghi', d.nguoiDeNghi],

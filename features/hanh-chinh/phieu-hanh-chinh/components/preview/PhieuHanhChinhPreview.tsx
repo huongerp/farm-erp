@@ -6,6 +6,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatDateTime } from '../../../../../lib/utils';
 import { useUIStore } from '../../../../../store/useStore';
+import { DongLien, usePhieuIn } from '../../../../../components/shared/phieu-in/phieu-in-context';
 import { BangHinhPhieuIn } from '../../../../../components/shared/phieu-in/PhieuInParts';
 import type { AdminFormRequest } from '../../core/types';
 import { duLieuPhieuIn, type KetQuaIn } from '../../core/phieu-in';
@@ -37,6 +38,7 @@ const Muc: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const PhieuHanhChinhPreview: React.FC<{ phieu: AdminFormRequest }> = ({ phieu }) => {
   const { t } = useTranslation();
   const info = useUIStore((s) => s.companyInfo);
+  const { logo } = usePhieuIn();
   const d = duLieuPhieuIn(phieu, t, formatDate);
   const mau = MAU_DAU[d.ketQua];
   const kinhGui = [
@@ -58,21 +60,14 @@ const PhieuHanhChinhPreview: React.FC<{ phieu: AdminFormRequest }> = ({ phieu })
 
   return (
     <div
-      className="phieu-in-content relative flex flex-col overflow-hidden bg-white text-[#111] min-h-[var(--in-trang-h,auto)]"
+      className="phieu-in-content relative flex flex-col overflow-hidden bg-white text-[#111]"
       style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '12pt', lineHeight: 1.45 }}
     >
-      {d.ketQua === 'huy' && (
-        <div
-          className="absolute left-1/2 top-[45%] whitespace-nowrap font-bold pointer-events-none"
-          style={{ transform: 'translate(-50%,-50%) rotate(-30deg)', fontSize: '90pt', color: 'rgba(107,114,128,.13)' }}
-        >
-          {t('adminForm.print.dau.huy')}
-        </div>
-      )}
-
+      <DongLien />
+      {/* Dấu chìm «Đã huỷ» do khung PhieuInPage in theo trạng thái (prop dauChim). */}
       <BangHinhPhieuIn compact={false} />
       <div className="flex items-start gap-2.5">
-        {info.appLogo && <img src={info.appLogo} alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
+        {logo && <img src={logo} data-in-logo alt="" className="w-[56px] h-[56px] object-contain shrink-0" />}
         <div className="flex-1 min-w-0">
           <div className="font-bold uppercase text-[12.5pt]">{info.companyName}</div>
           {lienHe.map((s) => (
@@ -135,7 +130,7 @@ const PhieuHanhChinhPreview: React.FC<{ phieu: AdminFormRequest }> = ({ phieu })
       </div>
 
       <p className="text-right italic mt-[26px] mb-1.5">{t('adminForm.print.ngayKy')}</p>
-      <div className="grid grid-cols-3 text-center break-inside-avoid">
+      <div data-in-chu-ky className="grid grid-cols-3 text-center break-inside-avoid">
         {(['nguoiDeNghi', 'truongBoPhan', 'hcns'] as const).map((k) => (
           <div key={k} className="px-1">
             <div className="font-bold text-[10.5pt] whitespace-nowrap">{t(`adminForm.print.ky.${k}`)}</div>

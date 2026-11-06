@@ -27,6 +27,7 @@ const PhieuCPTHPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('capPhatThuHoi.preview.title')} - ${phieu.ma_phieu}` : t('capPhatThuHoi.preview.title')}
       mauKey="cap-phat-thu-hoi"
+      duongDanGoc={id ? `/hanh-chinh/cap-phat-thu-hoi/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={phieu ? fileName(phieu) : 'cap-phat-thu-hoi'}
       duongDanVe="/hanh-chinh/cap-phat-thu-hoi"

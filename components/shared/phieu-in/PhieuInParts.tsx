@@ -6,9 +6,10 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn, formatDateTime, formatNumberVN } from '../../../lib/utils';
+import { cn, formatNumberVN } from '../../../lib/utils';
 import { useUIStore } from '../../../store/useStore';
-import { usePhieuIn } from './phieu-in-context';
+import { DongLien, usePhieuIn } from './phieu-in-context';
+import type { KhoGiayIn } from '../../../lib/phieu-in/cai-dat-in';
 import { BANG_HINH_URL } from '../../../lib/phieu-in/bang-hinh';
 
 /**
@@ -41,7 +42,7 @@ interface KhungPhieuProps {
 }
 
 /** Cỡ chữ gốc (pt) của KhungPhieu — truyền cho `PhieuInPage coChuGocPt`. */
-export const coChuKhungPhieu = (kho: 'a4' | 'a5') => (kho === 'a5' ? 9 : 10.5);
+export const coChuKhungPhieu = (kho: KhoGiayIn) => (kho === 'a5' ? 9 : 10.5);
 
 /**
  * Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» căn giữa trên cùng đầu phiếu, phía trên dòng công ty.
@@ -73,6 +74,7 @@ const DauPhieu: React.FC<{ compact: boolean; soPhieu?: string | null; ngay?: str
 }) => {
   const { t } = useTranslation();
   const company = useUIStore((s) => s.companyInfo);
+  const { logo } = usePhieuIn();
   const lienHe = [
     company.phone && `${t('common.phieuIn.dt')}: ${company.phone}`,
     company.email && `${t('common.phieuIn.email')}: ${company.email}`,
@@ -83,9 +85,7 @@ const DauPhieu: React.FC<{ compact: boolean; soPhieu?: string | null; ngay?: str
     <div className={cn('border-b-2 border-gray-300', compact ? 'pb-2 mb-2' : 'pb-3 mb-3')}>
       <BangHinhPhieuIn compact={compact} />
       <div className="flex items-start gap-3">
-        {company.appLogo && (
-          <img src={company.appLogo} alt="" className={cn('object-contain shrink-0', compact ? 'w-10 h-10' : 'w-14 h-14')} />
-        )}
+        {logo && <img src={logo} alt="" data-in-logo className={cn('object-contain shrink-0', compact ? 'w-10 h-10' : 'w-14 h-14')} />}
         <div className="min-w-0 flex-1">
           <h2 className={cn('font-bold uppercase leading-tight break-words m-0', compact ? 'text-[9.5pt]' : 'text-[12pt]')}>
             {company.companyName}
@@ -117,8 +117,8 @@ const DauPhieu: React.FC<{ compact: boolean; soPhieu?: string | null; ngay?: str
 };
 
 /**
- * Nội dung tờ giấy: header công ty, tiêu đề, nội dung, chân "In lúc". Khổ, lề, cỡ chữ do khung
- * `PhieuInPage` lo; khối này cao tối thiểu đúng một trang (`--in-trang-h`) để chân nằm cuối trang.
+ * Nội dung phiếu: dòng liên (khi in nhiều liên), header công ty, tiêu đề, nội dung. Khổ, lề, cỡ
+ * chữ, chia trang, giờ in / số trang (chân trang `@page`) do khung `PhieuInPage` lo.
  */
 export const KhungPhieu: React.FC<KhungPhieuProps> = ({
   title,
@@ -130,7 +130,6 @@ export const KhungPhieu: React.FC<KhungPhieuProps> = ({
   className = 'phieu-in-content',
   children,
 }) => {
-  const { t } = useTranslation();
   const { compact: compactKho } = usePhieuIn();
   const compact = compactProp ?? compactKho;
   const dau = <DauPhieu compact={compact} soPhieu={soPhieu} ngay={ngay} />;
@@ -146,8 +145,9 @@ export const KhungPhieu: React.FC<KhungPhieuProps> = ({
   return (
     <div
       className={cn(className, 'bg-white text-gray-900 font-sans box-border flex flex-col')}
-      style={{ minHeight: 'var(--in-trang-h, auto)', fontSize: compact ? '9pt' : '10.5pt' }}
+      style={{ fontSize: compact ? '9pt' : '10.5pt' }}
     >
+      <DongLien />
       {lapDauTrang ? (
         <table className="w-full border-collapse" data-in-co-dinh>
           <thead>
@@ -172,13 +172,6 @@ export const KhungPhieu: React.FC<KhungPhieuProps> = ({
         </>
       )}
 
-      {/* Bảng ngoài không co giãn theo flex → đệm đẩy chân xuống cuối trang. */}
-      {lapDauTrang && <div className="flex-1" />}
-      <footer className="mt-3 pt-2 border-t border-gray-200">
-        <p className="text-[7pt] text-gray-500 m-0">
-          {t('common.phieuIn.inLuc')} {formatDateTime(new Date())}
-        </p>
-      </footer>
     </div>
   );
 };
@@ -241,7 +234,7 @@ export const HangKyTen: React.FC<{
   const { t } = useTranslation();
   const o = labels.map((l) => (typeof l === 'string' ? { label: l } : l));
   return (
-    <div className={cn('mt-4 break-inside-avoid', className)}>
+    <div className={cn('mt-4 break-inside-avoid', className)} data-in-chu-ky>
       {dongNgay && <p className="text-right italic m-0 mb-1">{dongNgay}</p>}
       <div className="grid gap-2 text-center" style={{ gridTemplateColumns: `repeat(${o.length}, minmax(0, 1fr))` }}>
         {o.map((x) => (

@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useThanhToanDoiTacById } from './hooks/use-thanh-toan-doi-tac';
 import { exportThanhToanDoiTacToXLSX, getFileName } from './utils/export-thanh-toan-doi-tac';
 import ThanhToanDoiTacPreviewContent from './components/ThanhToanDoiTacPreviewContent';
@@ -17,6 +18,7 @@ const ThanhToanDoiTacPreviewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: item, isLoading, isError, error, refetch } = useThanhToanDoiTacById(id ?? undefined);
 
+  const dauChim = useDauChim(item?.ten_trang_thai, item?.ma_trang_thai);
   const loi = isError
     ? (error?.message ?? t('thanhToanDoiTac.preview.loadError'))
     : !isLoading && !item
@@ -27,6 +29,8 @@ const ThanhToanDoiTacPreviewPage: React.FC = () => {
     <PhieuInPage
       title={item ? `${t('thanhToanDoiTac.preview.title')} - ${item.so_phieu}` : t('thanhToanDoiTac.preview.title')}
       mauKey="thanh-toan-doi-tac"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/mua-hang/thanh-toan-doi-tac/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={item ? getFileName(item) : 'thanh-toan-doi-tac'}
       duongDanVe="/mua-hang/thanh-toan-doi-tac"

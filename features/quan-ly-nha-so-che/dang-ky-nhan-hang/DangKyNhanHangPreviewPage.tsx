@@ -8,6 +8,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { coChuKhungPhieu } from '../../../components/shared/phieu-in/PhieuInParts';
 import { useDangKyNhanHangById, useDangKyNhanHangChiTiet } from './hooks/use-dang-ky-nhan-hang';
 import { gopTheoHangHoa } from './core/gop-hang-hoa';
@@ -26,6 +27,7 @@ const DangKyNhanHangPreviewPage: React.FC = () => {
   const nhom = useMemo(() => gopTheoHangHoa(chiTiet), [chiTiet]);
 
   const tieuDe = t(`dangKyNhanHang.preview.title.${loai}`);
+  const dauChim = useDauChim(data?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('dangKyNhanHang.preview.loadError'))
     : !isLoading && !data
@@ -37,6 +39,8 @@ const DangKyNhanHangPreviewPage: React.FC = () => {
     <PhieuInPage
       title={data ? `${tieuDe} - ${data.so_xe || data.so_cont || data.id}` : tieuDe}
       mauKey={`dang-ky-nhan-hang.${loai}`}
+      dauChim={dauChim}
+      duongDanGoc={id ? `/quan-ly-nha-so-che/dang-ky-nhan-hang/preview/${id}?loai=${loai}` : null}
       macDinh={macDinh}
       coChuGocPt={coChuKhungPhieu}
       tenFile={data ? tenFileIn(loai, data) : `phieu-${loai}`}

@@ -6,6 +6,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useDonDatHangById } from './hooks/use-don-dat-hang';
 import { useDonDatHangServerScope } from './hooks/use-don-dat-hang-view-scope';
 import { exportDonDatHangToXLSX, getFileName } from './utils/export-don-dat-hang';
@@ -20,6 +21,7 @@ const DonDatHangPreviewPage: React.FC = () => {
   const { data: po, isLoading: poLoading, isError, error, refetch } = useDonDatHangById(id ?? undefined, phamVi);
   const isLoading = poLoading || phamVi.isLoading;
 
+  const dauChim = useDauChim(po?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('donDatHang.preview.loadError'))
     : !isLoading && !po
@@ -30,6 +32,8 @@ const DonDatHangPreviewPage: React.FC = () => {
     <PhieuInPage
       title={po ? `${t('donDatHang.preview.title')} - ${po.so_po}` : t('donDatHang.preview.title')}
       mauKey="don-dat-hang"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/mua-hang/don-dat-hang/preview/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={po ? getFileName(po) : 'don-dat-hang'}
       duongDanVe="/mua-hang/don-dat-hang"

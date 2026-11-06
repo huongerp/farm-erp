@@ -7,10 +7,11 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useAuthStore } from '../../../store/useStore';
 import { useAdminFormById } from './hooks/use-admin-form';
 import { usePhieuHanhChinhViewScope } from './hooks/use-phieu-hanh-chinh-view-scope';
-import { chonTabChoPhieu } from './core/deep-link';
+import { chonTabChoPhieu, THAM_SO_PHIEU } from './core/deep-link';
 import { soPhieuIn } from './core/phieu-in';
 import { exportPhieuHanhChinhXLSX, tenFilePhieuHanhChinh } from './utils/export-phieu-xlsx';
 import PhieuHanhChinhPreview from './components/preview/PhieuHanhChinhPreview';
@@ -30,6 +31,7 @@ const PhieuHanhChinhPreviewPage: React.FC = () => {
     [phieu, currentUserId, viewAll]
   );
   const dangTai = isLoading || dangTaiPhamVi;
+  const dauChim = useDauChim(phieu?.trang_thai, phieu?.trang_thai_quan_ly, phieu?.trang_thai_hcns);
   const loi = isError
     ? ((error as Error)?.message ?? t('adminForm.print.loadError'))
     : dangTai
@@ -44,6 +46,8 @@ const PhieuHanhChinhPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('adminForm.print.pageTitle')} - ${soPhieuIn(phieu.id)}` : t('adminForm.print.pageTitle')}
       mauKey="phieu-hanh-chinh"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/hanh-chinh/phieu-hanh-chinh?${THAM_SO_PHIEU}=${id}` : null}
       macDinh={MAC_DINH}
       coChuGocPt={12}
       tenFile={phieu ? tenFilePhieuHanhChinh(phieu) : 'phieu-hanh-chinh'}

@@ -44,6 +44,7 @@ import { mapPhieuKhoPTListRow, getExportColumnsPhieuKhoPTList, exportFileNamePhi
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoModuleId } from '../../kho-bien-the/bien-the';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -313,7 +314,10 @@ const DanhSachTab: React.FC = () => {
   };
 
   const bulkActions =
-    selectedIds.size > 0 && canApprove ? (
+    selectedIds.size > 0 ? (
+      <>
+        <NutInHangLoat mau={bt.key === 'phan-thuoc' ? 'phieu-kho-pt-phan-thuoc' : 'phieu-kho-pt'} ids={Array.from(selectedIds)} />
+        {canApprove && (
       <button
         type="button"
         onClick={handleApproveMany}
@@ -322,6 +326,8 @@ const DanhSachTab: React.FC = () => {
         <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
         <span className="text-xs font-medium">{t('phieuKhoPhanThuoc.bulkApproveAction')}</span>
       </button>
+        )}
+      </>
     ) : null;
 
   return (

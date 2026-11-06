@@ -1,58 +1,53 @@
 /**
- * Khung trang xem trước phiếu in dùng chung cho MỌI phiếu: toolbar (Đóng / Cài đặt / Tải
- * xuống PDF·DOC… / In), tờ giấy căn giữa, bảng cài đặt in (khổ, hướng, lề, phông, cỡ chữ,
- * độ rộng cột — nhớ riêng theo `mauKey`), trạng thái đang tải / lỗi.
+ * KHUNG IN DÙNG CHUNG cho MỌI trang xem trước / in phiếu.
  *
- * - Lề: padding của tờ giấy trên màn hình; khi in do `@page { margin }` lo — gắn suốt lúc trang mở
- *   nên Ctrl/Cmd+P cũng đúng khổ / lề, kèm số trang ở góc dưới (trình duyệt hỗ trợ margin box).
- * - Điện thoại: tờ giấy co vừa bề ngang màn hình (transform, chỉ trên màn hình, không ảnh hưởng in).
- * - Cỡ chữ: lớp `.phieu-in-zoom` đặt `zoom: k` + `width: 100/k %` → chữ to/nhỏ mà bố cục vẫn
- *   vừa khổ, áp được cho cả mẫu cũ đang cố định pt.
- * - Cột: `useKeoCotBangIn` soi mọi bảng trong phiếu, tay kéo vẽ ở lớp phủ không in.
- * Mẫu phiếu đọc khổ đang chọn qua `usePhieuIn()`; CSS in: khối `.phieu-in-*` trong index.css.
+ * Trang chỉ đưa: `mauKey` (khoá lưu cài đặt), `macDinh` (khổ/hướng/lề của mẫu), nội dung MỘT
+ * liên (`children`), và tuỳ chọn `dauChim` (theo trạng thái), `duongDanGoc` (QR), `nhanLien`.
+ * Khung lo: chia trang thật (paged.js, `XemTruocChiaTrang`), cài đặt in lưu trên máy theo mẫu
+ * (`useCaiDatIn`), kéo / ẩn cột, zoom, điều hướng trang, in theo khoảng trang, đầu/chân trang
+ * (margin box `@page`), dấu chìm, nhiều liên, QR, PDF (chụp từng trang) / DOC, in trình duyệt.
+ *
+ * Nội dung phiếu: không đặt width/padding/`@page` cứng theo khổ; logo gắn `data-in-logo`, khối ký
+ * `data-in-chu-ky`; bảng không cho kéo/ẩn cột thì `data-in-co-dinh`. paged.js nhận HTML chuỗi —
+ * event handler trong nội dung bị mất, nút bấm đặt ở `toolbarExtra`.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { ChevronDown, Download, FileText, FileType, Printer, Settings2, X } from 'lucide-react';
-import { cn } from '../../../lib/utils';
-import { taiDocTuNode, taiPdfTuNode } from '../../../lib/phieu-in/xuat-phieu';
-import {
-  FONT_IN_CSS,
-  chuanHoaCaiDatIn,
-  cssPageSize,
-  kichThuocGiayIn,
-  type CaiDatIn,
-} from '../../../lib/phieu-in/cai-dat-in';
-import { useCaiDatInStore } from '../../../lib/phieu-in/use-cai-dat-in-store';
-import type { KhoGiayIn } from '../../../lib/phieu-in/xuat-phieu';
-import { PhieuInContext, type PhieuInCtx } from './phieu-in-context';
+import QRCode from 'qrcode';
+import { FileText, FileType, X } from 'lucide-react';
+import { formatDateTime } from '../../../lib/utils';
+import { useAuthStore } from '../../../store/useStore';
+import { cssPageSize, kichThuocGiayIn, type MacDinhMau } from '../../../lib/phieu-in/cai-dat-in';
+import { dongChanTrai } from '../../../lib/phieu-in/css-trang';
+import { docKhoangTrang } from '../../../lib/phieu-in/khoang-trang';
+import { useLogoCongTyIn } from '../../../lib/phieu-in/logo-in';
+import { useCaiDatIn } from '../../../lib/phieu-in/use-cai-dat-in-store';
+import type { KhoGiayIn } from '../../../lib/phieu-in/cai-dat-in';
+import type { ThongTinBang } from '../../../lib/phieu-in/luoi-bang';
+import { LienContext, PhieuInContext, type PhieuInCtx } from './phieu-in-context';
 import { useKeoCotBangIn } from './use-keo-cot-bang-in';
+import { XemTruocChiaTrang, type KetQuaChiaTrang } from './XemTruocChiaTrang';
+import { ThanhCongCuIn, type MucTaiThem } from './ThanhCongCuIn';
 import BangCaiDatIn from './BangCaiDatIn';
 
 export { kichThuocGiayIn } from '../../../lib/phieu-in/cai-dat-in';
-export { usePhieuIn } from './phieu-in-context';
+export { usePhieuIn, useLienIn, DongLien } from './phieu-in-context';
+export type { MucTaiThem } from './ThanhCongCuIn';
 
-const PRINT_STYLE_ID = 'phieu-in-page-override';
 const PX_MOI_MM = 96 / 25.4;
-/** Dưới bề rộng này (px) tờ giấy co vừa màn hình thay vì cuộn ngang. */
-const MAN_HEP_PX = 768;
-
-export interface MucTaiThem {
-  key: string;
-  label: string;
-  icon?: React.ReactNode;
-  onClick: () => void | Promise<void>;
-}
+const ZOOM_MIN = 0.3;
+const ZOOM_MAX = 2.5;
+const PRINT_STYLE_ID = 'phieu-in-page-size';
 
 interface Props {
   /** Tiêu đề trên toolbar + tiêu đề tab trình duyệt. */
   title: string;
   /** Khoá nhớ cài đặt in của mẫu này (vd `phieu-kho`). */
   mauKey: string;
-  /** Mặc định của mẫu: khổ, hướng, lề… (người dùng đổi thì lưu đè). */
-  macDinh?: Partial<CaiDatIn>;
+  /** Mặc định của mẫu: khổ, hướng, lề (`leMm` đều hoặc `le` từng cạnh)… người dùng đổi thì lưu đè. */
+  macDinh?: MacDinhMau;
   /** Cỡ chữ gốc (pt) của mẫu theo khổ — chỉ để hiển thị "10.5 pt" trên bảng cài đặt. */
   coChuGocPt?: number | ((kho: KhoGiayIn) => number);
   /** Tên file tải về (không đuôi). */
@@ -63,11 +58,17 @@ interface Props {
   /** Có lỗi / không tìm thấy: thông báo thay cho phiếu. */
   loi?: string | null;
   onRetry?: () => void;
+  /** Chữ chìm in chéo mọi trang («BẢN NHÁP», «ĐÃ HUỶ»…) — trang tự quyết theo trạng thái; null = bản chính thức. */
+  dauChim?: string | null;
+  /** Đường dẫn (pathname + query) mở bản gốc — có thì cho bật QR xác thực ở góc trang 1. */
+  duongDanGoc?: string | null;
+  /** Nhãn từng liên khi in nhiều liên (mặc định «Lưu», «Giao người nhận», «Kế toán»). */
+  nhanLien?: string[];
   /** Định dạng tải thêm (vd XLSX) ngoài PDF / DOC. */
   taiThem?: MucTaiThem[];
   /** Ẩn PDF / DOC (mẫu chỉ có định dạng riêng). */
   anPdfDoc?: boolean;
-  /** Nút phụ trên toolbar, đặt trước Cài đặt (vd chọn loại phiếu). */
+  /** Nút phụ trên toolbar (vd chọn loại phiếu) — không in. */
   toolbarExtra?: React.ReactNode;
   children: React.ReactNode;
 }
@@ -82,6 +83,9 @@ const PhieuInPage: React.FC<Props> = ({
   isLoading,
   loi,
   onRetry,
+  dauChim,
+  duongDanGoc,
+  nhanLien,
   taiThem,
   anPdfDoc,
   toolbarExtra,
@@ -89,38 +93,36 @@ const PhieuInPage: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [exporting, setExporting] = useState(false);
-  const [downloadOpen, setDownloadOpen] = useState(false);
+  const nguoiIn = useAuthStore((s) => s.user?.full_name ?? null);
+  const { caiDat, doi, khoiPhuc, coThayDoi } = useCaiDatIn(mauKey, macDinh);
+  const { logo, xong: logoXong } = useLogoCongTyIn();
+  const cuonRef = useRef<HTMLDivElement>(null);
+  const dichRef = useRef<HTMLDivElement>(null);
+  const nguonRef = useRef<HTMLDivElement>(null);
   const [moCaiDat, setMoCaiDat] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const paperRef = useRef<HTMLDivElement>(null);
-  const zoomRef = useRef<HTMLDivElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const [vuaMan, setVuaMan] = useState({ tiLe: 1, caoPx: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [vuaKhung, setVuaKhung] = useState(true);
+  const [kq, setKq] = useState<KetQuaChiaTrang>({ soTrang: 0, bang: [] });
+  const [phienDan, setPhienDan] = useState(0);
+  const [trangHienTai, setTrangHienTai] = useState(1);
+  const [khoangTrang, setKhoangTrang] = useState('');
+  const [dangTaiXuong, setDangTaiXuong] = useState(false);
+  const [qr, setQr] = useState<string | null>(null);
+  const [gioIn] = useState(() => formatDateTime(new Date()));
 
-  const daLuu = useCaiDatInStore((s) => s.theoMau[mauKey]);
-  const datCaiDat = useCaiDatInStore((s) => s.datCaiDat);
-  const datCot = useCaiDatInStore((s) => s.datCot);
-  const datLaiCot = useCaiDatInStore((s) => s.datLaiCot);
-  const khoiPhucMacDinh = useCaiDatInStore((s) => s.khoiPhucMacDinh);
-  const caiDat = useMemo(() => chuanHoaCaiDatIn(daLuu, macDinh), [daLuu, macDinh]);
-
-  const { kho, huong, leMm, tiLeChu: k, font } = caiDat;
+  const { kho, huong } = caiDat;
   const { wMm, hMm } = kichThuocGiayIn(kho, huong);
-  const pageSize = cssPageSize(kho, huong);
   const coChuGoc = typeof coChuGocPt === 'function' ? coChuGocPt(kho) : coChuGocPt;
-  const ctx = useMemo<PhieuInCtx>(() => ({ kho, huong, wMm, hMm, leMm, compact: kho === 'a5' }), [kho, huong, wMm, hMm, leMm]);
-
-  const onDoiCot = useCallback((bang: string, rong: number[]) => datCot(mauKey, bang, rong), [datCot, mauKey]);
-  const onDatLaiBang = useCallback((bang: string) => datLaiCot(mauKey, bang), [datLaiCot, mauKey]);
-  const { tayKeo, batDauKeo, keoBangPhim } = useKeoCotBangIn({
-    rootRef: zoomRef,
-    khungRef: paperRef,
-    cot: caiDat.cot,
-    onDoi: onDoiCot,
-    onDatLai: onDatLaiBang,
-    phuThuoc: `${kho}-${huong}-${leMm}-${k}-${font}-${moCaiDat}-${isLoading ? 1 : 0}-${loi ?? ''}`,
-  });
+  const ctx = useMemo<PhieuInCtx>(
+    () => ({ kho, huong, wMm, hMm, le: caiDat.le, compact: kho === 'a5', logo }),
+    [kho, huong, wMm, hMm, caiDat.le, logo]
+  );
+  const chanTrai = dongChanTrai(caiDat, gioIn, nguoiIn, { inLuc: t('common.phieuIn.inLuc'), nguoiIn: t('common.phieuIn.nguoiIn') });
+  const sanSang = kq.soTrang > 0 && !isLoading && !loi;
+  const nhanLienDung = useMemo(
+    () => nhanLien ?? [t('common.phieuIn.lien_luu'), t('common.phieuIn.lien_giao'), t('common.phieuIn.lien_keToan')],
+    [nhanLien, t]
+  );
 
   useEffect(() => {
     const prev = document.title;
@@ -130,6 +132,104 @@ const PhieuInPage: React.FC<Props> = ({
     };
   }, [title]);
 
+  // Khổ giấy khi in trình duyệt: mỗi `.pagedjs_page` đã đúng khổ + lề → @page lề 0. Gắn sau CSS
+  // của app (index.css có @page A4 12mm) nên thắng.
+  useEffect(() => {
+    document.getElementById(PRINT_STYLE_ID)?.remove();
+    const el = document.createElement('style');
+    el.id = PRINT_STYLE_ID;
+    el.textContent = `@page { size: ${wMm}mm ${hMm}mm; margin: 0 !important; }`;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [wMm, hMm]);
+
+  useEffect(() => {
+    if (!caiDat.qr || !duongDanGoc) {
+      setQr(null);
+      return;
+    }
+    let huy = false;
+    void QRCode.toDataURL(`${window.location.origin}${duongDanGoc}`, { margin: 0, width: 240 }).then((u) => !huy && setQr(u));
+    return () => {
+      huy = true;
+    };
+  }, [caiDat.qr, duongDanGoc]);
+
+  const onXong = useCallback((r: KetQuaChiaTrang) => {
+    setKq(r);
+    setPhienDan((n) => n + 1);
+  }, []);
+
+  // Zoom «vừa khung»: tính lại khi đổi khổ / mở đóng cài đặt / đổi cỡ cửa sổ.
+  useEffect(() => {
+    if (!vuaKhung) return;
+    const cuon = cuonRef.current;
+    if (!cuon) return;
+    const tinh = () => {
+      const w = cuon.clientWidth;
+      if (w > 0) setZoom(Math.max(ZOOM_MIN, Math.min(1.25, Math.floor(((w - 32) / (wMm * PX_MOI_MM)) * 100) / 100)));
+    };
+    tinh();
+    const ro = new ResizeObserver(tinh);
+    ro.observe(cuon);
+    return () => ro.disconnect();
+  }, [vuaKhung, wMm, moCaiDat, isLoading, loi]);
+
+  const onZoom = useCallback((z: number | 'vua') => {
+    if (z === 'vua') {
+      setVuaKhung(true);
+      return;
+    }
+    setVuaKhung(false);
+    setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Math.round(z * 100) / 100)));
+  }, []);
+
+  // Trang đang xem = trang có đỉnh gần mép trên vùng cuộn nhất.
+  useEffect(() => {
+    const cuon = cuonRef.current;
+    if (!cuon) return;
+    const onScroll = () => {
+      const top = cuon.getBoundingClientRect().top + 40;
+      let hienTai = 1;
+      cuon.querySelectorAll<HTMLElement>('.pagedjs_page').forEach((p, i) => {
+        if (p.getBoundingClientRect().top <= top) hienTai = i + 1;
+      });
+      setTrangHienTai(hienTai);
+    };
+    cuon.addEventListener('scroll', onScroll, { passive: true });
+    return () => cuon.removeEventListener('scroll', onScroll);
+  }, [isLoading, loi]);
+
+  const nhayTrang = useCallback((n: number) => {
+    dichRef.current?.querySelector(`.pagedjs_page[data-trang="${n}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  useKeoCotBangIn({
+    dichRef,
+    phienDan,
+    bang: kq.bang as ThongTinBang[],
+    caiDat,
+    zoom,
+    batTat: sanSang,
+    nhan: t('common.phieuIn.keoCot'),
+    doi,
+  });
+
+  const khoang = useMemo(() => docKhoangTrang(khoangTrang, Math.max(1, kq.soTrang)), [khoangTrang, kq.soTrang]);
+  const loiKhoang =
+    khoang.loi === 'cu-phap'
+      ? t('common.phieuIn.khoangLoi_cuPhap', { phan: khoang.phan })
+      : khoang.loi === 'ngoai-pham-vi'
+        ? t('common.phieuIn.khoangLoi_ngoaiPhamVi', { tong: khoang.tong })
+        : null;
+
+  const tatCaTrang = () => Array.from(dichRef.current?.querySelectorAll<HTMLElement>('.pagedjs_page') ?? []);
+  const trangTrongKhoang = (): HTMLElement[] => {
+    const ds = tatCaTrang();
+    const chon = khoang.trang;
+    return chon ? ds.filter((_, i) => chon.includes(i + 1)) : ds;
+  };
+
   const handleClose = useCallback(() => {
     if (window.history.length > 1) navigate(-1);
     // Mở bằng window.open(..., 'noopener') → không window.close() được; về trang module.
@@ -138,85 +238,70 @@ const PhieuInPage: React.FC<Props> = ({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (downloadOpen) setDownloadOpen(false);
-      else if (moCaiDat && window.innerWidth < 768) setMoCaiDat(false);
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      if ((e.target as HTMLElement | null)?.closest?.('input, select, textarea')) return;
+      if (moCaiDat && window.innerWidth < 768) setMoCaiDat(false);
       else handleClose();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [handleClose, downloadOpen, moCaiDat]);
+  }, [handleClose, moCaiDat]);
 
-  useEffect(() => {
-    if (!downloadOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDownloadOpen(false);
+  const handlePrint = () => {
+    if (loiKhoang) {
+      toast.error(loiKhoang);
+      return;
+    }
+    const tat = tatCaTrang();
+    const giu = new Set(trangTrongKhoang());
+    tat.forEach((p) => !giu.has(p) && p.setAttribute('data-ngoai-khoang', ''));
+    const xong = () => {
+      tat.forEach((p) => p.removeAttribute('data-ngoai-khoang'));
+      window.removeEventListener('afterprint', xong);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [downloadOpen]);
-
-  // @page theo cài đặt — gắn suốt lúc trang mở (Ctrl/Cmd+P cũng đúng khổ, lề) + số trang.
-  useEffect(() => {
-    document.getElementById(PRINT_STYLE_ID)?.remove();
-    const styleEl = document.createElement('style');
-    styleEl.id = PRINT_STYLE_ID;
-    styleEl.textContent = `@page { size: ${pageSize}; margin: ${leMm}mm !important; @bottom-right { content: counter(page) "/" counter(pages); font: 8pt sans-serif; color: #6b7280; } }`;
-    document.head.appendChild(styleEl);
-    return () => styleEl.remove();
-  }, [pageSize, leMm]);
-
-  const handlePrint = () => window.print();
-
-  // Màn hẹp: co tờ giấy vừa bề ngang vùng xem (đo lại khi xoay máy / mở bảng cài đặt / nội dung đổi cao).
-  useEffect(() => {
-    const body = bodyRef.current;
-    const paper = paperRef.current;
-    if (!body || !paper) return;
-    const rongGiayPx = wMm * PX_MOI_MM;
-    const tinh = () => {
-      const cs = getComputedStyle(body);
-      const rongXem = body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      const tiLe = window.innerWidth < MAN_HEP_PX && rongXem > 0 && rongXem < rongGiayPx ? rongXem / rongGiayPx : 1;
-      const caoPx = paper.offsetHeight;
-      setVuaMan((cu) => (cu.tiLe === tiLe && cu.caoPx === caoPx ? cu : { tiLe, caoPx }));
-    };
-    tinh();
-    const ro = new ResizeObserver(tinh);
-    ro.observe(body);
-    ro.observe(paper);
-    return () => ro.disconnect();
-  }, [wMm, isLoading, loi]);
+    window.addEventListener('afterprint', xong);
+    window.print();
+  };
 
   const chay = async (viec: () => void | Promise<void>) => {
-    setDownloadOpen(false);
-    setExporting(true);
+    setDangTaiXuong(true);
     try {
       await viec();
     } catch (e) {
       if (import.meta.env.DEV) console.error('Export error:', e);
       toast.error(t('common.exportError'));
     } finally {
-      setExporting(false);
+      setDangTaiXuong(false);
     }
   };
 
-  const handleExport = (format: 'pdf' | 'doc') => {
-    const node = zoomRef.current;
-    if (!node) return;
+  const handlePdf = () => {
+    if (loiKhoang) {
+      toast.error(loiKhoang);
+      return;
+    }
     void chay(async () => {
-      if (format === 'pdf') await taiPdfTuNode(node, { kho, huong, wMm, hMm, leMm, tiLe: k, tenFile });
-      else taiDocTuNode(node, { pageSize, wMm, leMm, tiLe: k, tenFile });
+      const dich = dichRef.current;
+      const zoomCu = dich?.style.zoom ?? '';
+      // html2canvas đo theo bố cục thật — bỏ zoom hiển thị trong lúc chụp.
+      if (dich) dich.style.zoom = '1';
+      try {
+        const { taiPdfTuTrang } = await import('../../../lib/phieu-in/xuat-phieu');
+        await taiPdfTuTrang(trangTrongKhoang(), { kho, huong, tenFile });
+      } finally {
+        if (dich) dich.style.zoom = zoomCu;
+      }
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" aria-label={t('common.loading')} />
-      </div>
-    );
-  }
+  const handleDoc = () => {
+    void chay(async () => {
+      const lien = nguonRef.current?.querySelector<HTMLElement>('.phieu-in-lien');
+      if (!lien) throw new Error('no content');
+      const { taiDocTuNode } = await import('../../../lib/phieu-in/xuat-phieu');
+      taiDocTuNode(lien, { pageSize: cssPageSize(kho, huong), le: caiDat.le, tiLe: caiDat.tiLeChu, tenFile });
+    });
+  };
 
   if (loi) {
     return (
@@ -249,152 +334,75 @@ const PhieuInPage: React.FC<Props> = ({
     ...(anPdfDoc
       ? []
       : [
-          { key: 'pdf', label: 'PDF', icon: <FileText size={16} />, onClick: () => handleExport('pdf') },
-          { key: 'doc', label: 'DOC', icon: <FileType size={16} />, onClick: () => handleExport('doc') },
+          { key: 'pdf', label: 'PDF', icon: <FileText size={16} />, onClick: handlePdf },
+          { key: 'doc', label: 'DOC', icon: <FileType size={16} />, onClick: handleDoc },
         ]),
     ...(taiThem ?? []).map((m) => ({ ...m, onClick: () => chay(m.onClick) })),
   ];
 
-  const fontCss = font === 'mac-dinh' ? undefined : FONT_IN_CSS[font];
+  const lien = Array.from({ length: caiDat.soLien }, (_, k) => (
+    <section key={k} className="phieu-in-lien">
+      <LienContext.Provider value={{ lien: k + 1, soLien: caiDat.soLien, nhan: nhanLienDung[k] ?? '' }}>{children}</LienContext.Provider>
+    </section>
+  ));
 
   return (
     <div className="phieu-in-backdrop fixed inset-0 z-[70] flex flex-col bg-muted/90" role="main" aria-label={title}>
-      <div className="phieu-in-toolbar flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-card border-b border-border shadow-sm shrink-0 print:hidden">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t('common.close')}
-          >
-            <X size={20} />
-          </button>
-          <span className="hidden sm:inline text-sm font-semibold truncate">{title}</span>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {toolbarExtra}
-          <button
-            type="button"
-            onClick={() => setMoCaiDat((o) => !o)}
-            aria-pressed={moCaiDat}
-            className={cn(
-              'inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-border hover:bg-muted/50',
-              moCaiDat ? 'bg-muted' : 'bg-card'
-            )}
-          >
-            <Settings2 size={16} />
-            <span className="hidden sm:inline">{t('common.phieuIn.caiDat')}</span>
-          </button>
-          {dinhDang.length > 0 && (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setDownloadOpen((o) => !o)}
-                disabled={exporting}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border border-border bg-card hover:bg-muted/50 disabled:opacity-70 disabled:pointer-events-none"
-              >
-                <Download size={16} />
-                <span className="hidden sm:inline">{t('common.phieuIn.taiXuong')}</span>
-                <ChevronDown size={14} className={cn('transition-transform', downloadOpen && 'rotate-180')} />
-              </button>
-              {downloadOpen && (
-                <div className="absolute right-0 top-full mt-1 min-w-[120px] py-1 bg-card rounded-xl border border-border shadow-xl z-[100]">
-                  {dinhDang.map((opt) => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => void opt.onClick()}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted/60"
-                    >
-                      {opt.icon}
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary/90"
-          >
-            <Printer size={16} />
-            {t('common.phieuIn.in')}
-          </button>
-        </div>
-      </div>
-
+      <ThanhCongCuIn
+        title={title}
+        onDong={handleClose}
+        zoom={zoom}
+        vuaKhung={vuaKhung}
+        onZoom={onZoom}
+        trangHienTai={trangHienTai}
+        soTrang={Math.max(1, kq.soTrang)}
+        onNhayTrang={nhayTrang}
+        khoangTrang={khoangTrang}
+        onKhoangTrang={setKhoangTrang}
+        loiKhoang={loiKhoang}
+        moCaiDat={moCaiDat}
+        onCaiDat={() => setMoCaiDat((o) => !o)}
+        dinhDang={dinhDang}
+        dangTaiXuong={dangTaiXuong}
+        sanSang={sanSang}
+        onIn={handlePrint}
+        toolbarExtra={toolbarExtra}
+      />
       <div className="phieu-in-main flex-1 min-h-0 flex">
-        {/* Căn giữa bằng mx-auto (không dùng justify-center): tờ A4 ngang rộng hơn màn hình
-            vẫn cuộn ngang tới được mép trái. */}
-        <div
-          ref={bodyRef}
-          className="phieu-in-body flex-1 min-w-0 overflow-auto p-4 md:p-6 flex items-start print:p-0 print:overflow-visible"
-        >
-          {/* Lớp co vừa màn hình: giữ chỗ đúng kích thước tờ giấy sau khi scale (transform không đổi bố cục). */}
-          <div
-            className="phieu-in-vua-man shrink-0 mx-auto"
-            style={vuaMan.tiLe < 1 ? { width: wMm * PX_MOI_MM * vuaMan.tiLe, height: vuaMan.caoPx * vuaMan.tiLe } : undefined}
-          >
-            <div
-              ref={paperRef}
-              className="phieu-in-content-wrapper relative bg-white text-gray-900 shadow-xl rounded-sm box-border print:p-0"
-              style={{
-                width: `${wMm}mm`,
-                minHeight: `${hMm}mm`,
-                padding: `${leMm}mm`,
-                ...(vuaMan.tiLe < 1 && { transform: `scale(${vuaMan.tiLe})`, transformOrigin: 'top left' }),
-              }}
-            >
-              <div
-                ref={zoomRef}
-                className="phieu-in-zoom"
-                data-font={fontCss ? font : undefined}
-                style={
-                  {
-                    zoom: k,
-                    width: `${100 / k}%`,
-                    '--in-font': fontCss,
-                    '--in-trang-h': `${(hMm - 2 * leMm) / k}mm`,
-                  } as React.CSSProperties
-                }
-              >
-                <PhieuInContext.Provider value={ctx}>{children}</PhieuInContext.Provider>
-              </div>
-              <div className="phieu-in-lop-keo absolute inset-0 pointer-events-none print:hidden" data-phieu-in-bo-khi-xuat>
-                {tayKeo.map((tk) => (
-                  <div
-                    key={tk.key}
-                    role="slider"
-                    aria-orientation="horizontal"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={tk.rongPct}
-                    aria-label={t('common.phieuIn.keoCot')}
-                    tabIndex={0}
-                    title={t('common.phieuIn.keoCot')}
-                    onPointerDown={(e) => batDauKeo(e, tk)}
-                    onKeyDown={(e) => keoBangPhim(e, tk)}
-                    onDoubleClick={() => onDatLaiBang(tk.bang)}
-                    className="group absolute pointer-events-auto cursor-col-resize touch-none flex justify-center outline-none"
-                    style={{ left: tk.left - 4, top: tk.top, height: tk.height, width: 9 }}
-                  >
-                    <span className="w-0.5 h-full rounded-full bg-primary/0 group-hover:bg-primary/70 group-focus-visible:bg-primary transition-colors" />
-                  </div>
-                ))}
-              </div>
+        <div ref={cuonRef} className="phieu-in-cuon relative flex-1 min-w-0 overflow-auto">
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" aria-label={t('common.loading')} />
             </div>
-          </div>
+          ) : (
+            <>
+              <div ref={dichRef} className="phieu-in-dich" style={{ zoom }} />
+              <PhieuInContext.Provider value={ctx}>
+                <XemTruocChiaTrang
+                  caiDat={caiDat}
+                  chanTrai={chanTrai}
+                  dauChim={dauChim}
+                  qrDataUrl={qr}
+                  tamDung={!logoXong || (caiDat.qr && !!duongDanGoc && !qr)}
+                  dichRef={dichRef}
+                  nguonRef={nguonRef}
+                  onXong={onXong}
+                >
+                  {lien}
+                </XemTruocChiaTrang>
+              </PhieuInContext.Provider>
+            </>
+          )}
         </div>
         {moCaiDat && (
           <BangCaiDatIn
             caiDat={caiDat}
             coChuGocPt={coChuGoc}
-            coCotDaChinh={Object.keys(daLuu?.cot ?? {}).length > 0}
-            onDoi={(patch) => datCaiDat(mauKey, patch)}
-            onDatLaiCot={() => datLaiCot(mauKey)}
-            onKhoiPhuc={() => khoiPhucMacDinh(mauKey)}
+            doi={doi}
+            khoiPhuc={khoiPhuc}
+            coThayDoi={coThayDoi}
+            bang={kq.bang}
+            coQr={!!duongDanGoc}
             onDong={() => setMoCaiDat(false)}
           />
         )}

@@ -22,4 +22,6 @@ export const config = {
   /** Giới hạn ảnh gốc gửi lên (MB) — ảnh điện thoại chưa nén thường 3–8 MB. */
   toiDaMb: Number(process.env.MEDIA_MAX_MB ?? 15),
   port: Number(process.env.PORT ?? 3004),
+  /** PostgREST nội bộ — `GET /logo` đọc logo công ty bằng token người gọi (qua RLS) để làm allowlist. */
+  postgrestUrl: process.env.POSTGREST_URL ?? 'http://postgrest:3000',
 };

@@ -1,15 +1,13 @@
 /**
- * Tải phiếu in về máy (PDF / DOC) từ CHÍNH nút preview đang hiển thị — bố cục chỉ có một
- * nguồn là component React. Nội dung đã được React escape nên không ghép chuỗi HTML tay.
- * - PDF: nhân bản nút kèm style đã tính vào iframe trống (nạp cùng phông web của app), chụp
- *   html2canvas từng trang, ngắt trang ở mép dòng / khối không tách.
- * - DOC: nhân bản nút kèm style inline + @page (Word đọc được).
+ * Tải phiếu in về máy (PDF / DOC) từ CHÍNH bản xem trước — bố cục chỉ có một nguồn là
+ * component React. Nội dung đã được React escape nên không ghép chuỗi HTML tay.
+ * - PDF: chụp html2canvas từng trang paged.js đã chia (`taiPdfTuTrang`).
+ * - DOC: nhân bản nội dung nguồn kèm style inline + @page (Word đọc được).
  */
 import { downloadBlob } from '../download-blob';
-import { chonDiemNgatTrang, type KhoiNguyen } from './ngat-trang-pdf';
+import { kichThuocGiayIn, type HuongGiayIn, type KhoGiayIn, type LeTrang } from './cai-dat-in';
 
-export type KhoGiayIn = 'a4' | 'a5';
-export type HuongGiayIn = 'doc' | 'ngang';
+export type { HuongGiayIn, KhoGiayIn } from './cai-dat-in';
 
 const CSS_GIU = [
   'display', 'flex-direction', 'flex', 'flex-wrap', 'justify-content', 'align-items', 'gap', 'box-sizing',
@@ -105,166 +103,128 @@ function htmlDocLap(node: HTMLElement, bo?: TuyChonNhanBan & { paddingMm?: numbe
   return clone.outerHTML;
 }
 
-/**
- * Đọc nút ở trạng thái "không zoom", bề rộng `rongMm` — cỡ chữ của khung in làm bằng CSS
- * `zoom`, html2canvas / Word không hiểu `zoom` nên phải dựng bản phẳng. Đổi style rồi trả
- * lại ngay trong cùng một tick nên màn hình không nháy.
- */
-function docKhongZoom<T>(node: HTMLElement, rongMm: number, doc: () => T): T {
-  const zoom = node.style.zoom;
-  const width = node.style.width;
-  node.style.zoom = '1';
-  node.style.width = `${rongMm}mm`;
-  try {
-    return doc();
-  } finally {
-    node.style.zoom = zoom;
-    node.style.width = width;
+export interface ThamSoDoc {
+  /** Giá trị `size` của @page, vd `A4 landscape`. */
+  pageSize: string;
+  le: LeTrang;
+  /** Tỉ lệ cỡ chữ (Word không có zoom → nhân vào cỡ chữ đã tính). */
+  tiLe?: number;
+  tenFile: string;
+}
+
+/** DOC từ nội dung NGUỒN (một liên, chưa chia trang) — lề do `@page` của Word lo. */
+export function taiDocTuNode(node: HTMLElement, ts: ThamSoDoc): void {
+  const tiLe = ts.tiLe && ts.tiLe > 0 ? ts.tiLe : 1;
+  const body = htmlDocLap(node, { paddingMm: 0, tiLeChu: tiLe });
+  const { tren, phai, duoi, trai } = ts.le;
+  const html = [
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
+    '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
+    `<style>@page{size:${ts.pageSize};margin:${tren}mm ${phai}mm ${duoi}mm ${trai}mm}body{font-family:Arial,sans-serif}</style>`,
+    `</head><body>${body}</body></html>`,
+  ].join('');
+  downloadBlob(new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }), `${ts.tenFile}.doc`);
+}
+
+/** Thuộc tính màu html2canvas đọc — Tailwind v4 cho ra oklch, html2canvas không hiểu. */
+const THUOC_TINH_MAU = [
+  'color',
+  'background-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'outline-color',
+  'text-decoration-color',
+  'fill',
+  'stroke',
+];
+
+/** Ghi màu đã đổi sang rgb vào style inline của bản sao html2canvas (duyệt song song nguồn ↔ bản sao). */
+function doiMauBanSao(nguon: Element, banSao: Element) {
+  const cs = getComputedStyle(nguon);
+  const st = (banSao as HTMLElement).style;
+  if (st) {
+    for (const p of THUOC_TINH_MAU) {
+      const v = cs.getPropertyValue(p);
+      if (v && /okl|lab\(|lch\(|color\(/.test(v)) st.setProperty(p, doiMau(v));
+    }
+    const bong = cs.getPropertyValue('box-shadow');
+    if (bong && bong !== 'none') st.setProperty('box-shadow', doiMau(bong));
+    const nen = cs.getPropertyValue('background-image');
+    if (nen && nen !== 'none' && /okl|lab\(|lch\(|color\(/.test(nen)) st.setProperty('background-image', 'none');
   }
+  const n = Math.min(nguon.children.length, banSao.children.length);
+  for (let i = 0; i < n; i++) doiMauBanSao(nguon.children[i], banSao.children[i]);
+}
+
+async function choAnh(el: HTMLElement, ms = 5000): Promise<void> {
+  const imgs = Array.from(el.querySelectorAll('img')).filter((im) => !im.complete);
+  if (imgs.length === 0) return;
+  await Promise.race([
+    Promise.all(
+      imgs.map(
+        (im) =>
+          new Promise<void>((r) => {
+            im.addEventListener('load', () => r(), { once: true });
+            im.addEventListener('error', () => r(), { once: true });
+          })
+      )
+    ),
+    new Promise<void>((r) => setTimeout(r, ms)),
+  ]);
+}
+
+type Html2Canvas = (typeof import('html2canvas'))['default'];
+
+/** Chụp MỘT trang paged.js thành canvas (màu oklch đổi sang rgb trên bản sao, bỏ tay kéo cột). */
+export async function chupTrang(t: HTMLElement, html2canvas?: Html2Canvas, scale = 2): Promise<HTMLCanvasElement> {
+  const h2c = html2canvas ?? (await import('html2canvas')).default;
+  await choAnh(t);
+  const soTrang = t.getAttribute('data-trang') ?? '';
+  return h2c(t, {
+    scale,
+    useCORS: true,
+    logging: false,
+    imageTimeout: 5000,
+    backgroundColor: '#ffffff',
+    width: t.offsetWidth,
+    height: t.offsetHeight,
+    windowWidth: t.offsetWidth,
+    windowHeight: t.offsetHeight,
+    onclone: (doc) => {
+      const banSao = doc.querySelector(`.pagedjs_page[data-trang="${soTrang}"]`);
+      if (banSao) {
+        (banSao as HTMLElement).style.boxShadow = 'none';
+        doiMauBanSao(t, banSao);
+      }
+    },
+    ignoreElements: (el) => el.classList?.contains('phieu-in-tay-keo') ?? false,
+  });
 }
 
 export interface ThamSoPdf {
   kho: KhoGiayIn;
   huong: HuongGiayIn;
-  /** Khổ giấy (mm) theo hướng. */
-  wMm: number;
-  hMm: number;
-  /** Lề trang (mm) — áp cho MỌI trang, nội dung tràn trang sau vẫn chừa lề. */
-  leMm: number;
-  /** Tỉ lệ cỡ chữ (zoom của khung in), 1 = như thiết kế. */
-  tiLe?: number;
   /** Tên file không kèm đuôi. */
   tenFile: string;
 }
 
-const escAttr = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-
 /**
- * Link stylesheet phông web của app (Inter ở index.html, phông Google do `loadFont` nạp thêm).
- * Iframe thiếu chúng thì dàn chữ bằng phông dự phòng (hẹp hơn) trong khi html2canvas vẽ trên
- * canvas của document chính bằng phông thật (rộng hơn) → các từ đè lên nhau, mất khoảng trắng.
+ * PDF từ các trang paged.js đã dựng: mỗi `.pagedjs_page` = một trang PDF đúng khổ / hướng, nên
+ * không bao giờ cắt đôi dòng bảng (paged.js đã ngắt theo dòng). Chụp TỪNG trang (không một ảnh
+ * dài) để tránh trần canvas ~16,7 MP của iOS Safari. Tay kéo cột (`phieu-in-tay-keo`) bỏ qua.
  */
-function linkPhongWeb(): string {
-  return Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href^="https://fonts.googleapis.com/"]'))
-    .map((l) => `<link rel="stylesheet" href="${escAttr(l.href)}">`)
-    .join('');
-}
-
-/** Chờ phông của iframe tải xong; mạng chậm / offline thì thôi sau `ms` để vẫn xuất được. */
-async function choPhong(doc: Document, ms = 4000): Promise<void> {
-  if (!doc.fonts) return;
-  // Ép dàn trang để trình duyệt bắt đầu tải các phông đang dùng trước khi đọc `ready`.
-  void doc.body.offsetHeight;
-  await Promise.race([doc.fonts.ready.then(() => undefined), new Promise<void>((r) => setTimeout(r, ms))]);
-}
-
-/**
- * Khối không được tách qua hai trang: dòng bảng (trừ dòng bọc cả bảng con — phiếu kho dùng bảng
- * ngoài để lặp header), đoạn chữ, tiêu đề, ảnh và khối `break-inside: avoid` (ô ký, dòng tổng).
- */
-function khoiKhongTach(root: HTMLElement): KhoiNguyen[] {
-  const goc = root.getBoundingClientRect().top;
-  const out: KhoiNguyen[] = [];
-  root.querySelectorAll<HTMLElement>('*').forEach((el) => {
-    const tag = el.tagName;
-    const nguyen =
-      (tag === 'TR' && !el.querySelector('table')) ||
-      /^(P|H[1-6]|LI|IMG|SVG)$/i.test(tag) ||
-      el.style.getPropertyValue('break-inside') === 'avoid';
-    if (!nguyen) return;
-    const r = el.getBoundingClientRect();
-    if (r.height > 0) out.push({ top: r.top - goc, bottom: r.bottom - goc });
-  });
-  return out;
-}
-
-/**
- * PDF đúng khổ / hướng: dựng bản độc lập trong iframe trống, chụp html2canvas TỪNG TRANG
- * (canvas nhỏ — một canvas cả phiếu dài vượt giới hạn ~16,7 MP của iOS ra PDF trắng) và ngắt
- * trang ở mép dòng bảng / khối không tách thay vì cắt ngang chữ.
- * `node` là phần NỘI DUNG (không gồm lề). Cỡ chữ: dựng bản rộng `nội dung / tiLe` rồi co ảnh
- * về đúng bề rộng nội dung — cùng hiệu ứng với `zoom` trên màn hình.
- */
-export async function taiPdfTuNode(node: HTMLElement, ts: ThamSoPdf): Promise<void> {
+export async function taiPdfTuTrang(trang: readonly HTMLElement[], ts: ThamSoPdf): Promise<void> {
+  if (trang.length === 0) throw new Error('Chưa dàn trang xong.');
   const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([import('jspdf'), import('html2canvas')]);
-  const { wMm, hMm, leMm } = ts;
-  const tiLe = ts.tiLe && ts.tiLe > 0 ? ts.tiLe : 1;
-  const rongNoiDung = wMm - 2 * leMm;
-  const caoNoiDung = hMm - 2 * leMm;
-  const rongDung = rongNoiDung / tiLe;
-  const body = docKhongZoom(node, rongDung, () => htmlDocLap(node, { caoTheoNoiDung: true }));
-
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${rongDung}mm;height:${hMm}mm;border:0;visibility:hidden`;
-  iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="UTF-8">${linkPhongWeb()}<style>*{box-sizing:border-box}body{margin:0;background:#fff}</style></head><body>${body}</body></html>`;
-  document.body.appendChild(iframe);
-  try {
-    await new Promise<void>((ok, fail) => {
-      iframe.onload = () => ok();
-      iframe.onerror = () => fail(new Error('iframe load failed'));
-    });
-    const doc = iframe.contentDocument;
-    const root = doc?.body.firstElementChild as HTMLElement | null;
-    if (!doc || !root) throw new Error('iframe body not available');
-    // Chờ ảnh tải xong (lỗi cũng bỏ qua) để PDF không thiếu ảnh.
-    await Promise.all([
-      choPhong(doc),
-      ...Array.from(doc.images).map((im) =>
-        im.complete
-          ? null
-          : new Promise<void>((r) => {
-              im.addEventListener('load', () => r(), { once: true });
-              im.addEventListener('error', () => r(), { once: true });
-            })
-      ),
-    ]);
-    iframe.style.height = `${root.scrollHeight}px`;
-
-    const rect = root.getBoundingClientRect();
-    const pxMoiMm = rect.width / rongNoiDung;
-    const moc = chonDiemNgatTrang(root.scrollHeight, caoNoiDung * pxMoiMm, khoiKhongTach(root));
-
-    const huong = ts.huong === 'ngang' ? 'l' : 'p';
-    const pdf = new jsPDF({ orientation: huong, unit: 'mm', format: ts.kho });
-    for (let i = 0; i < moc.length - 1; i++) {
-      const canvas = await html2canvas(root, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        y: moc[i],
-        width: Math.ceil(rect.width),
-        height: Math.ceil(moc[i + 1] - moc[i]),
-      });
-      if (i > 0) pdf.addPage(ts.kho, huong);
-      const hAnh = Math.min(caoNoiDung, (canvas.height / canvas.width) * rongNoiDung);
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', leMm, leMm, rongNoiDung, hAnh);
-    }
-    downloadBlob(pdf.output('blob'), `${ts.tenFile}.pdf`);
-  } finally {
-    iframe.remove();
+  const { wMm, hMm } = kichThuocGiayIn(ts.kho, ts.huong);
+  const huong = ts.huong === 'ngang' ? 'l' : 'p';
+  const pdf = new jsPDF({ orientation: huong, unit: 'mm', format: [Math.min(wMm, hMm), Math.max(wMm, hMm)] });
+  for (let i = 0; i < trang.length; i++) {
+    const canvas = await chupTrang(trang[i], html2canvas);
+    if (i > 0) pdf.addPage([Math.min(wMm, hMm), Math.max(wMm, hMm)], huong);
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, wMm, hMm);
   }
-}
-
-export interface ThamSoDoc {
-  /** Giá trị `size` của @page, vd `A4 landscape`. */
-  pageSize: string;
-  /** Bề rộng giấy (mm) theo hướng. */
-  wMm: number;
-  leMm: number;
-  tiLe?: number;
-  tenFile: string;
-}
-
-export function taiDocTuNode(node: HTMLElement, ts: ThamSoDoc): void {
-  const tiLe = ts.tiLe && ts.tiLe > 0 ? ts.tiLe : 1;
-  // Lề đã do @page lo — `node` là phần nội dung. Word không có zoom → nhân cỡ chữ.
-  const body = docKhongZoom(node, ts.wMm - 2 * ts.leMm, () => htmlDocLap(node, { paddingMm: 0, tiLeChu: tiLe }));
-  const html = [
-    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
-    '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>',
-    `<style>@page{size:${ts.pageSize};margin:${ts.leMm}mm}body{font-family:Arial,sans-serif}</style>`,
-    `</head><body>${body}</body></html>`,
-  ].join('');
-  downloadBlob(new Blob(['﻿' + html], { type: 'application/msword;charset=utf-8' }), `${ts.tenFile}.doc`);
+  downloadBlob(pdf.output('blob'), `${ts.tenFile}.pdf`);
 }

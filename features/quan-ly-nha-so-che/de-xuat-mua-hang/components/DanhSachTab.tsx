@@ -50,6 +50,7 @@ import {
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoModuleId } from '../../kho-bien-the/bien-the';
 import { laCapBacToanQuyen } from '../../../he-thong/phan-quyen/core/cap-bac-toan-quyen';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 
 const DanhSachTab: React.FC = () => {
   const bt = useKhoBienThe();
@@ -326,7 +327,10 @@ const DanhSachTab: React.FC = () => {
   };
 
   const bulkActions =
-    selectedIds.size > 0 && canApprove ? (
+    selectedIds.size > 0 ? (
+      <>
+        <NutInHangLoat mau={bt.key === 'phan-thuoc' ? 'de-xuat-mua-hang-phan-thuoc' : 'de-xuat-mua-hang'} ids={Array.from(selectedIds)} />
+        {canApprove && (
       <button
         type="button"
         onClick={handleApproveMany}
@@ -335,6 +339,8 @@ const DanhSachTab: React.FC = () => {
         <CheckCircle size={14} className="stroke-[2.5px] shrink-0" />
         <span className="text-xs font-medium">{t('deXuatMuaHang.bulkApproveAction')}</span>
       </button>
+        )}
+      </>
     ) : null;
 
   return (

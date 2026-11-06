@@ -5,6 +5,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useDotKiemKeById, useChiTietByDot } from './hooks/use-kiem-ke-tai-san';
 import PhieuKiemKePreviewContent from './components/PhieuKiemKePreviewContent';
 
@@ -16,6 +17,7 @@ const PhieuKiemKePreviewPage: React.FC = () => {
   const { data: dot, isLoading, isError, error, refetch } = useDotKiemKeById(id ?? null);
   const { data: chiTiet = [], isLoading: chiTietLoading } = useChiTietByDot(id ?? null);
 
+  const dauChim = useDauChim(dot?.trang_thai);
   const loi = isError
     ? (error?.message ?? t('kiemKeTaiSan.preview.loadError'))
     : !isLoading && !dot
@@ -26,6 +28,8 @@ const PhieuKiemKePreviewPage: React.FC = () => {
     <PhieuInPage
       title={dot ? `${t('kiemKeTaiSan.preview.title')} - ${dot.ma_dot} · ${dot.ten_dot}` : t('kiemKeTaiSan.preview.title')}
       mauKey="kiem-ke-tai-san"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/phieu-kiem-ke/${id}` : null}
       macDinh={MAC_DINH}
       tenFile={dot ? `Phieu_kiem_ke_${dot.ma_dot}` : 'kiem-ke-tai-san'}
       duongDanVe="/hanh-chinh/kiem-ke-tai-san"

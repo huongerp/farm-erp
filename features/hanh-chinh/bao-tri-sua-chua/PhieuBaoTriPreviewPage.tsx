@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
+import { useDauChim } from '../../../components/shared/phieu-in/use-dau-chim';
 import { useAuthStore } from '../../../store/useStore';
 import { usePhieuBaoTriById } from './hooks/use-bao-tri-sua-chua';
 import { useBaoTriSuaChuaViewScope } from './hooks/use-bao-tri-sua-chua-view-scope';
@@ -34,6 +35,7 @@ const PhieuBaoTriPreviewPage: React.FC = () => {
   }, [phieu, currentUserId, viewAll, taiSanList]);
 
   const dangTai = isLoading || dangTaiPhamVi || dangTaiTaiSan;
+  const dauChim = useDauChim(phieu?.trang_thai);
   const loi = isError
     ? ((error as Error)?.message ?? t('baoTriSuaChua.print.loadError'))
     : dangTai
@@ -48,6 +50,8 @@ const PhieuBaoTriPreviewPage: React.FC = () => {
     <PhieuInPage
       title={phieu ? `${t('baoTriSuaChua.print.pageTitle')} - ${phieu.ma_phieu}` : t('baoTriSuaChua.print.pageTitle')}
       mauKey="phieu-bao-tri"
+      dauChim={dauChim}
+      duongDanGoc={id ? `/hanh-chinh/chi-phi-tai-san/preview/${id}` : null}
       macDinh={MAC_DINH}
       coChuGocPt={12}
       tenFile={phieu ? tenFilePhieuBaoTri(phieu) : 'phieu-bao-tri'}

@@ -1,13 +1,19 @@
 /**
- * Cài đặt in dùng chung cho mọi phiếu (khung `PhieuInPage`): khổ, hướng, lề, font, cỡ chữ
- * và bề rộng cột từng bảng. Thuần — không phụ thuộc React hay DOM.
+ * Cài đặt in dùng chung cho mọi phiếu (khung `PhieuInPage`): khổ, hướng, lề từng cạnh, phông,
+ * cỡ chữ, độ rộng / ẩn cột từng bảng, đầu/chân trang, logo, ô ký, số liên, QR.
+ * Thuần — không phụ thuộc React hay DOM.
+ *
+ * Lưu trên TỪNG MÁY theo mẫu (`use-cai-dat-in-store.ts`), CHỈ lưu phần khác mặc định của mẫu
+ * (`phanKhacMacDinh`): đổi mặc định trong code thì người chưa từng chỉnh vẫn nhận mặc định mới.
  *
  * Cỡ chữ lưu dạng TỈ LỆ so với cỡ gốc của mẫu (không lưu pt): mẫu A5 nhỏ chữ hơn A4,
  * đổi khổ mà giữ pt tuyệt đối thì phiếu A5 sẽ to bất thường.
  */
-import type { HuongGiayIn, KhoGiayIn } from './xuat-phieu';
 
-export const KHO_GIAY_IN = ['a4', 'a5'] as const satisfies readonly KhoGiayIn[];
+export type KhoGiayIn = 'a4' | 'a5' | 'a3';
+export type HuongGiayIn = 'doc' | 'ngang';
+
+export const KHO_GIAY_IN = ['a5', 'a4', 'a3'] as const satisfies readonly KhoGiayIn[];
 export const HUONG_GIAY_IN = ['doc', 'ngang'] as const satisfies readonly HuongGiayIn[];
 export const FONT_IN = ['mac-dinh', 'times', 'arial', 'tahoma', 'verdana'] as const;
 export type FontIn = (typeof FONT_IN)[number];
@@ -20,33 +26,89 @@ export const FONT_IN_CSS: Record<Exclude<FontIn, 'mac-dinh'>, string> = {
   verdana: 'Verdana, Geneva, sans-serif',
 };
 
-export const LE_MIN_MM = 5;
-export const LE_MAX_MM = 25;
+/** Khổ giấy dọc (mm): [ngắn, dài]. */
+const KICH_THUOC_KHO: Record<KhoGiayIn, [number, number]> = {
+  a5: [148, 210],
+  a4: [210, 297],
+  a3: [297, 420],
+};
+
+export const LE_MIN_MM = 0;
+export const LE_MAX_MM = 40;
 export const TI_LE_CHU_MIN = 0.6;
 export const TI_LE_CHU_MAX = 1.6;
+export const SO_LIEN_MAX = 3;
 /** Bước tăng/giảm cỡ chữ trên bảng cài đặt (pt). */
 export const BUOC_CO_CHU_PT = 0.5;
 /** Cột hẹp nhất khi kéo (% bề rộng bảng). */
 export const COT_MIN_PCT = 3;
 
+export interface LeTrang {
+  tren: number;
+  phai: number;
+  duoi: number;
+  trai: number;
+}
+
+export const CANH_LE = ['tren', 'phai', 'duoi', 'trai'] as const satisfies readonly (keyof LeTrang)[];
+
+export interface DauChanTrang {
+  /** «Trang x/y» góc dưới phải. */
+  soTrang: boolean;
+  /** Giờ in góc dưới trái. */
+  gioIn: boolean;
+  /** Tên người in góc dưới trái. */
+  nguoiIn: boolean;
+  /** Bảng bị tách sang trang sau thì lặp lại hàng tiêu đề. */
+  lapTieuDeBang: boolean;
+}
+
 export interface CaiDatIn {
   kho: KhoGiayIn;
   huong: HuongGiayIn;
-  leMm: number;
+  le: LeTrang;
   font: FontIn;
   /** Tỉ lệ cỡ chữ so với cỡ gốc của mẫu (1 = như thiết kế). */
   tiLeChu: number;
-  /** Bề rộng cột theo bảng: khoá = thứ tự bảng trong phiếu, giá trị = % (tổng 100). */
+  /** Bề rộng cột theo bảng: khoá = thứ tự bảng trong một liên, giá trị = % (tổng 100). */
   cot: Record<string, number[]>;
+  /** Chỉ số cột (vị trí cột thật) bị ẩn theo bảng. */
+  anCot: Record<string, number[]>;
+  dauChan: DauChanTrang;
+  /** Khối gắn `data-in-logo`. */
+  hienLogo: boolean;
+  /** Khối gắn `data-in-chu-ky`. */
+  hienChuKy: boolean;
+  /** Số liên (1–3), mỗi liên bắt đầu trang mới. */
+  soLien: number;
+  /** Mã QR mở bản gốc ở góc trang đầu. */
+  qr: boolean;
 }
 
 export const CAI_DAT_IN_GOC: CaiDatIn = {
   kho: 'a4',
   huong: 'doc',
-  leMm: 12,
+  le: { tren: 12, phai: 12, duoi: 12, trai: 12 },
   font: 'mac-dinh',
   tiLeChu: 1,
   cot: {},
+  anCot: {},
+  // Mẫu cũ in «In lúc …» cuối phiếu → giữ giờ in bật sẵn (nay nằm ở chân trang mọi trang).
+  dauChan: { soTrang: true, gioIn: true, nguoiIn: false, lapTieuDeBang: true },
+  hienLogo: true,
+  hienChuKy: true,
+  soLien: 1,
+  qr: false,
+};
+
+/**
+ * Mặc định riêng của một mẫu — chỉ khai phần khác `CAI_DAT_IN_GOC`. `leMm` (một số cho cả bốn
+ * cạnh) là cách khai cũ, vẫn nhận; `le` khai từng cạnh thì đè lên.
+ */
+export type MacDinhMau = Partial<Omit<CaiDatIn, 'le' | 'dauChan'>> & {
+  leMm?: number;
+  le?: Partial<LeTrang>;
+  dauChan?: Partial<DauChanTrang>;
 };
 
 const thuoc = <T extends string>(ds: readonly T[], v: unknown): v is T =>
@@ -56,6 +118,10 @@ const kep = (v: number, min: number, max: number) => Math.min(max, Math.max(min,
 
 const soHuuHan = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
+const laBool = (v: unknown, macDinh: boolean): boolean => (typeof v === 'boolean' ? v : macDinh);
+
+const laObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+
 /** Mảng % hợp lệ: ≥ 2 cột, toàn số dương, tổng ≈ 100. Sai thì bỏ (dùng bố cục gốc của mẫu). */
 export function laMangCotHopLe(v: unknown): v is number[] {
   if (!Array.isArray(v) || v.length < 2) return false;
@@ -64,32 +130,101 @@ export function laMangCotHopLe(v: unknown): v is number[] {
   return Math.abs(tong - 100) < 0.5;
 }
 
-/**
- * Gộp cài đặt người dùng đã lưu (`raw`, có thể thiếu / hỏng từ localStorage) lên mặc định
- * của mẫu, kẹp giá trị về khoảng hợp lệ.
- */
-export function chuanHoaCaiDatIn(raw: unknown, macDinh: Partial<CaiDatIn> = {}): CaiDatIn {
-  const goc: CaiDatIn = { ...CAI_DAT_IN_GOC, ...macDinh, cot: { ...(macDinh.cot ?? {}) } };
-  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-  const cot: Record<string, number[]> = { ...goc.cot };
-  if (r.cot && typeof r.cot === 'object') {
-    for (const [k, v] of Object.entries(r.cot as Record<string, unknown>)) {
-      if (laMangCotHopLe(v)) cot[k] = v;
-    }
+function chuanHoaCot(raw: unknown): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  if (!laObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw)) if (laMangCotHopLe(v)) out[k] = v;
+  return out;
+}
+
+function chuanHoaAnCot(raw: unknown): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  if (!laObj(raw)) return out;
+  for (const [k, v] of Object.entries(raw)) {
+    if (!Array.isArray(v)) continue;
+    const ds = [...new Set(v.filter((x): x is number => Number.isInteger(x) && x >= 0))].sort((a, b) => a - b);
+    if (ds.length > 0) out[k] = ds;
   }
+  return out;
+}
+
+const leDeu = (mm: number): LeTrang => ({ tren: mm, phai: mm, duoi: mm, trai: mm });
+
+/** Lề mặc định của mẫu: `leMm` cũ (đều bốn cạnh) rồi `le` từng cạnh đè lên. */
+function leCuaMau(md: MacDinhMau): LeTrang {
+  const nen = soHuuHan(md.leMm) ? leDeu(md.leMm) : CAI_DAT_IN_GOC.le;
+  return { ...nen, ...md.le };
+}
+
+/** Mặc định đầy đủ của một mẫu (chưa có gì người dùng lưu). */
+export function macDinhDayDu(md: MacDinhMau = {}): CaiDatIn {
+  const { leMm: _leMm, le: _le, dauChan, ...con } = md;
+  return {
+    ...CAI_DAT_IN_GOC,
+    ...con,
+    le: leCuaMau(md),
+    dauChan: { ...CAI_DAT_IN_GOC.dauChan, ...dauChan },
+    cot: { ...(md.cot ?? {}) },
+    anCot: { ...(md.anCot ?? {}) },
+  };
+}
+
+/**
+ * Gộp cài đặt người dùng đã lưu (`raw`, có thể thiếu / hỏng / bản cũ từ localStorage) lên
+ * mặc định của mẫu, kẹp giá trị về khoảng hợp lệ. Bản lưu cũ có `leMm` (một số) → lề đều.
+ */
+export function chuanHoaCaiDatIn(raw: unknown, macDinh: MacDinhMau = {}): CaiDatIn {
+  const goc = macDinhDayDu(macDinh);
+  const r = laObj(raw) ? raw : {};
+  const leLuu: Record<string, unknown> = laObj(r.le) ? r.le : soHuuHan(r.leMm) ? { ...leDeu(r.leMm) } : {};
+  const le = {} as LeTrang;
+  for (const k of CANH_LE) {
+    const v = leLuu[k];
+    le[k] = kep(Math.round((soHuuHan(v) ? v : goc.le[k]) * 2) / 2, LE_MIN_MM, LE_MAX_MM);
+  }
+  const dc = laObj(r.dauChan) ? r.dauChan : {};
   return {
     kho: thuoc(KHO_GIAY_IN, r.kho) ? r.kho : goc.kho,
     huong: thuoc(HUONG_GIAY_IN, r.huong) ? r.huong : goc.huong,
-    leMm: kep(Math.round(soHuuHan(r.leMm) ? r.leMm : goc.leMm), LE_MIN_MM, LE_MAX_MM),
+    le,
     font: thuoc(FONT_IN, r.font) ? r.font : goc.font,
     tiLeChu: kep(soHuuHan(r.tiLeChu) ? r.tiLeChu : goc.tiLeChu, TI_LE_CHU_MIN, TI_LE_CHU_MAX),
-    cot,
+    cot: r.cot === undefined ? goc.cot : { ...goc.cot, ...chuanHoaCot(r.cot) },
+    anCot: r.anCot === undefined ? goc.anCot : chuanHoaAnCot(r.anCot),
+    dauChan: {
+      soTrang: laBool(dc.soTrang, goc.dauChan.soTrang),
+      gioIn: laBool(dc.gioIn, goc.dauChan.gioIn),
+      nguoiIn: laBool(dc.nguoiIn, goc.dauChan.nguoiIn),
+      lapTieuDeBang: laBool(dc.lapTieuDeBang, goc.dauChan.lapTieuDeBang),
+    },
+    hienLogo: laBool(r.hienLogo, goc.hienLogo),
+    hienChuKy: laBool(r.hienChuKy, goc.hienChuKy),
+    soLien: Math.round(kep(soHuuHan(r.soLien) ? r.soLien : goc.soLien, 1, SO_LIEN_MAX)),
+    qr: laBool(r.qr, goc.qr),
   };
+}
+
+/**
+ * Phần khác giữa cài đặt và mặc định của mẫu — thứ được lưu xuống máy. `{}` khi trùng hết
+ * (để «Khôi phục mặc định» / chỉnh về đúng mặc định thì xoá hẳn khỏi bộ nhớ).
+ */
+export function phanKhacMacDinh(c: CaiDatIn, macDinh: MacDinhMau = {}): Partial<CaiDatIn> {
+  const md = macDinhDayDu(macDinh);
+  const out: Partial<CaiDatIn> = {};
+  for (const k of Object.keys(c) as (keyof CaiDatIn)[]) {
+    if (JSON.stringify(c[k]) !== JSON.stringify(md[k])) (out as Record<string, unknown>)[k] = c[k];
+  }
+  return out;
+}
+
+/** Bốn cạnh lề bằng nhau không (bật khoá «lề đều» trên bảng cài đặt). */
+export function laLeDeu(le: LeTrang): boolean {
+  return le.tren === le.phai && le.phai === le.duoi && le.duoi === le.trai;
 }
 
 /** Kích thước giấy (mm) theo khổ + hướng. */
 export function kichThuocGiayIn(kho: KhoGiayIn, huong: HuongGiayIn): { wMm: number; hMm: number } {
-  const [ngan, dai] = kho === 'a5' ? [148, 210] : [210, 297];
+  const [ngan, dai] = KICH_THUOC_KHO[kho] ?? KICH_THUOC_KHO.a4;
   return huong === 'ngang' ? { wMm: dai, hMm: ngan } : { wMm: ngan, hMm: dai };
 }
 
@@ -110,34 +245,7 @@ export function doiCoChu(coChuGocPt: number, tiLeChu: number, soBuoc: number): n
   return Math.round(kep(tiLe, TI_LE_CHU_MIN, TI_LE_CHU_MAX) * 1000) / 1000;
 }
 
-/** Đổi bề rộng đo được (px) ra % tổng 100, làm tròn 2 chữ số. */
-export function sangPhanTram(rongPx: number[]): number[] {
-  const tong = rongPx.reduce((s, x) => s + Math.max(0, x), 0);
-  if (rongPx.length === 0 || tong <= 0) return rongPx.map(() => 100 / Math.max(1, rongPx.length));
-  const pct = rongPx.map((x) => Math.round((Math.max(0, x) / tong) * 10000) / 100);
-  // Dồn sai số làm tròn vào cột cuối để tổng đúng 100.
-  const lech = 100 - pct.reduce((s, x) => s + x, 0);
-  pct[pct.length - 1] = Math.round((pct[pct.length - 1] + lech) * 100) / 100;
-  return pct;
-}
-
-/**
- * Kéo mép phải của cột `i` thêm `deltaPct` (%): cột `i` rộng ra, cột `i + 1` hẹp lại đúng
- * bằng chừng đó — tổng giữ 100, bảng không tràn khổ giấy. Không cột nào hẹp hơn `minPct`.
- */
-export function keoCot(rong: number[], i: number, deltaPct: number, minPct = COT_MIN_PCT): number[] {
-  if (i < 0 || i >= rong.length - 1) return rong;
-  const trai = rong[i];
-  const phai = rong[i + 1];
-  const d = kep(deltaPct, minPct - trai, phai - minPct);
-  if (d === 0) return rong;
-  const out = [...rong];
-  out[i] = Math.round((trai + d) * 100) / 100;
-  out[i + 1] = Math.round((trai + phai - out[i]) * 100) / 100;
-  return out;
-}
-
-/** Ô tiêu đề bảng rút gọn (chỉ cần span) — để tính lưới mà không phụ thuộc DOM. */
+/** Ô bảng rút gọn (chỉ cần span) — để tính lưới mà không phụ thuộc DOM. */
 export interface OSpan {
   colSpan: number;
   rowSpan: number;
@@ -154,7 +262,8 @@ export interface ViTriO {
 
 /**
  * Dựng lưới bảng có rowSpan/colSpan (thuật toán chuẩn HTML): trả số cột lá và cột lá bắt
- * đầu của từng ô. Dùng để biết mép cột ở bảng có tiêu đề nhiều tầng (GSCL, báo cáo sơ chế).
+ * đầu của từng ô. Dùng để gắn `data-in-o` đúng vị trí cột thật — ẩn cột theo đó thì dòng
+ * «Tổng cộng» gộp ô không bị ẩn nhầm như `nth-child`.
  */
 export function dungLuoiBang(hang: OSpan[][]): { soCot: number; o: ViTriO[] } {
   const chiem: boolean[][] = [];
