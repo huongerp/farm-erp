@@ -9,6 +9,7 @@ import CurrencyInput from '../../../../components/ui/CurrencyInput';
 import NumberInput from '../../../../components/ui/NumberInput';
 import { farmHangHoaSchema, type FarmHangHoaFormValues } from '../core/schema';
 import type { FarmHangHoa } from '../core/types';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { useCreateFarmHangHoa, useUpdateFarmHangHoa } from '../hooks/use-farm-hang-hoa';
 import { useFarmDanhMucCap2WithParent } from '../hooks/use-farm-danh-muc';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -28,6 +29,7 @@ interface Props {
 
 const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], existingPhamCapList = [], onClose, onSuccessCreate }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const isEdit = !!initialData;
   const createMutation = useCreateFarmHangHoa((created) => {
     if (created) onSuccessCreate?.(created);
@@ -125,9 +127,13 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
       // Ô trống / 0 = không đặt định mức.
       dinh_muc: data.dinh_muc ? data.dinh_muc : undefined,
       mo_ta: data.mo_ta?.trim() || null,
+      // Không xem được giá nhập: ô giá bị ẩn → tạo mới lưu 0; sửa giữ nguyên giá cũ (form state
+      // được reset từ initialData, không bị ghi đè).
+      don_gia: !xemGia && !isEdit ? 0 : data.don_gia,
     };
     if (isEdit && initialData) {
-      updateMutation.mutate({ id: initialData.id, data: sanitized });
+      // Không xem được giá nhập → không gửi `don_gia` (giữ nguyên giá DB, kể cả null).
+      updateMutation.mutate({ id: initialData.id, data: sanitized, boQuaDonGia: !xemGia });
     } else {
       createMutation.mutate(sanitized);
     }
@@ -235,20 +241,22 @@ const HangHoaForm: React.FC<Props> = ({ initialData, existingDvtList = [], exist
                 />
               )}
             />
-            <Controller
-              name="don_gia"
-              control={control}
-              render={({ field }) => (
-                <CurrencyInput
-                  label={t('farmHangHoaPhanThuoc.hangHoa.form.price')}
-                  placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.pricePlaceholder')}
-                  icon={<DollarSign size={12} />}
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.don_gia?.message}
-                />
-              )}
-            />
+            {xemGia && (
+              <Controller
+                name="don_gia"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    label={t('farmHangHoaPhanThuoc.hangHoa.form.price')}
+                    placeholder={t('farmHangHoaPhanThuoc.hangHoa.form.pricePlaceholder')}
+                    icon={<DollarSign size={12} />}
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.don_gia?.message}
+                  />
+                )}
+              />
+            )}
             <div>
               <Controller
                 name="dinh_muc"

@@ -148,6 +148,8 @@ export function employeeToUser(emp: Employee): User {
     id_chi_nhanh: emp.id_chi_nhanh?.[0] ?? null,
     // Chỉ lấy đúng cột cap_bac; id_cap_bac là khoá ngoại fp_var_cap_bac.id, không phải số cấp bậc.
     cap_bac: emp.cap_bac ?? null,
+    // Super admin = toàn quyền như cấp bậc 1 (xem laNhanVienToanQuyen).
+    is_super_admin: emp.is_super_admin === true,
   };
 }
 
@@ -308,6 +310,7 @@ function bootstrapEmployeeFromRpc(row: Record<string, unknown> | null): Employee
     ten_cap_bac: (row.ten_cap_bac as string) ?? undefined,
     id_cap_bac: row.cap_bac_id != null ? String(row.cap_bac_id) : null,
     cap_bac: row.cap_bac != null ? Number(row.cap_bac) : undefined,
+    is_super_admin: row.is_super_admin === true,
     gioi_tinh: ((row.gioi_tinh as string) as 'Nam' | 'Nữ' | 'Khác') ?? 'Khác',
     trang_thai: (row.trang_thai as TrangThaiNV) ?? TRANG_THAI_NV.DANG_LAM_VIEC,
     ngay_vao_lam: (row.ngay_vao_lam as string) ?? '',

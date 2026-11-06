@@ -22,6 +22,7 @@ import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useAuthStore } from '../../../../store/useStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import type { PhieuKho, LoaiPhieuKhoTab, TrangThaiPhieuKho } from '../core/types';
 import { canMutatePhieuKhoByTrangThai, canBulkApprovePhieuKho } from '../core/constants';
@@ -156,8 +157,9 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     return [];
   }, [loaiTab, doiTacNccRef, doiTacKhRef]);
 
-  const exportColumnsPhieuKho = useMemo(() => getExportColumnsPhieuKhoList(t), [t]);
-  const exportMapPhieuKho = useCallback((item: PhieuKho) => mapPhieuKhoListRow(item), []);
+  const xemGia = useXemGiaNhap();
+  const exportColumnsPhieuKho = useMemo(() => getExportColumnsPhieuKhoList(t, xemGia), [t, xemGia]);
+  const exportMapPhieuKho = useCallback((item: PhieuKho) => mapPhieuKhoListRow(item, xemGia), [xemGia]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData<PhieuKho>({
       data: exportRows,

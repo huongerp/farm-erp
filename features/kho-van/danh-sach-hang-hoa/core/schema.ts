@@ -31,6 +31,17 @@ export const hangHoaSchema = z.object({
 
 export type HangHoaFormValues = z.infer<typeof hangHoaSchema>;
 
+/**
+ * Schema cho người KHÔNG được xem giá nhập: ô giá bị ẩn nên không bắt buộc —
+ * tạo mới lưu 0; khi sửa, giá cũ nằm sẵn trong form state nên được giữ nguyên.
+ */
+export const hangHoaSchemaAnGia = hangHoaSchema.extend({
+  don_gia: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
+    z.number().min(0, i18n.t('hangHoa.validation.priceMin')),
+  ),
+});
+
 /** Schema form Thêm/Sửa định mức tồn kho (tab Định mức tồn). */
 export const dinhMucTonSchema = z.object({
   kho_id: z.string().min(1, i18n.t('hangHoa.dinhMuc.validation.khoRequired')),

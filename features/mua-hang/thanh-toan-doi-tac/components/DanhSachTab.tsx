@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { useThanhToanDoiTacPage, useThanhToanDoiTacTomTat, useThanhToanDoiTacById, useDeleteThanhToanDoiTac, useDeleteThanhToanDoiTacMany, useUpdateThanhToanDoiTac, useChuyenTrangThaiThanhToanMany } from '../hooks/use-thanh-toan-doi-tac';
+import { toast } from 'sonner';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import BulkActionButton from '../../../../components/shared/BulkActionButton';
 import { getTodayISO } from '../../../../lib/utils';
@@ -22,6 +23,25 @@ import ThanhToanDoiTacList from './ThanhToanDoiTacList';
 import ThanhToanDoiTacForm from './ThanhToanDoiTacForm';
 import ThanhToanDoiTacDetail from './ThanhToanDoiTacDetail';
 import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
+import LazyExportDialog from '../../../../components/shared/LazyExportDialog';
+import LazyImportDialog from '../../../../components/shared/LazyImportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import { useNhomDoiTacList } from '../../../kho-van/danh-sach-doi-tac/hooks/use-doi-tac';
+import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
+import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
+import { fetchAllThanhToanDoiTacForListQuery } from '../services/thanh-toan-doi-tac-service';
+import { useThanhToanDoiTacImport } from '../hooks/use-thanh-toan-doi-tac-import';
+import {
+  TTDT_LIST_EXPORT_FILE_NAME,
+  TTDT_LIST_EXPORT_SHEET_NAME,
+  getExportColumnsThanhToanDoiTacList,
+  mapThanhToanDoiTacListRow,
+} from '../utils/export-thanh-toan-doi-tac';
+import { useAuthStore } from '../../../../store/useStore';
+
+function toYyyyMmDd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 
 function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhToanDoiTacFormValues>): ThanhToanDoiTacFormValues {
@@ -68,7 +88,34 @@ const DanhSachTab: React.FC = () => {
   const { data: chiNhanhList = [] } = useBranches();
   const { data: employees = [] } = useEmployeesRefQuery();
   const { data: statusList = [] } = useTrangThaiThanhToanDoiTacList();
+  const { data: nhomList = [] } = useNhomDoiTacList();
   const viewScope = useThanhToanDoiTacViewScope();
+  const user = useAuthStore((s) => s.user);
+
+  const nguoiTaoList = useMemo(() => employees.map((e) => ({ id: String(e.id), ho_ten: e.ho_ten })), [employees]);
+
+  /** Khoảng ngày lập từ preset của toolbar ('all' = không giới hạn). */
+  const dateRange = useMemo(() => {
+    const preset = filters.datePreset || 'all';
+    if (preset === 'all') return { start: '', end: '' };
+    const range = getDateRangeFromPreset(
+      preset as DateRangePresetId,
+      filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
+      filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
+    );
+    return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
+  }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
+
+  /** Phạm vi xem dùng chung cho trang + tóm tắt chip (không đếm phiếu ngoài phạm vi). */
+  const scopeQuery = useMemo(
+    () => ({
+      viewAll: viewScope.viewAll,
+      viewByBranch: viewScope.viewByBranch,
+      allowedBranchIds: viewScope.allowedBranchIds,
+      currentEmployeeId: viewScope.currentEmployeeId,
+    }),
+    [viewScope.viewAll, viewScope.viewByBranch, viewScope.allowedBranchIds, viewScope.currentEmployeeId]
+  );
 
   /** Bộ lọc + phạm vi xem gửi thẳng xuống PostgREST — trước đây tải toàn bộ bảng. */
   const listServerQuery: ThanhToanDoiTacListServerQuery = useMemo(
@@ -79,18 +126,19 @@ const DanhSachTab: React.FC = () => {
       statusIds: filters.statusIds ?? [],
       doiTacIds: filters.doiTacIds ?? [],
       donViIds: filters.donViIds ?? [],
-      viewAll: viewScope.viewAll,
-      viewByBranch: viewScope.viewByBranch,
-      allowedBranchIds: viewScope.allowedBranchIds,
-      currentEmployeeId: viewScope.currentEmployeeId,
+      nhomIds: filters.nhomIds ?? [],
+      nguoiTaoIds: filters.nguoiTaoIds ?? [],
+      tuNgay: dateRange.start,
+      denNgay: dateRange.end,
+      ...scopeQuery,
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, sort, viewScope]
+    [pagination.page, pagination.pageSize, searchTerm, filters, dateRange, sort, scopeQuery]
   );
 
-  /** Tóm tắt toàn bộ cho chip lọc (đếm theo trạng thái / đối tác / đơn vị). */
-  const { data: tomTatList = [] } = useThanhToanDoiTacTomTat();
+  /** Tóm tắt phiếu trong phạm vi xem cho chip lọc (đếm theo trạng thái / nhóm / đối tác / đơn vị / người tạo). */
+  const { data: tomTatList = [] } = useThanhToanDoiTacTomTat(scopeQuery, !viewScope.isLoading);
 
   const pageQuery = useThanhToanDoiTacPage(listServerQuery, !viewScope.isLoading);
   const pageList = useMemo(() => pageQuery.data?.data ?? [], [pageQuery.data]);
@@ -210,6 +258,51 @@ const DanhSachTab: React.FC = () => {
     });
   };
 
+  /* ───────── Xuất: tải TẤT CẢ bản ghi khớp bộ lọc + phạm vi xem, không chỉ trang đang xem ───────── */
+  const [showExport, setShowExport] = useState(false);
+  const [exportRows, setExportRows] = useState<ThanhToanDoiTac[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  const exportColumns = useMemo(() => getExportColumnsThanhToanDoiTacList(t), [t]);
+  const { exportData, paginatedData, selectedData } = useExportData<ThanhToanDoiTac>({
+    data: exportRows,
+    isOpen: showExport,
+    mapFn: mapThanhToanDoiTacListRow,
+    pagination,
+    selectedIds,
+    keyExtractor: (p) => p.id,
+  });
+
+  const handleOpenExport = useCallback(async () => {
+    if (totalCount === 0) {
+      toast.warning(t('thanhToanDoiTac.export.noData'));
+      return;
+    }
+    setExportLoading(true);
+    try {
+      setExportRows(await fetchAllThanhToanDoiTacForListQuery(listServerQuery));
+      setShowExport(true);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setExportLoading(false);
+    }
+  }, [listServerQuery, totalCount, t]);
+
+  /* ───────── Nhập Excel: chỉ vào đơn vị trong phạm vi xem ───────── */
+  const allowedBranches = useMemo(() => {
+    if (viewScope.viewAll) return chiNhanhList;
+    const allowed = new Set(viewScope.allowedBranchIds.map(String));
+    if (user?.id_chi_nhanh) allowed.add(String(user.id_chi_nhanh));
+    return chiNhanhList.filter((b) => allowed.has(String(b.id)));
+  }, [chiNhanhList, viewScope.viewAll, viewScope.allowedBranchIds, user?.id_chi_nhanh]);
+
+  const importer = useThanhToanDoiTacImport({
+    allowedBranches,
+    statusList,
+    nhomList,
+    defaultDonViId: user?.id_chi_nhanh ? String(user.id_chi_nhanh) : null,
+  });
+
   const bulkActions = (
     <>
       <NutInHangLoat mau="thanh-toan-doi-tac" ids={Array.from(selectedIds)} />
@@ -239,9 +332,14 @@ const DanhSachTab: React.FC = () => {
       <ThanhToanDoiTacToolbar
         data={tomTatList}
         doiTacList={doiTacList}
+        nhomList={nhomList}
         chiNhanhList={chiNhanhList}
         statusList={statusList}
+        nguoiTaoList={nguoiTaoList}
         selectedCount={selectedIds.size}
+        onExport={handleOpenExport}
+        exportLoading={exportLoading}
+        onImport={canCreate ? importer.openImport : undefined}
         onAdd={() => {
           setEditingItem(null);
           setShowForm(true);
@@ -301,6 +399,34 @@ const DanhSachTab: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <LazyExportDialog
+        open={showExport}
+        onClose={() => {
+          setShowExport(false);
+          setExportRows([]);
+        }}
+        columns={exportColumns}
+        data={exportData}
+        paginatedData={paginatedData}
+        selectedData={selectedData}
+        fileName={TTDT_LIST_EXPORT_FILE_NAME}
+        sheetName={TTDT_LIST_EXPORT_SHEET_NAME}
+      />
+
+      {canCreate && (
+        <LazyImportDialog
+          open={importer.showImport}
+          onClose={importer.closeImport}
+          columns={importer.importColumns}
+          sampleRows={importer.sampleRows}
+          guideNotes={importer.guideNotes}
+          referenceSheets={importer.referenceSheets}
+          importErrors={importer.importErrors}
+          templateFileName={importer.templateFileName}
+          onImport={importer.handleImport}
+        />
+      )}
     </div>
   );
 };

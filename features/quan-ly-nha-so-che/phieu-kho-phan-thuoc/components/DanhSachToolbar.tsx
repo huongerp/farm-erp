@@ -9,6 +9,8 @@ import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/
 import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { usePhieuKhoPTStore } from '../store/usePhieuKhoPTStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { anhXaChiSoSapXep, locCotTheoXemGia } from '../utils/loc-cot-gia';
 import type { PhieuKhoPT } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import { DATE_RANGE_PRESETS } from '../../../he-thong/nhan-vien/core/stats-constants';
@@ -63,9 +65,16 @@ const DanhSachToolbar: React.FC<Props> = ({
   const filters = usePhieuKhoPTStore((s) => s.filters);
   const setFilter = usePhieuKhoPTStore((s) => s.setFilter);
   const clearSelection = usePhieuKhoPTStore((s) => s.clearSelection);
-  const columns = usePhieuKhoPTStore((s) => s.columns);
+  const columnsAll = usePhieuKhoPTStore((s) => s.columns);
+  // Bộ chọn ẩn/hiện/kéo cột không được liệt kê cột giá với người không xem được giá nhập.
+  const xemGia = useXemGiaNhap();
+  const columns = useMemo(() => locCotTheoXemGia(columnsAll, xemGia), [columnsAll, xemGia]);
   const toggleColumn = usePhieuKhoPTStore((s) => s.toggleColumn);
-  const reorderColumns = usePhieuKhoPTStore((s) => s.reorderColumns);
+  const reorderColumnsAll = usePhieuKhoPTStore((s) => s.reorderColumns);
+  const reorderColumns = (from: number, to: number) => {
+    const idx = anhXaChiSoSapXep(columnsAll, columns, from, to);
+    if (idx) reorderColumnsAll(idx[0], idx[1]);
+  };
   const resetColumns = usePhieuKhoPTStore((s) => s.resetColumns);
   const resetColumnWidths = usePhieuKhoPTStore((s) => s.resetColumnWidths);
 

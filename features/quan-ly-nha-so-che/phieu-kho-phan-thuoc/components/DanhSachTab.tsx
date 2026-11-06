@@ -42,6 +42,8 @@ import { usePhieuKhoPTImport } from '../hooks/use-phieu-kho-pt-import';
 import { useExportData } from '../../../../lib/useExportData';
 import { mapPhieuKhoPTListRow, getExportColumnsPhieuKhoPTList, exportFileNamePhieuKhoPTDanhSach } from '../utils/export-phieu-kho-pt-danh-sach';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoXemGia } from '../utils/loc-cot-gia';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoModuleId } from '../../kho-bien-the/bien-the';
 import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
@@ -64,7 +66,10 @@ const DanhSachTab: React.FC = () => {
   const pagination = usePhieuKhoPTStore((s) => s.pagination);
   const setPage = usePhieuKhoPTStore((s) => s.setPage);
   const setPageSize = usePhieuKhoPTStore((s) => s.setPageSize);
-  const columns = usePhieuKhoPTStore((s) => s.columns);
+  const xemGia = useXemGiaNhap();
+  const columnsAll = usePhieuKhoPTStore((s) => s.columns);
+  // Người không được xem giá nhập: bỏ hẳn cột Tổng tiền khỏi bảng (store vẫn giữ cột mặc định).
+  const columns = useMemo(() => locCotTheoXemGia(columnsAll, xemGia), [columnsAll, xemGia]);
   const resizeColumn = usePhieuKhoPTStore((s) => s.resizeColumn);
 
   const [showForm, setShowForm] = useState(false);
@@ -163,8 +168,8 @@ const DanhSachTab: React.FC = () => {
     () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
     [exportRequest, exportResult]
   );
-  const exportColumns = useMemo(() => getExportColumnsPhieuKhoPTList(t), [t]);
-  const exportMap = useCallback((item: PhieuKhoPT) => mapPhieuKhoPTListRow(item), []);
+  const exportColumns = useMemo(() => getExportColumnsPhieuKhoPTList(t, xemGia), [t, xemGia]);
+  const exportMap = useCallback((item: PhieuKhoPT) => mapPhieuKhoPTListRow(item, xemGia), [xemGia]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
     data: exportRows,
     isOpen: showExport && !exportLoading,

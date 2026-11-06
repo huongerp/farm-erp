@@ -12,6 +12,8 @@ export interface NguonDongBo {
   nguon: string;
   /** Mọi bảng nền ảnh hưởng số liệu của view — phải có trigger đánh dấu. */
   bangGoc: string[];
+  /** Có cột giá nhập (đơn giá, thành tiền, tổng tiền) phải ẩn với người không toàn quyền — xem `core/cot-gia.ts`. */
+  anGiaNhap?: boolean;
 }
 
 export const NGUON_DONG_BO: Readonly<Record<string, NguonDongBo>> = {
@@ -22,9 +24,11 @@ export const NGUON_DONG_BO: Readonly<Record<string, NguonDongBo>> = {
   'quan-ly-nha-so-che/phieu-kho-phan-thuoc': {
     nguon: 'v_xuat_phieu_kho_phan_thuoc',
     bangGoc: ['fp_farm_phieu_kho_phan_thuoc', 'fp_farm_phieu_kho_phan_thuoc_chi_tiet'],
+    anGiaNhap: true,
   },
   'phan-thuoc/phieu-kho-phan-thuoc': {
     nguon: 'v_xuat_pt_phieu_kho',
     bangGoc: ['fp_pt_phieu_kho', 'fp_pt_phieu_kho_chi_tiet'],
+    anGiaNhap: true,
   },
 };

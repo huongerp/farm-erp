@@ -20,6 +20,8 @@ import { useChiTietPhieuKhoPTStore } from '../store/useChiTietPhieuKhoPTStore';
 import type { ChiTietPhieuKhoPTFlat, PhieuKhoPT } from '../core/types';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { COT_GIA_PHIEU_KHO_PT, locCotTheoXemGia } from '../utils/loc-cot-gia';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoModuleId } from '../../kho-bien-the/bien-the';
 import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
@@ -133,7 +135,17 @@ const ChiTietTab: React.FC = () => {
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetchingOverlay = !!pageQuery.data && pageQuery.isFetching;
 
-  const visibleColumns = useMemo(() => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order), [columns]);
+  const xemGia = useXemGiaNhap();
+  // Người không được xem giá nhập: bỏ hẳn cột Đơn giá / Thành tiền (store vẫn giữ cột mặc định).
+  const visibleColumns = useMemo(
+    () => locCotTheoXemGia(columns, xemGia).filter((c) => c.visible).sort((a, b) => a.order - b.order),
+    [columns, xemGia]
+  );
+  // Sort đang lưu theo cột giá (đổi quyền giữa chừng) thì bỏ qua.
+  const sortHieuLuc = useMemo(
+    () => (!xemGia && sort.column && COT_GIA_PHIEU_KHO_PT.has(sort.column) ? { column: null, direction: null } : sort),
+    [sort, xemGia]
+  );
 
   // Mỗi lần mở hộp thoại (hoặc đổi bộ lọc khi đang mở) tạo một "yêu cầu" mới; kết quả
   // chỉ dùng khi khớp đúng yêu cầu hiện tại → đang tải / dữ liệu suy ra lúc render.
@@ -150,8 +162,8 @@ const ChiTietTab: React.FC = () => {
     () => (exportRequest !== null && exportResult?.request === exportRequest ? exportResult.rows : []),
     [exportRequest, exportResult]
   );
-  const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKhoPT(t), [t]);
-  const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoPTFlat) => mapChiTietPhieuKhoPTFlatRow(row), []);
+  const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKhoPT(t, xemGia), [t, xemGia]);
+  const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoPTFlat) => mapChiTietPhieuKhoPTFlatRow(row, xemGia), [xemGia]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({
     data: exportRows,
     isOpen: showExport && !exportLoading,
@@ -263,7 +275,7 @@ const ChiTietTab: React.FC = () => {
         <ChiTietList
           rows={tableRows}
           visibleColumns={visibleColumns}
-          sort={sort}
+          sort={sortHieuLuc}
           setSort={setSort}
           isLoading={isLoading}
           isFetchingOverlay={isFetchingOverlay}

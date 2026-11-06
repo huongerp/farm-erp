@@ -45,6 +45,8 @@ import {
 } from '../core/quyen-sua-phieu';
 import type { HanhDongXinSuaPhieuKhoPT } from '../core/types';
 import XinSuaPhieuDialog from './XinSuaPhieuDialog';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoXemGia } from '../utils/loc-cot-gia';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
@@ -70,6 +72,7 @@ function loaiLabel(loai: LoaiPhieuKhoPT, t: (k: string) => string): string {
 
 const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, onCopy, canApprove = true, stackLevel }) => {
   const bt = useKhoBienThe();
+  const xemGia = useXemGiaNhap();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
@@ -240,7 +243,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     />
   );
 
-  const chiTietColumns: SubTableColumn[] = [
+  const chiTietColumns: SubTableColumn[] = locCotTheoXemGia<SubTableColumn>([
     { id: 'ten_hang', label: t('phieuKhoPhanThuoc.form.itemName'), width: 200, minWidth: 140, sticky: true, mobile: 'title' },
     { id: 'ma_hang', label: t('phieuKhoPhanThuoc.form.itemCode'), width: 110, minWidth: 80, mobile: 'hidden' },
     { id: 'pham_cap', label: t('phieuKhoPhanThuoc.form.phamCap'), width: 120, minWidth: 80 },
@@ -250,7 +253,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     { id: 'thanh_tien', label: t('phieuKhoPhanThuoc.form.amount'), width: 120, minWidth: 90, align: 'right' },
     { id: 'so_lot', label: t('phieuKhoPhanThuoc.preview.soLot'), width: 100, minWidth: 70 },
     { id: 'ghi_chu', label: t('phieuKhoPhanThuoc.form.note'), width: 180, minWidth: 100, mobile: 'full' },
-  ];
+  ], xemGia);
 
   const renderChiTietCell = (colId: string, ct: ChiTietPhieuKhoPT) => {
     switch (colId) {

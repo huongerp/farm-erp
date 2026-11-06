@@ -41,6 +41,8 @@ export interface Employee {
   id_cap_bac?: string | null;
   ten_cap_bac?: string;
   cap_bac?: number | null;
+  /** Super admin = toàn quyền như cấp bậc 1. Chỉ super admin khác mới đổi được (trigger DB chặn). */
+  is_super_admin?: boolean;
   loai_hop_dong?: string;
   ngay_het_han_hd?: string | null;
   noi_lam_viec?: string;

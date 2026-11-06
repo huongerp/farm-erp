@@ -4,6 +4,7 @@
 import type { TFunction } from 'i18next';
 import type { PhieuKho, ChiTietPhieuKhoFlat } from '../core/types';
 import type { ExportColumn } from '../../../../components/shared/LazyExportDialog';
+import { COT_GIA_CHI_TIET, COT_GIA_DANH_SACH as COT_GIA_LIST } from './loc-cot-gia';
 
 /** Thứ tự cột xuất — khớp key trong mapPhieuKhoListRow */
 export const PHIEU_KHO_LIST_EXPORT_KEYS = [
@@ -35,8 +36,16 @@ export const PHIEU_KHO_LIST_EXPORT_KEYS = [
   'tong_tien',
 ] as const;
 
-export function mapPhieuKhoListRow(p: PhieuKho): Record<string, unknown> {
-  return {
+/** Bỏ các khoá giá khỏi một dòng đã map khi người xem không được thấy giá. */
+function boCotGia(row: Record<string, unknown>, cotGia: ReadonlySet<string>, xemGia: boolean): Record<string, unknown> {
+  if (xemGia) return row;
+  const out = { ...row };
+  for (const k of cotGia) delete out[k];
+  return out;
+}
+
+export function mapPhieuKhoListRow(p: PhieuKho, xemGia: boolean): Record<string, unknown> {
+  return boCotGia({
     id: p.id,
     so_phieu: p.so_phieu ?? '',
     ngay: p.ngay ?? '',
@@ -63,11 +72,11 @@ export function mapPhieuKhoListRow(p: PhieuKho): Record<string, unknown> {
     tong_so_dong: p.tong_so_dong ?? 0,
     tong_so_luong: p.tong_so_luong ?? 0,
     tong_tien: p.tong_tien ?? 0,
-  };
+  }, COT_GIA_LIST, xemGia);
 }
 
-export function getExportColumnsPhieuKhoList(t: TFunction): ExportColumn[] {
-  return PHIEU_KHO_LIST_EXPORT_KEYS.map((key) => ({
+export function getExportColumnsPhieuKhoList(t: TFunction, xemGia: boolean): ExportColumn[] {
+  return PHIEU_KHO_LIST_EXPORT_KEYS.filter((key) => xemGia || !COT_GIA_LIST.has(key)).map((key) => ({
     key,
     label: t(`phieuKho.export.list.${key}`),
   }));
@@ -121,8 +130,8 @@ export const CHI_TIET_PHIEU_KHO_EXPORT_KEYS = [
   'chi_tiet_tg_cap_nhat',
 ] as const;
 
-export function mapChiTietPhieuKhoFlatRow(row: ChiTietPhieuKhoFlat): Record<string, unknown> {
-  return {
+export function mapChiTietPhieuKhoFlatRow(row: ChiTietPhieuKhoFlat, xemGia: boolean): Record<string, unknown> {
+  return boCotGia({
     id: row.id,
     id_phieu_kho: row.id_phieu_kho,
     so_phieu: row.so_phieu ?? '',
@@ -162,11 +171,11 @@ export function mapChiTietPhieuKhoFlatRow(row: ChiTietPhieuKhoFlat): Record<stri
     chi_tiet_ten_nguoi_tao: row.chi_tiet_ten_nguoi_tao ?? '',
     chi_tiet_tg_tao: row.chi_tiet_tg_tao ?? '',
     chi_tiet_tg_cap_nhat: row.chi_tiet_tg_cap_nhat ?? '',
-  };
+  }, COT_GIA_CHI_TIET, xemGia);
 }
 
-export function getExportColumnsChiTietPhieuKho(t: TFunction): ExportColumn[] {
-  return CHI_TIET_PHIEU_KHO_EXPORT_KEYS.map((key) => ({
+export function getExportColumnsChiTietPhieuKho(t: TFunction, xemGia: boolean): ExportColumn[] {
+  return CHI_TIET_PHIEU_KHO_EXPORT_KEYS.filter((key) => xemGia || !COT_GIA_CHI_TIET.has(key)).map((key) => ({
     key,
     label: t(`phieuKho.export.chiTiet.${key}`),
   }));

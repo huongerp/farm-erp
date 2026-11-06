@@ -17,6 +17,8 @@ export interface User {
   id_chi_nhanh?: string | null;
   /** Cấp bậc số (cap_bac từ fp_var_nhan_vien) */
   cap_bac?: number | null;
+  /** Cờ super admin (fp_var_nhan_vien.is_super_admin) — toàn quyền y như cấp bậc 1. */
+  is_super_admin?: boolean;
 }
 
 export interface AuthState {

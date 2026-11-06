@@ -5,6 +5,7 @@ import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
 import type { FarmHangHoa } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import TrangThaiHangHoaBadge from './TrangThaiHangHoaBadge';
 
 interface Props {
@@ -43,9 +44,14 @@ const HangHoaList: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
 
+  // Người không được xem giá nhập: bỏ hẳn cột Đơn giá khỏi bảng (store vẫn giữ cột mặc định).
+  const xemGia = useXemGiaNhap();
   const visibleColumns = useMemo(
-    () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns]
+    () =>
+      columns
+        .filter((c) => c.visible && (xemGia || c.id !== 'don_gia'))
+        .sort((a, b) => a.order - b.order),
+    [columns, xemGia]
   );
 
   const renderCell = (colId: string, item: FarmHangHoa) => {
@@ -159,7 +165,7 @@ const HangHoaList: React.FC<Props> = ({
           </div>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
-          {item.don_gia != null && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), formatNumberVN(item.don_gia))}
+          {xemGia && item.don_gia != null && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.priceCol'), formatNumberVN(item.don_gia))}
           {item.dvt && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.unitCol'), item.dvt)}
           {item.pham_cap && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol'), item.pham_cap)}
           {item.dinh_muc != null && nhan(t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol'), formatNumberVN(item.dinh_muc))}

@@ -14,6 +14,7 @@ import {
   TTDT_SORTABLE_DB_COLUMNS,
   TTDT_SORT_MAC_DINH,
   type ThanhToanDoiTacListServerQuery,
+  type ThanhToanDoiTacViewScopeQuery,
 } from './thanh-toan-doi-tac-list-query';
 import type { ThanhToanDoiTac } from '../core/types';
 import type { ThanhToanDoiTacFormValues } from '../core/schema';
@@ -236,32 +237,64 @@ const TTDT_SEARCH_SPEC = {
   dates: ['ngay', 'ngay_xu_ly'],
 } as const;
 
-/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+const toNumIds = (ids: string[]) => ids.map(Number).filter(Number.isFinite);
+
+/** Phạm vi xem — khớp với filterThanhToanDoiTacListByViewScope ở client cũ. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyTtdtListQuery(q: any, query: ThanhToanDoiTacListServerQuery): any {
+function applyTtdtViewScope(sel: any, scope: ThanhToanDoiTacViewScopeQuery): any {
+  if (scope.viewAll) return sel;
+  const me = scope.currentEmployeeId != null ? Number(scope.currentEmployeeId) : NaN;
+  const ve: string[] = [];
+  if (Number.isFinite(me)) ve.push(`id_nguoi_tao.eq.${me}`);
+  if (scope.viewByBranch) {
+    const ids = toNumIds(scope.allowedBranchIds);
+    if (ids.length > 0) ve.push(`id_don_vi.in.(${ids.join(',')})`);
+  }
+  return ve.length > 0 ? sel.or(ve.join(',')) : sel.eq('id', -1);
+}
+
+/**
+ * Nhóm đối tác nằm ở bảng đối tác → tra id đối tác thuộc các nhóm đã chọn bằng một truy vấn nhẹ.
+ * Trả null khi không lọc theo nhóm; mảng rỗng = không đối tác nào khớp (danh sách trống).
+ */
+async function doiTacIdsTheoNhom(nhomIds: string[]): Promise<number[] | null> {
+  const ids = toNumIds(nhomIds);
+  if (ids.length === 0) return null;
+  const rows = await fetchAllRows<{ id: number }>((from, to) =>
+    db.from(TABLE_DOI_TAC).select('id').in('id_nhom', ids).range(from, to)
+  );
+  return rows.map((r) => r.id);
+}
+
+/** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
+function applyTtdtListQuery(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  q: any,
+  query: ThanhToanDoiTacListServerQuery,
+  doiTacTheoNhom: number[] | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
   let sel = q;
 
   if (query.statusIds.length > 0) {
-    sel = sel.in('id_trang_thai_thanh_toan', query.statusIds.map(Number).filter(Number.isFinite));
+    sel = sel.in('id_trang_thai_thanh_toan', toNumIds(query.statusIds));
   }
   if (query.doiTacIds.length > 0) {
-    sel = sel.in('id_doi_tac', query.doiTacIds.map(Number).filter(Number.isFinite));
+    sel = sel.in('id_doi_tac', toNumIds(query.doiTacIds));
+  }
+  if (doiTacTheoNhom) {
+    sel = doiTacTheoNhom.length > 0 ? sel.in('id_doi_tac', doiTacTheoNhom) : sel.eq('id', -1);
   }
   if (query.donViIds.length > 0) {
-    sel = sel.in('id_don_vi', query.donViIds.map(Number).filter(Number.isFinite));
+    sel = sel.in('id_don_vi', toNumIds(query.donViIds));
   }
+  if (query.nguoiTaoIds.length > 0) {
+    sel = sel.in('id_nguoi_tao', toNumIds(query.nguoiTaoIds));
+  }
+  if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
 
-  // Phạm vi xem — khớp với filterThanhToanDoiTacListByViewScope ở client cũ.
-  if (!query.viewAll) {
-    const me = query.currentEmployeeId != null ? Number(query.currentEmployeeId) : NaN;
-    const ve: string[] = [];
-    if (Number.isFinite(me)) ve.push(`id_nguoi_tao.eq.${me}`);
-    if (query.viewByBranch) {
-      const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
-      if (ids.length > 0) ve.push(`id_don_vi.in.(${ids.join(',')})`);
-    }
-    sel = ve.length > 0 ? sel.or(ve.join(',')) : sel.eq('id', -1);
-  }
+  sel = applyTtdtViewScope(sel, query);
 
   sel = applyPostgrestSearch(sel, query.searchTerm, TTDT_SEARCH_SPEC);
 
@@ -277,10 +310,12 @@ function applyTtdtListQuery(q: any, query: ThanhToanDoiTacListServerQuery): any 
 export async function getThanhToanDoiTacPage(
   query: ThanhToanDoiTacListServerQuery
 ): Promise<PaginatedTableResult<ThanhToanDoiTac>> {
+  const doiTacTheoNhom = await doiTacIdsTheoNhom(query.nhomIds);
   const result = await fetchTablePage<DbRow>(query.page, query.pageSize, async (from, to) => {
     const res = await applyTtdtListQuery(
       db.from(TABLE).select(THANH_TOAN_ROW_COLUMNS, { count: 'exact' }),
-      query
+      query,
+      doiTacTheoNhom
     ).range(from, to);
     return { data: (res.data as unknown as DbRow[] | null) ?? null, error: res.error, count: res.count };
   });
@@ -291,31 +326,57 @@ export async function getThanhToanDoiTacPage(
 export async function fetchAllThanhToanDoiTacForListQuery(
   query: ThanhToanDoiTacListServerQuery
 ): Promise<ThanhToanDoiTac[]> {
+  const doiTacTheoNhom = await doiTacIdsTheoNhom(query.nhomIds);
   const rows = await fetchAllRows<DbRow>((from, to) =>
-    applyTtdtListQuery(db.from(TABLE).select(THANH_TOAN_ROW_COLUMNS), query).range(from, to)
+    applyTtdtListQuery(db.from(TABLE).select(THANH_TOAN_ROW_COLUMNS), query, doiTacTheoNhom).range(from, to)
   );
   return enrichThanhToanRows(rows);
 }
 
 /**
- * Tóm tắt toàn bộ phiếu (4 cột) — chip lọc phải đếm trên toàn bộ dữ liệu chứ
- * không riêng trang đang xem.
+ * Tóm tắt phiếu trong PHẠM VI XEM (vài cột) — chip lọc phải đếm trên toàn bộ dữ liệu chứ
+ * không riêng trang đang xem, nhưng không đếm phiếu người dùng không được xem.
+ * id_nhom ghép từ bảng đối tác (phiếu không có cột nhóm).
  */
-export async function getThanhToanDoiTacTomTat(): Promise<ThanhToanDoiTacTomTat[]> {
-  const rows = await fetchAllRows<{
-    id: number;
-    id_trang_thai_thanh_toan: number | null;
-    id_doi_tac: number | null;
-    id_don_vi: number | null;
-  }>((from, to) =>
-    db.from(TABLE).select('id,id_trang_thai_thanh_toan,id_doi_tac,id_don_vi').range(from, to)
-  );
-  return rows.map((r) => ({
-    id: String(r.id),
-    id_trang_thai_thanh_toan: r.id_trang_thai_thanh_toan != null ? String(r.id_trang_thai_thanh_toan) : '',
-    id_doi_tac: r.id_doi_tac != null ? String(r.id_doi_tac) : '',
-    id_don_vi: r.id_don_vi != null ? String(r.id_don_vi) : null,
-  }));
+export async function getThanhToanDoiTacTomTat(
+  scope: ThanhToanDoiTacViewScopeQuery
+): Promise<ThanhToanDoiTacTomTat[]> {
+  const [rows, doiTacRows] = await Promise.all([
+    fetchAllRows<{
+      id: number;
+      id_trang_thai_thanh_toan: number | null;
+      id_doi_tac: number | null;
+      id_don_vi: number | null;
+      id_nguoi_tao: number | null;
+    }>((from, to) =>
+      applyTtdtViewScope(
+        db.from(TABLE).select('id,id_trang_thai_thanh_toan,id_doi_tac,id_don_vi,id_nguoi_tao'),
+        scope
+      )
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<{ id: number; id_nhom: number | null }>((from, to) =>
+      db
+        .from(TABLE_DOI_TAC)
+        .select('id,id_nhom')
+        .eq('loai_doi_tac', 'nha_cung_cap')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+  ]);
+  const nhomTheoDoiTac = new Map(doiTacRows.map((d) => [String(d.id), d.id_nhom != null ? String(d.id_nhom) : null]));
+  return rows.map((r) => {
+    const idDoiTac = r.id_doi_tac != null ? String(r.id_doi_tac) : '';
+    return {
+      id: String(r.id),
+      id_trang_thai_thanh_toan: r.id_trang_thai_thanh_toan != null ? String(r.id_trang_thai_thanh_toan) : '',
+      id_doi_tac: idDoiTac,
+      id_don_vi: r.id_don_vi != null ? String(r.id_don_vi) : null,
+      id_nguoi_tao: r.id_nguoi_tao != null ? String(r.id_nguoi_tao) : null,
+      id_nhom: nhomTheoDoiTac.get(idDoiTac) ?? null,
+    };
+  });
 }
 
 export interface ThanhToanDoiTacTomTat {
@@ -323,6 +384,8 @@ export interface ThanhToanDoiTacTomTat {
   id_trang_thai_thanh_toan: string;
   id_doi_tac: string;
   id_don_vi: string | null;
+  id_nguoi_tao: string | null;
+  id_nhom: string | null;
 }
 
 /** Gắn tên chi nhánh / đối tác / người tạo / trạng thái cho một tập bản ghi. */

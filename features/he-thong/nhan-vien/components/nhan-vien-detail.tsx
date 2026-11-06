@@ -19,6 +19,7 @@ import Select from '../../../../components/ui/Select';
 import Input from '../../../../components/ui/Input';
 import EnumBadge from '../../../../components/ui/EnumBadge';
 import AvatarWithFallback from '../../../../components/ui/AvatarWithFallback';
+import SuperAdminBadge from './SuperAdminBadge';
 import { formatDate, getTenureText, cn } from '@/lib/utils';
 import { CONFIRM_YES } from '../../../../lib/button-labels';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
@@ -230,6 +231,11 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
             <DetailField label={t('employee.detail.department')} value={data.ten_phong_ban} icon={<Building2 size={12} />} />
             <DetailField label={t('employee.detail.branch')} value={data.ten_chi_nhanh} icon={<MapPin size={12} />} />
             <DetailField label={t('employee.detail.level')} value={data.ten_cap_bac} icon={<Users size={12} />} />
+            <DetailField
+              label={t('nhanVienSuperAdmin.label')}
+              value={data.is_super_admin ? <SuperAdminBadge /> : t('nhanVienSuperAdmin.khong')}
+              icon={<Users size={12} />}
+            />
             <DetailField label={t('employee.detail.hireDate')} value={formatDate(data.ngay_vao_lam)} icon={<Calendar size={12} />} />
             <DetailField label={t('employee.detail.tenure')} value={getTenureText(data.ngay_vao_lam)} icon={<Calendar size={12} />} />
             <DetailField label={t('employee.detail.contractType')} value={data.loai_hop_dong ? <EnumBadge value={data.loai_hop_dong} config={CONTRACT_BADGE_CONFIG} /> : undefined} icon={<FileText size={12} />} />

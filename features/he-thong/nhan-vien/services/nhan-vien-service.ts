@@ -93,6 +93,7 @@ function rowToEmployee(row: NhanVienRow): Employee {
     id_cap_bac: row.cap_bac_id != null ? String(row.cap_bac_id) : null,
     ten_cap_bac: (row.ten_cap_bac as string) ?? undefined,
     cap_bac: row.cap_bac != null ? Number(row.cap_bac) : undefined,
+    is_super_admin: row.is_super_admin === true,
     loai_hop_dong: (row.loai_hop_dong as string) ?? undefined,
     ngay_het_han_hd: dateToIso(row.ngay_het_han_hd) ?? undefined,
     noi_lam_viec: (row.noi_lam_viec as string) ?? undefined,
@@ -118,7 +119,7 @@ function rowToEmployee(row: NhanVienRow): Employee {
 }
 
 function formToRow(data: EmployeeFormValues): NhanVienRow {
-  return {
+  const row: NhanVienRow = {
     ho_va_ten: data.ho_ten?.trim() || null,
     hinh_anh: data.anh_dai_dien || null,
     trang_thai: data.trang_thai || null,
@@ -165,6 +166,9 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
     noi_dang_ky_kcb: data.noi_dang_ky_kcb || null,
     cap_bac_id: data.id_cap_bac || null,
   };
+  // Chỉ gửi khi form có đặt (người đăng nhập là super admin) — trigger DB chặn người khác đổi cột này.
+  if (data.is_super_admin !== undefined) row.is_super_admin = data.is_super_admin;
+  return row;
 }
 
 /**
@@ -173,7 +177,7 @@ function formToRow(data: EmployeeFormValues): NhanVienRow {
  * UI dùng AvatarWithFallback → khi không có base64 sẽ render initials/seed.
  */
 const EMPLOYEE_LIST_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, cap_bac_id, cap_bac, is_super_admin, trang_thai, gioi_tinh, ngay_vao_lam, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, ten_cap_bac, loai_hop_dong, ngay_het_han_hd, noi_lam_viec';
 
 /** Chỉ đủ cho useFilterCounts + employeeMatchesSearch — nhẹ hơn EMPLOYEE_LIST_SELECT. */
 const EMPLOYEE_LITE_FOR_COUNTS_SELECT =
@@ -181,7 +185,7 @@ const EMPLOYEE_LITE_FOR_COUNTS_SELECT =
 
 /** Đủ cột cho `rowToEmployee` (hồ sơ đầy đủ) — tránh select('*'). */
 const EMPLOYEE_DETAIL_SELECT =
-  'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
+  'id,ho_va_ten,email,so_dien_thoai,phong_ban_id,chuc_vu_id,chi_nhanh_ids,ten_phong_ban,ten_chuc_vu,ten_chi_nhanh,hinh_anh,cap_bac_id,cap_bac,is_super_admin,ten_cap_bac,gioi_tinh,trang_thai,ngay_vao_lam,ngay_sinh,cmnd_cccd,ngay_cap_cccd,noi_cap_cccd,quoc_tich,dan_toc,ton_giao,tinh_thanh,quan_huyen,phuong_xa,dia_chi_cu_the,dia_chi_tam_tru,loai_hop_dong,ngay_het_han_hd,noi_lam_viec,nguoi_lien_he_khan_cap,sdt_khan_cap,quan_he_khan_cap,tinh_trang_hon_nhan,so_nguoi_phu_thuoc,trinh_do_hoc_van,chuyen_nganh,truong_hoc,nam_tot_nghiep,chung_chi,so_tai_khoan,ten_ngan_hang,chi_nhanh_nh,ma_so_thue_ca_nhan,so_bhxh,so_bhyt,ngay_tham_gia_bh,noi_dang_ky_kcb';
 
 /** Cần gọi API chức vụ khi có id nhưng chưa có tên (null/undefined — giữ nguyên hành vi ??). */
 function needsPositionEnrichment(e: Employee): boolean {
@@ -425,7 +429,7 @@ export const getEmployeeById = async (id: string): Promise<Employee | undefined>
  * từ ~500KB xuống vài KB. Avatar lấy riêng khi mở trang Hồ sơ/Profile (qua getEmployeeById).
  */
 const EMPLOYEE_AUTH_SELECT =
-  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, cap_bac_id, cap_bac, trang_thai, gioi_tinh, ngay_vao_lam';
+  'id, ho_va_ten, email, so_dien_thoai, phong_ban_id, chuc_vu_id, chi_nhanh_ids, ten_phong_ban, ten_chuc_vu, ten_chi_nhanh, cap_bac_id, cap_bac, is_super_admin, trang_thai, gioi_tinh, ngay_vao_lam';
 
 export const getEmployeeByEmail = async (email: string): Promise<Employee | null> => {
   if (!email?.trim()) return null;

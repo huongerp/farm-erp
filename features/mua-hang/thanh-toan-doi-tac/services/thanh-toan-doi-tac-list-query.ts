@@ -7,6 +7,12 @@ export interface ThanhToanDoiTacListServerQuery {
   statusIds: string[];
   doiTacIds: string[];
   donViIds: string[];
+  /** Nhóm đối tác (id_nhom của fp_mh_danh_sach_doi_tac) — tra id đối tác trước rồi `.in('id_doi_tac')`. */
+  nhomIds: string[];
+  nguoiTaoIds: string[];
+  /** Khoảng ngày lập (yyyy-mm-dd, tính cả hai đầu); rỗng = không giới hạn. */
+  tuNgay: string;
+  denNgay: string;
   /** Phạm vi xem: toàn bộ / theo chi nhánh / chỉ phiếu của mình. */
   viewAll: boolean;
   viewByBranch: boolean;
@@ -15,6 +21,12 @@ export interface ThanhToanDoiTacListServerQuery {
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }
+
+/** Phần phạm vi xem — tóm tắt cho chip lọc cũng phải áp, không đếm phiếu ngoài phạm vi. */
+export type ThanhToanDoiTacViewScopeQuery = Pick<
+  ThanhToanDoiTacListServerQuery,
+  'viewAll' | 'viewByBranch' | 'allowedBranchIds' | 'currentEmployeeId'
+>;
 
 export const TTDT_SORTABLE_DB_COLUMNS = new Set([
   'so_phieu',

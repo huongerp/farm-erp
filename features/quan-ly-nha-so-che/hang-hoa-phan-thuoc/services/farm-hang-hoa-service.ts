@@ -190,7 +190,16 @@ export const createFarmHangHoa = async (bt: KhoBienThe, data: FarmHangHoaFormVal
   return enriched;
 };
 
-export const updateFarmHangHoa = async (bt: KhoBienThe, id: string, data: FarmHangHoaFormValues): Promise<FarmHangHoa> => {
+/**
+ * `boQuaDonGia` = true (người không được xem giá nhập): payload KHÔNG chứa `don_gia`
+ * → giữ nguyên giá trong DB (kể cả null).
+ */
+export const updateFarmHangHoa = async (
+  bt: KhoBienThe,
+  id: string,
+  data: FarmHangHoaFormValues,
+  boQuaDonGia = false
+): Promise<FarmHangHoa> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('farmHangHoaPhanThuoc.hangHoa.service.notFound'));
 
@@ -215,7 +224,9 @@ export const updateFarmHangHoa = async (bt: KhoBienThe, id: string, data: FarmHa
     ten_hang_hoa: data.ten_hang_hoa.trim(),
     dvt: data.dvt?.trim() || null,
     pham_cap: data.pham_cap?.trim() || null,
-    don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    ...(boQuaDonGia
+      ? {}
+      : { don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null }),
     dinh_muc: data.dinh_muc != null && !Number.isNaN(Number(data.dinh_muc)) ? Number(data.dinh_muc) : null,
     mo_ta: data.mo_ta?.trim() || null,
     tg_cap_nhat: new Date().toISOString(),

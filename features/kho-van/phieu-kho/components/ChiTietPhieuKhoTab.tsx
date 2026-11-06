@@ -37,6 +37,8 @@ import type { LoaiPhieuKho, TrangThaiPhieuKho } from '../core/types';
 import { LOAI_DB_TO_TAB } from '../core/types';
 import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { COT_GIA_CHI_TIET, locCotGia } from '../utils/loc-cot-gia';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
 import ExportDialog from '../../../../components/shared/LazyExportDialog';
 import { useExportData } from '../../../../lib/useExportData';
@@ -90,6 +92,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   const { data: tagList = [] } = useTagList();
   const { data: doiTacListAll = [] } = useDoiTacList();
   const viewScope = usePhieuKhoViewScope();
+  const xemGia = useXemGiaNhap();
 
   const {
     searchTerm,
@@ -182,6 +185,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
 
   const sortedPageRows = useMemo(() => {
     if (!sort.column || !sort.direction) return tableRows;
+    // Không sắp xếp theo cột giá khi không xem được giá (tránh lộ thứ tự giá).
+    if (!xemGia && COT_GIA_CHI_TIET.has(sort.column)) return tableRows;
     const dir = sort.direction === 'asc' ? 1 : -1;
     return [...tableRows].sort((a, b) => {
       const aVal = (a as unknown as Record<string, unknown>)[sort.column!];
@@ -192,7 +197,7 @@ const ChiTietPhieuKhoTab: React.FC = () => {
       const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
       return cmp * dir;
     });
-  }, [tableRows, sort.column, sort.direction]);
+  }, [tableRows, sort.column, sort.direction, xemGia]);
 
   useEffect(() => {
     return () => resetState();
@@ -208,8 +213,11 @@ const ChiTietPhieuKhoTab: React.FC = () => {
   }, [pagination.page, pagination.pageSize, maxPage, setPage]);
 
   const visibleColumns = useMemo(
-    () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns]
+    () =>
+      locCotGia(columns, COT_GIA_CHI_TIET, xemGia)
+        .filter((c) => c.visible)
+        .sort((a, b) => a.order - b.order),
+    [columns, xemGia]
   );
 
   const paginatedData = sortedPageRows;
@@ -230,8 +238,8 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     return out;
   }, [doiTacNccRef, doiTacKhRef]);
 
-  const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKho(t), [t]);
-  const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoFlat) => mapChiTietPhieuKhoFlatRow(row), []);
+  const exportColumnsChiTiet = useMemo(() => getExportColumnsChiTietPhieuKho(t, xemGia), [t, xemGia]);
+  const exportMapChiTiet = useCallback((row: ChiTietPhieuKhoFlat) => mapChiTietPhieuKhoFlatRow(row, xemGia), [xemGia]);
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } =
     useExportData<ChiTietPhieuKhoFlat>({
       data: exportRows,

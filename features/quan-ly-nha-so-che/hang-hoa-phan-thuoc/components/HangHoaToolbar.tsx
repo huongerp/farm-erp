@@ -9,6 +9,8 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useFarmHangHoaStore } from '../store/useFarmHangHoaStore';
 import { useFarmDanhMucList } from '../hooks/use-farm-danh-muc';
 import type { FarmHangHoa } from '../core/types';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { anhXaChiSoSapXep, locCotTheoXemGia } from '../utils/loc-cot-gia';
 import ImportExportButtons, { buildImportExportMobileActions } from './ImportExportButtons';
 
 interface Props {
@@ -38,9 +40,16 @@ const HangHoaToolbar: React.FC<Props> = ({
   const filters = useFarmHangHoaStore((s) => s.filters);
   const setFilter = useFarmHangHoaStore((s) => s.setFilter);
   const clearSelection = useFarmHangHoaStore((s) => s.clearSelection);
-  const columns = useFarmHangHoaStore((s) => s.columns);
+  const columnsAll = useFarmHangHoaStore((s) => s.columns);
+  // Bộ chọn ẩn/hiện/kéo cột không được liệt kê cột giá với người không xem được giá nhập.
+  const xemGia = useXemGiaNhap();
+  const columns = useMemo(() => locCotTheoXemGia(columnsAll, xemGia), [columnsAll, xemGia]);
   const toggleColumn = useFarmHangHoaStore((s) => s.toggleColumn);
-  const reorderColumns = useFarmHangHoaStore((s) => s.reorderColumns);
+  const reorderColumnsAll = useFarmHangHoaStore((s) => s.reorderColumns);
+  const reorderColumns = (from: number, to: number) => {
+    const idx = anhXaChiSoSapXep(columnsAll, columns, from, to);
+    if (idx) reorderColumnsAll(idx[0], idx[1]);
+  };
   const resetColumns = useFarmHangHoaStore((s) => s.resetColumns);
   const resetColumnWidths = useFarmHangHoaStore((s) => s.resetColumnWidths);
 

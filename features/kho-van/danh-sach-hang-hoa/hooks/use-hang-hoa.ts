@@ -77,7 +77,8 @@ export const useCreateHangHoa = (onSuccess?: () => void) => {
 export const useUpdateHangHoa = (onSuccess?: () => void) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: HangHoaFormValues }) => updateHangHoa(id, data),
+    mutationFn: ({ id, data, boQuaDonGia }: { id: string; data: HangHoaFormValues; boQuaDonGia?: boolean }) =>
+      updateHangHoa(id, data, boQuaDonGia),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: HANG_HOA_QUERY_KEY });
       qc.invalidateQueries({ queryKey: HANG_HOA_REF_QUERY_KEY });

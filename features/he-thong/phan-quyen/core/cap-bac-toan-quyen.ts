@@ -15,3 +15,14 @@ export function laCapBacToanQuyen(capBac: unknown): boolean {
   const so = Number(capBac);
   return Number.isFinite(so) && so === CAP_BAC_TOAN_QUYEN;
 }
+
+/**
+ * Nhân viên toàn quyền: cấp bậc 1 HOẶC cờ super admin (fp_var_nhan_vien.is_super_admin).
+ * Chỉ `true` thật mới tính là super admin — chuỗi 'true' / số 1 không được hiểu nhầm.
+ */
+export function laNhanVienToanQuyen(
+  nv: { cap_bac?: unknown; is_super_admin?: unknown } | null | undefined,
+): boolean {
+  if (!nv) return false;
+  return laCapBacToanQuyen(nv.cap_bac) || nv.is_super_admin === true;
+}

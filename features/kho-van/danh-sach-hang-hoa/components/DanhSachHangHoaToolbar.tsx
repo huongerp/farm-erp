@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { HangHoaTomTat } from '../services/hang-hoa-service';
 import { useTranslation } from 'react-i18next';
 import { Plus, Download, Upload, Tag, Folder, FolderTree, Ruler, QrCode } from 'lucide-react';
@@ -10,6 +10,8 @@ import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolb
 import { useHangHoaStore } from '../store/useHangHoaStore';
 import { useDanhMucHangHoaList } from '../../danh-muc-hang-hoa/hooks/use-danh-muc-hang-hoa';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoQuyenXemGia } from '../utils/an-gia';
 
 interface Props {
   /**
@@ -49,9 +51,30 @@ const DanhSachHangHoaToolbar: React.FC<Props> = ({
   const filters = useHangHoaStore((s) => s.filters);
   const setFilter = useHangHoaStore((s) => s.setFilter);
   const clearSelection = useHangHoaStore((s) => s.clearSelection);
-  const columns = useHangHoaStore((s) => s.columns);
+  const allColumns = useHangHoaStore((s) => s.columns);
+  // Không xem được giá → cột giá không xuất hiện trong bộ chọn ẩn/hiện/sắp xếp cột.
+  const xemGia = useXemGiaNhap();
+  const columns = useMemo(() => locCotTheoQuyenXemGia(allColumns, xemGia, (c) => c.id), [allColumns, xemGia]);
+  // Bộ chọn cột kéo thả theo chỉ số trong danh sách ĐÃ lọc; store lại tính theo danh sách đầy đủ
+  // → đổi chỉ số lọc sang chỉ số đầy đủ (cột giá bị ẩn nằm giữa sẽ làm lệch).
+  const reorderColumnsStore = useHangHoaStore((s) => s.reorderColumns);
+  const reorderColumns = useCallback(
+    (from: number, to: number) => {
+      if (xemGia) return reorderColumnsStore(from, to);
+      const byOrder = (a: { order: number }, b: { order: number }) => a.order - b.order;
+      const full = [...allColumns].sort(byOrder);
+      const shown = [...columns].sort(byOrder);
+      const fromId = shown[from]?.id;
+      const toId = shown[to]?.id;
+      if (!fromId || !toId) return;
+      reorderColumnsStore(
+        full.findIndex((c) => c.id === fromId),
+        full.findIndex((c) => c.id === toId)
+      );
+    },
+    [xemGia, allColumns, columns, reorderColumnsStore]
+  );
   const toggleColumn = useHangHoaStore((s) => s.toggleColumn);
-  const reorderColumns = useHangHoaStore((s) => s.reorderColumns);
   const resetColumns = useHangHoaStore((s) => s.resetColumns);
   const resetColumnWidths = useHangHoaStore((s) => s.resetColumnWidths);
 

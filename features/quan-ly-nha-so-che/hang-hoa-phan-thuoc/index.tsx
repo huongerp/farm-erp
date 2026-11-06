@@ -34,16 +34,21 @@ import type { FarmDanhMuc } from './core/types';
 import type { FarmHangHoa } from './core/types';
 import { createListSearchMatcher } from '../../../lib/list-search-matcher';
 import { useKhoBienThe } from '../kho-bien-the/KhoBienTheProvider';
+import { useXemGiaNhap } from '../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoXemGia } from './utils/loc-cot-gia';
 
 /** Ô tìm kiếm quét MỌI cột của bảng, bỏ dấu tiếng Việt — xem lib/list-search-matcher.ts. */
 const khopTimKiemDanhMuc = createListSearchMatcher({ columns: DM_COLUMNS });
 const khopTimKiemHangHoa = createListSearchMatcher({ columns: HH_COLUMNS });
+/** Người không được xem giá nhập: tìm kiếm không quét cột Đơn giá (tránh dò giá bằng ô tìm kiếm). */
+const khopTimKiemHangHoaKhongGia = createListSearchMatcher({ columns: locCotTheoXemGia(HH_COLUMNS, false) });
 
 const HangHoaPhanThuocPage: React.FC = () => {
   const bt = useKhoBienThe();
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
+  const xemGia = useXemGiaNhap();
 
   const [activeTab, setActiveTab] = useState<'danhMuc' | 'hangHoa'>('danhMuc');
 
@@ -152,7 +157,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
   if (dmPage > dmMaxPage) setDmPage(dmMaxPage);
 
   const hhFilterFn = useCallback((item: FarmHangHoa, term: string, f: typeof hhFilters) => {
-    const matchesSearch = khopTimKiemHangHoa(item, term);
+    const matchesSearch = (xemGia ? khopTimKiemHangHoa : khopTimKiemHangHoaKhongGia)(item, term);
     const matchesDanhMucCha =
       f.id_danh_muc_cha.length === 0 ||
       (item.danh_muc_cha_id != null && f.id_danh_muc_cha.includes(item.danh_muc_cha_id));
@@ -162,7 +167,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
       f.dvt.length === 0 || (item.dvt != null && item.dvt.trim() !== '' && f.dvt.includes(item.dvt.trim()));
     const matchesTrangThai = f.trang_thai.length === 0 || f.trang_thai.includes(item.trang_thai);
     return matchesSearch && matchesDanhMucCha && matchesDanhMucCon && matchesDvt && matchesTrangThai;
-  }, []);
+  }, [xemGia]);
 
   const filteredHh = useListWithFilter(hhList, hhSearch, hhFilters, hhFilterFn);
 

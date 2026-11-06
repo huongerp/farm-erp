@@ -50,7 +50,7 @@ const EmployeePage: React.FC = () => {
   // Import cấp mật khẩu mặc định cho người khác → cần cùng quyền với RPC rpc_set_mat_khau,
   // không thì tạo xong nhân viên mà không đăng nhập được.
   const importer = useNhanVienImport(
-    canCreate && coQuyenDatMatKhau({ nhanVienDangNhapId: currentUser?.id, capBac: currentUser?.cap_bac, canAdmin })
+    canCreate && coQuyenDatMatKhau({ nhanVienDangNhapId: currentUser?.id, capBac: currentUser?.cap_bac, isSuperAdmin: currentUser?.is_super_admin, canAdmin })
   );
 
 
@@ -360,6 +360,7 @@ const EmployeePage: React.FC = () => {
                   nhanVienDangNhapId: currentUser?.id,
                   nhanVienMucTieuId: viewingEmp.id,
                   capBac: currentUser?.cap_bac,
+                  isSuperAdmin: currentUser?.is_super_admin,
                   canAdmin,
                 })}
             />

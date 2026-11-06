@@ -25,6 +25,7 @@ import type { Kho } from '../../danh-sach-kho/core/types';
 import type { DinhMucTonKhoRow } from '../../phieu-kho/services/ton-kho-service';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_DELETE } from '../../../../lib/button-labels';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 
 interface Props {
   data: HangHoa;
@@ -40,6 +41,7 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const confirm = useConfirmStore((s) => s.confirm);
   const isActive = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
 
@@ -143,12 +145,14 @@ const DanhSachHangHoaDetail: React.FC<Props> = ({
               icon={<Package size={12} />}
               emptyText="—"
             />
-            <DetailField
-              label={t('hangHoa.form.price')}
-              value={data.don_gia != null ? data.don_gia.toLocaleString('vi-VN') : ''}
-              icon={<DollarSign size={12} />}
-              emptyText="—"
-            />
+            {xemGia && (
+              <DetailField
+                label={t('hangHoa.form.price')}
+                value={data.don_gia != null ? data.don_gia.toLocaleString('vi-VN') : ''}
+                icon={<DollarSign size={12} />}
+                emptyText="—"
+              />
+            )}
             <DetailField label={t('hangHoa.detail.order')} value={String(data.thu_tu)} icon={<ArrowUpFromLine size={12} />} />
             <DetailField
               label={t('common.status')}

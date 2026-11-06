@@ -6,6 +6,8 @@ import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { COT_GIA_DANH_SACH, locCotGia } from '../utils/loc-cot-gia';
 
 interface Props {
   data: PhieuKho[];
@@ -55,15 +57,18 @@ const PhieuKhoList: React.FC<Props> = ({
   serverTotalCount,
 }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
 
   const visibleColumns = useMemo(() => {
-    const base = columns.filter((c) => c.visible).sort((a, b) => a.order - b.order);
+    const base = locCotGia(columns, COT_GIA_DANH_SACH, xemGia)
+      .filter((c) => c.visible)
+      .sort((a, b) => a.order - b.order);
     let out = base;
     if (loai !== 'chuyen') out = out.filter((c) => c.id !== 'ten_kho_den');
     if (loai !== 'nhap') out = out.filter((c) => c.id !== 'ten_nha_cung_cap' && c.id !== 'so_po_don_dat_hang');
     if (loai !== 'xuat') out = out.filter((c) => c.id !== 'ten_khach_hang');
     return out;
-  }, [columns, loai]);
+  }, [columns, loai, xemGia]);
 
   const columnsForTable = useMemo(() => {
     const getColumnLabel = (col: ColumnConfig) => {
@@ -229,10 +234,12 @@ const PhieuKhoList: React.FC<Props> = ({
             <span className="text-xs text-muted-foreground">{t('phieuKho.list.totalItems')}: </span>
             <span className="font-semibold">{formatNumberVN(item.tong_so_dong ?? 0, { maxFractionDigits: 0 })}</span>
           </span>
-          <span className="shrink-0">
-            <span className="text-xs text-muted-foreground">{t('phieuKho.list.totalValue')}: </span>
-            <span className="font-semibold">{formatNumberVN(item.tong_tien ?? 0)}</span>
-          </span>
+          {xemGia && (
+            <span className="shrink-0">
+              <span className="text-xs text-muted-foreground">{t('phieuKho.list.totalValue')}: </span>
+              <span className="font-semibold">{formatNumberVN(item.tong_tien ?? 0)}</span>
+            </span>
+          )}
         </div>
         {(item.ten_nguoi_tao || nguoiDuyet) && (
           <p className="mt-1 text-xs text-muted-foreground truncate">

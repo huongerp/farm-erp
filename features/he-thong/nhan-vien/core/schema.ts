@@ -80,6 +80,7 @@ export const employeeSchema = z.object({
 
   // --- Công việc (mở rộng) ---
   id_cap_bac: z.string().optional().nullable(),
+  is_super_admin: z.boolean().optional(),
   loai_hop_dong: z.string().optional().nullable(),
   ngay_het_han_hd: z.string().optional().nullable(),
   noi_lam_viec: z.string().optional().nullable(),

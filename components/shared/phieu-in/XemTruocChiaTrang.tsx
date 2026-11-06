@@ -3,7 +3,8 @@
  *
  * `children` (các liên / chứng từ) render vào vùng NGUỒN ẩn, rộng đúng bề rộng nội dung (để ảnh
  * nạp và đo cỡ chữ). Bản SAO của vùng nguồn được nhân cỡ chữ, chuẩn bị bảng (`luoi-bang.ts`)
- * rồi đưa paged.js dựng thành `.pagedjs_page` trong `dichRef`. Sau khi chia: đánh số
+ * rồi đưa paged.js dựng thành `.pagedjs_page` trong một khung ẩn KHÔNG zoom, xong chuyển sang
+ * `dichRef` (vùng xem mang zoom). Sau khi chia: đánh số
  * `data-trang`, chèn dấu chìm + QR. Cùng DOM đó dùng cho xem, in trình duyệt, chụp PDF.
  *
  * Bài học (drv-app): KHÔNG dùng CSS `zoom` cho cỡ chữ (paged.js đo lệch, trang trống thừa) —
@@ -180,12 +181,23 @@ export function XemTruocChiaTrang({
       dich.innerHTML = '';
       const previewer = new Previewer() as unknown as PagedPreviewer;
       previewerRef.current = previewer;
+      // Dàn trong khung KHÔNG zoom rồi mới chuyển sang `dich` (đang mang zoom xem). paged.js trộn số đo
+      // getBoundingClientRect (đã nhân zoom) với columnGap / scrollWidth (chưa nhân): zoom < ~0,97 (điện
+      // thoại ≈ 0,3) là không thấy phần tràn → không ngắt trang, dòng bảng chảy sang cột ẩn của trang;
+      // html2canvas vẽ dòng bị tách cột thành khối phủ kín trang (PDF mất chữ).
+      const khungDan = document.createElement('div');
+      khungDan.className = 'phieu-in-dich';
+      khungDan.setAttribute('aria-hidden', 'true');
+      Object.assign(khungDan.style, { position: 'absolute', left: '-100000px', top: '0', height: '0', overflow: 'hidden' });
+      (dich.parentElement ?? document.body).appendChild(khungDan);
       try {
-        await previewer.preview(html, [{ 'phieu-in.css': css }], dich);
+        await previewer.preview(html, [{ 'phieu-in.css': css }], khungDan);
       } catch (err) {
         if (import.meta.env.DEV) console.error('paged.js không chia trang được:', err);
       }
+      khungDan.remove();
       if (!mountedRef.current || run !== runRef.current) return;
+      dich.replaceChildren(...Array.from(khungDan.childNodes));
       const soTrang = chenLopPhu(dich, dauChim, qrDataUrl, caiDat);
       setDangChia(false);
       onXongRef.current({ soTrang: Math.max(1, soTrang), bang });

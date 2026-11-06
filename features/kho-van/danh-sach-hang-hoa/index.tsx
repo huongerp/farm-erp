@@ -33,6 +33,8 @@ import { useHangHoaStore } from './store/useHangHoaStore';
 import { useConfirmStore } from '../../../store/useConfirmStore';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL, CONFIRM_YES } from '../../../lib/button-labels';
 import { useExportData } from '../../../lib/useExportData';
+import { useXemGiaNhap } from '../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoQuyenXemGia } from './utils/an-gia';
 import { TRANG_THAI_HOAT_DONG } from '../../../lib/constants';
 import type { HangHoa } from './core/types';
 import type { DinhMucSummaryMap } from './components/DanhSachHangHoaList';
@@ -44,6 +46,7 @@ const DanhSachHangHoaPage: React.FC = () => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
+  const xemGia = useXemGiaNhap();
   const {
     searchTerm,
     filters,
@@ -89,8 +92,9 @@ const DanhSachHangHoaPage: React.FC = () => {
       dvt: filters.dvt ?? [],
       sortColumn: sort.column,
       sortDirection: sort.direction,
+      anGia: !xemGia,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, sort]
+    [pagination.page, pagination.pageSize, searchTerm, filters, sort, xemGia]
   );
 
   /** Tóm tắt 3 cột cho số thứ tự kế tiếp + gợi ý đơn vị tính (không tải cả bảng). */
@@ -202,18 +206,23 @@ const DanhSachHangHoaPage: React.FC = () => {
   }, [danhMucList, tomTatList, t]);
 
   const EXPORT_COLUMNS = useMemo(
-    () => [
-      { key: 'thu_tu', label: t('hangHoa.store.orderCol') },
-      { key: 'ma_hang_hoa', label: t('hangHoa.store.codeCol') },
-      { key: 'ten_hang_hoa', label: t('hangHoa.store.nameCol') },
-      { key: 'ten_danh_muc', label: t('hangHoa.store.categoryCol') },
-      { key: 'dvt', label: t('hangHoa.store.unitCol') },
-      { key: 'pham_cap', label: t('hangHoa.store.phamCapCol') },
-      { key: 'don_gia', label: t('hangHoa.store.priceCol') },
-      { key: 'mo_ta', label: t('hangHoa.store.descCol') },
-      { key: 'trang_thai_text', label: t('hangHoa.store.statusCol') },
-    ],
-    [t]
+    () =>
+      locCotTheoQuyenXemGia(
+        [
+          { key: 'thu_tu', label: t('hangHoa.store.orderCol') },
+          { key: 'ma_hang_hoa', label: t('hangHoa.store.codeCol') },
+          { key: 'ten_hang_hoa', label: t('hangHoa.store.nameCol') },
+          { key: 'ten_danh_muc', label: t('hangHoa.store.categoryCol') },
+          { key: 'dvt', label: t('hangHoa.store.unitCol') },
+          { key: 'pham_cap', label: t('hangHoa.store.phamCapCol') },
+          { key: 'don_gia', label: t('hangHoa.store.priceCol') },
+          { key: 'mo_ta', label: t('hangHoa.store.descCol') },
+          { key: 'trang_thai_text', label: t('hangHoa.store.statusCol') },
+        ],
+        xemGia,
+        (c) => c.key
+      ),
+    [t, xemGia]
   );
 
   useEffect(() => {
@@ -267,12 +276,13 @@ const DanhSachHangHoaPage: React.FC = () => {
       ten_danh_muc: item.ten_danh_muc ?? '',
       dvt: item.dvt ?? '',
       pham_cap: item.pham_cap ?? '',
-      don_gia: item.don_gia ?? '',
+      // Không xem được giá → không đưa giá vào dữ liệu xuất (kể cả khi file/Google Sheet lấy theo hàng).
+      ...(xemGia ? { don_gia: item.don_gia ?? '' } : {}),
       mo_ta: item.mo_ta ?? '',
       trang_thai_text:
         item.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG ? t('hangHoa.active') : t('hangHoa.inactive'),
     }),
-    [t]
+    [t, xemGia]
   );
 
   const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData({

@@ -9,6 +9,7 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
 import DetailToolbar, { type DetailToolbarAction } from '../../../../components/shared/DetailToolbar';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useDoiTrangThaiFarmHangHoa } from '../hooks/use-farm-hang-hoa';
@@ -25,6 +26,7 @@ interface Props {
 
 const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canDoiTrangThai = false }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const confirm = useConfirmStore((s) => s.confirm);
   const doiTrangThai = useDoiTrangThaiFarmHangHoa();
   const dangHoatDong = data.trang_thai === TRANG_THAI_HOAT_DONG.DANG_HOAT_DONG;
@@ -120,12 +122,14 @@ const HangHoaDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canDo
               icon={<Package size={12} />}
               emptyText="—"
             />
-            <DetailField
-              label={t('farmHangHoaPhanThuoc.hangHoa.form.price')}
-              value={data.don_gia != null ? data.don_gia.toLocaleString('vi-VN') : ''}
-              icon={<DollarSign size={12} />}
-              emptyText="—"
-            />
+            {xemGia && (
+              <DetailField
+                label={t('farmHangHoaPhanThuoc.hangHoa.form.price')}
+                value={data.don_gia != null ? data.don_gia.toLocaleString('vi-VN') : ''}
+                icon={<DollarSign size={12} />}
+                emptyText="—"
+              />
+            )}
             <DetailField
               label={t('farmHangHoaPhanThuoc.hangHoa.form.dinhMuc')}
               value={data.dinh_muc != null ? data.dinh_muc.toLocaleString('vi-VN') : ''}

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { ImportColumn, ImportReferenceSheet, ImportSampleRow } from '../../../../components/shared/LazyImportDialog';
 import type { ImportErrorRow, ImportSummary } from '../../../../lib/import-types';
 import { useAuthStore } from '../../../../store/useStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useImportPhieuKhoPT } from './use-phieu-kho-pt';
@@ -73,6 +74,7 @@ export function usePhieuKhoPTImport(khoList: Kho[]) {
   const importMutation = useImportPhieuKhoPT();
   const { data: hangHoaList = [] } = useFarmHangHoaList();
   const user = useAuthStore((s) => s.user);
+  const xemGia = useXemGiaNhap();
 
   const importColumns = useMemo<ImportColumn[]>(
     () =>
@@ -123,11 +125,18 @@ export function usePhieuKhoPTImport(khoList: Kho[]) {
       },
       {
         name: tr('sheetHangHoa'),
-        headers: [tr('refMa'), tr('refTen'), tr('refDvt'), tr('colPhamCap'), tr('colDonGia')],
-        data: hangHoaList.map((h) => [h.ma_hang_hoa, h.ten_hang_hoa, h.dvt ?? '', h.pham_cap ?? '', h.don_gia ?? '']),
+        // Người không xem được giá nhập: sheet tham chiếu trong file mẫu không kèm đơn giá.
+        headers: [tr('refMa'), tr('refTen'), tr('refDvt'), tr('colPhamCap'), ...(xemGia ? [tr('colDonGia')] : [])],
+        data: hangHoaList.map((h) => [
+          h.ma_hang_hoa,
+          h.ten_hang_hoa,
+          h.dvt ?? '',
+          h.pham_cap ?? '',
+          ...(xemGia ? [h.don_gia ?? ''] : []),
+        ]),
       },
     ],
-    [khoList, hangHoaList, tr]
+    [khoList, hangHoaList, tr, xemGia]
   );
 
   const handleImport = useCallback(

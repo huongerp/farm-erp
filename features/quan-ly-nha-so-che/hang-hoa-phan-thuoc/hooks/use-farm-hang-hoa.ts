@@ -77,7 +77,8 @@ export const useUpdateFarmHangHoa = (onSuccess?: () => void) => {
   const bt = useKhoBienThe();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: FarmHangHoaFormValues }) => updateFarmHangHoa(bt, id, data),
+    mutationFn: ({ id, data, boQuaDonGia }: { id: string; data: FarmHangHoaFormValues; boQuaDonGia?: boolean }) =>
+      updateFarmHangHoa(bt, id, data, boQuaDonGia),
     onSuccess: () => {
       invalidateRefCache('farmHangHoa');
       qc.invalidateQueries({ queryKey: FARM_HANG_HOA_QUERY_KEY });

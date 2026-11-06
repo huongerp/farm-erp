@@ -11,8 +11,14 @@ import type {
 import type { ImportErrorRow, ImportMode, ImportOptions, ImportRefColumn, ImportSummary } from '../../../../lib/import-types';
 import type { FarmDanhMuc, FarmHangHoa } from '../core/types';
 import type { HangHoaRefColumn } from '../utils/import-hang-hoa';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { useImportFarmHangHoa } from './use-farm-hang-hoa';
 import { useImportFarmDanhMuc } from './use-farm-danh-muc';
+
+/** Bỏ cột Đơn giá khỏi cột xuất khi người xem không được thấy giá nhập. */
+function locCotGiaXuat<T extends { key: string }>(cols: T[], xemGia: boolean): T[] {
+  return xemGia ? cols : cols.filter((c) => c.key !== 'don_gia');
+}
 
 /**
  * Chế độ import khả dụng theo quyền.
@@ -42,6 +48,7 @@ export function useFarmHangHoaImportExport({
   canUpdate,
 }: HangHoaArgs) {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const [showImport, setShowImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [importErrors, setImportErrors] = useState<ImportErrorRow[]>([]);
@@ -139,36 +146,45 @@ export function useFarmHangHoaImportExport({
     [importMutation]
   );
 
+  // Cột/dòng XUẤT bỏ Đơn giá khi không được xem giá nhập (cột mẫu IMPORT ở trên giữ nguyên).
   const exportColumns = useMemo(
-    () => [
-      { key: 'ma_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.store.codeCol') },
-      { key: 'ten_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.store.nameCol') },
-      { key: 'ten_danh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.categoryCol') },
-      { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.store.unitCol') },
-      { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol') },
-      { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.store.priceCol') },
-      { key: 'dinh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol') },
-      { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol') },
-      { key: 'trang_thai', label: t('farmHangHoaPhanThuoc.hangHoa.store.statusCol') },
-      { key: 'tg_cap_nhat', label: t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol') },
-    ],
-    [t]
+    () =>
+      locCotGiaXuat(
+        [
+          { key: 'ma_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.store.codeCol') },
+          { key: 'ten_hang_hoa', label: t('farmHangHoaPhanThuoc.hangHoa.store.nameCol') },
+          { key: 'ten_danh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.categoryCol') },
+          { key: 'dvt', label: t('farmHangHoaPhanThuoc.hangHoa.store.unitCol') },
+          { key: 'pham_cap', label: t('farmHangHoaPhanThuoc.hangHoa.store.phamCapCol') },
+          { key: 'don_gia', label: t('farmHangHoaPhanThuoc.hangHoa.store.priceCol') },
+          { key: 'dinh_muc', label: t('farmHangHoaPhanThuoc.hangHoa.store.dinhMucCol') },
+          { key: 'mo_ta', label: t('farmHangHoaPhanThuoc.hangHoa.store.descCol') },
+          { key: 'trang_thai', label: t('farmHangHoaPhanThuoc.hangHoa.store.statusCol') },
+          { key: 'tg_cap_nhat', label: t('farmHangHoaPhanThuoc.hangHoa.store.updatedCol') },
+        ],
+        xemGia
+      ),
+    [t, xemGia]
   );
 
   const exportMapFn = useCallback(
-    (item: FarmHangHoa) => ({
-      ma_hang_hoa: item.ma_hang_hoa,
-      ten_hang_hoa: item.ten_hang_hoa,
-      ten_danh_muc: item.ten_danh_muc ?? '',
-      dvt: item.dvt ?? '',
-      pham_cap: item.pham_cap ?? '',
-      don_gia: item.don_gia ?? '',
-      dinh_muc: item.dinh_muc ?? '',
-      mo_ta: item.mo_ta ?? '',
-      trang_thai: item.trang_thai,
-      tg_cap_nhat: formatDateShort(item.tg_cap_nhat),
-    }),
-    []
+    (item: FarmHangHoa) => {
+      const row: Record<string, unknown> = {
+        ma_hang_hoa: item.ma_hang_hoa,
+        ten_hang_hoa: item.ten_hang_hoa,
+        ten_danh_muc: item.ten_danh_muc ?? '',
+        dvt: item.dvt ?? '',
+        pham_cap: item.pham_cap ?? '',
+        don_gia: item.don_gia ?? '',
+        dinh_muc: item.dinh_muc ?? '',
+        mo_ta: item.mo_ta ?? '',
+        trang_thai: item.trang_thai,
+        tg_cap_nhat: formatDateShort(item.tg_cap_nhat),
+      };
+      if (!xemGia) delete row.don_gia;
+      return row;
+    },
+    [xemGia]
   );
 
   const { exportData, paginatedData, selectedData } = useExportData({

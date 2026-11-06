@@ -121,6 +121,12 @@ const HANG_HOA_SEARCH_SPEC = {
   numeric: ['id', 'don_gia'],
 } as const;
 
+/** Bản không quét giá — cho người không được xem giá nhập (gõ số giá không được lộ dòng khớp). */
+const HANG_HOA_SEARCH_SPEC_AN_GIA = {
+  text: HANG_HOA_SEARCH_SPEC.text,
+  numeric: ['id'],
+} as const;
+
 /** Lọc + sắp xếp dùng chung cho trang danh sách và cho lượt tải phục vụ xuất file. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function applyHangHoaListQuery(q: any, query: HangHoaListServerQuery): any {
@@ -137,9 +143,12 @@ function applyHangHoaListQuery(q: any, query: HangHoaListServerQuery): any {
   }
   if (query.dvt.length > 0) sel = sel.in('dvt', query.dvt);
 
-  sel = applyPostgrestSearch(sel, query.searchTerm, HANG_HOA_SEARCH_SPEC);
+  sel = applyPostgrestSearch(sel, query.searchTerm, query.anGia ? HANG_HOA_SEARCH_SPEC_AN_GIA : HANG_HOA_SEARCH_SPEC);
 
-  const dbSortable = query.sortColumn != null && HANG_HOA_SORTABLE_DB_COLUMNS.has(query.sortColumn);
+  const dbSortable =
+    query.sortColumn != null &&
+    HANG_HOA_SORTABLE_DB_COLUMNS.has(query.sortColumn) &&
+    !(query.anGia && query.sortColumn === 'don_gia');
   const sortCol = dbSortable ? query.sortColumn! : HANG_HOA_SORT_MAC_DINH.column;
   const ascending = dbSortable ? query.sortDirection !== 'desc' : HANG_HOA_SORT_MAC_DINH.ascending;
 
@@ -354,7 +363,11 @@ export const createHangHoa = async (data: HangHoaFormValues): Promise<HangHoa> =
   return enriched;
 };
 
-export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promise<HangHoa> => {
+/**
+ * `boQuaDonGia` = true (người không được xem giá nhập): payload KHÔNG chứa `don_gia`
+ * → giữ nguyên giá trong DB (kể cả null), không ghi đè thành 0 do schema ẩn giá.
+ */
+export const updateHangHoa = async (id: string, data: HangHoaFormValues, boQuaDonGia = false): Promise<HangHoa> => {
   const idNum = Number(id);
   if (Number.isNaN(idNum)) throw new Error(i18n.t('hangHoa.service.notFound'));
 
@@ -379,7 +392,9 @@ export const updateHangHoa = async (id: string, data: HangHoaFormValues): Promis
     dvt: data.dvt?.trim() || null,
     thu_tu: Math.max(1, data.thu_tu ?? 1),
     trang_thai: data.trang_thai,
-    don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null,
+    ...(boQuaDonGia
+      ? {}
+      : { don_gia: data.don_gia != null && !Number.isNaN(Number(data.don_gia)) ? Number(data.don_gia) : null }),
     pham_cap: data.pham_cap?.trim() || null,
     mo_ta: data.mo_ta?.trim() || null,
     hinh_anh: data.hinh_anh?.trim() || null,

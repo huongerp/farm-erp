@@ -6,6 +6,8 @@ import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { locCotTheoQuyenXemGia } from '../utils/an-gia';
 
 /** Tổng định mức (sum ton_toi_thieu) và số kho có định mức, theo hang_hoa_id. */
 export type DinhMucSummaryMap = Record<string, { tong: number; soKho: number }>;
@@ -55,9 +57,14 @@ const DanhSachHangHoaList: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
 
+  const xemGia = useXemGiaNhap();
+
   const visibleColumns = useMemo(
-    () => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order),
-    [columns]
+    () =>
+      locCotTheoQuyenXemGia(columns, xemGia, (c) => c.id)
+        .filter((c) => c.visible)
+        .sort((a, b) => a.order - b.order),
+    [columns, xemGia]
   );
 
   const renderStatusBadge = (item: HangHoa) => (
@@ -217,7 +224,7 @@ const DanhSachHangHoaList: React.FC<Props> = ({
             .filter(Boolean)
             .join(' · ')}
         </span>
-        {item.don_gia != null && (
+        {xemGia && item.don_gia != null && (
           <span className="shrink-0 tabular-nums">
             <span className="text-xs text-muted-foreground">{t('hangHoa.store.priceCol')}: </span>
             <span className="font-semibold">{formatNumberVN(item.don_gia)}</span>

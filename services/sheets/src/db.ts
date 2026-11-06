@@ -137,6 +137,19 @@ export async function kiemNguoiTao(nhanVienId: number, moduleId: string): Promis
   return r ? { email: r.email, conLam: r.con_lam, toanPhamVi: r.toan_pham_vi } : null;
 }
 
+/**
+ * Nhân viên toàn quyền (cấp bậc 1 hoặc super admin) — được xem giá nhập. `is_super_admin` có thể
+ * chưa có trên DB (migration 070) nên đọc qua `to_jsonb` thay vì tên cột: thiếu cột → coi như false.
+ */
+export async function laToanQuyen(nhanVienId: number): Promise<boolean> {
+  const kq = await pool.query<{ toan_quyen: boolean }>(
+    `SELECT (nv.cap_bac = 1 OR COALESCE((to_jsonb(nv)->>'is_super_admin')::boolean, false)) AS toan_quyen
+       FROM public.fp_var_nhan_vien nv WHERE nv.id = $1`,
+    [nhanVienId],
+  );
+  return kq.rows[0]?.toan_quyen === true;
+}
+
 export async function baoLoiVaoChuong(lichId: number, tieuDe: string, noiDung: string): Promise<void> {
   try {
     await pool.query('SELECT public.rpc_sheets_bao_loi($1, $2, $3)', [lichId, tieuDe, noiDung]);

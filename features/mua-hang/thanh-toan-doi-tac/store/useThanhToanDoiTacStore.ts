@@ -5,6 +5,12 @@ export interface ThanhToanDoiTacFilters {
   statusIds: string[];
   doiTacIds: string[];
   donViIds: string[];
+  nhomIds: string[];
+  nguoiTaoIds: string[];
+  /** Khoảng ngày lập: preset của DateRangePicker ('all' = không lọc) + ngày tự chọn. */
+  datePreset: string;
+  customDateFrom: string;
+  customDateEnd: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -25,6 +31,11 @@ const initialFilters: ThanhToanDoiTacFilters = {
   statusIds: [],
   doiTacIds: [],
   donViIds: [],
+  nhomIds: [],
+  nguoiTaoIds: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
 };
 
 export const useThanhToanDoiTacStore = createGenericStore<ThanhToanDoiTacFilters>(

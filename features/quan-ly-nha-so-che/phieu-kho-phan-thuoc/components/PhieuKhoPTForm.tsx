@@ -21,6 +21,7 @@ import { moTaDongVuot, timDongVuot } from '../../../../lib/thuc-hien-tung-phan';
 import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useFarmTonKhoPTTheoKho } from '../../ton-kho-phan-thuoc/hooks/use-farm-ton-kho-pt';
 import { buildTonMap, laDuoiDinhMuc, phieuDelta, tonSauPhieu, type TonMap } from '../utils/ton-kho-check';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { useAuthStore } from '../../../../store/useStore';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -75,6 +76,8 @@ const PhieuKhoPTForm: React.FC<Props> = ({
   stackLevel,
 }) => {
   const bt = useKhoBienThe();
+  // Không xem được giá nhập: ẩn ô giá/thành tiền nhưng giá vẫn nằm trong form state (RHF không shouldUnregister).
+  const xemGia = useXemGiaNhap();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isEdit = !!initialData?.id;
@@ -530,12 +533,16 @@ const PhieuKhoPTForm: React.FC<Props> = ({
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px] text-right">
                 {t('phieuKhoPhanThuoc.form.tonSauPhieu')}
               </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
-                {t('phieuKhoPhanThuoc.form.unitPrice')}
-              </th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
-                {t('phieuKhoPhanThuoc.form.amount')}
-              </th>
+              {xemGia && (
+                <>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">
+                    {t('phieuKhoPhanThuoc.form.unitPrice')}
+                  </th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
+                    {t('phieuKhoPhanThuoc.form.amount')}
+                  </th>
+                </>
+              )}
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">
                 {t('phieuKhoPhanThuoc.form.unit')}
               </th>
@@ -553,7 +560,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={xemGia ? 12 : 10}className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKhoPhanThuoc.form.noItems')}
                 </td>
               </tr>
@@ -658,23 +665,28 @@ const PhieuKhoPTForm: React.FC<Props> = ({
                     >
                       {tonDong ? hienTon(tonDong.sau) : '—'}
                     </td>
-                    <td className="px-4 py-2.5 min-w-[90px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.don_gia`}
-                        control={control}
-                        render={({ field }) => (
-                          <NumberInput
-                            compact
-                            value={field.value ?? 0}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            min={0}
-                            maxFractionDigits={2}
+                    {/* Không xem được giá nhập: không render ô giá; giá vẫn nằm trong form state (tự điền ngầm / giữ giá cũ khi sửa). */}
+                    {xemGia && (
+                      <>
+                        <td className="px-4 py-2.5 min-w-[90px] align-top">
+                          <Controller
+                            name={`chi_tiet.${index}.don_gia`}
+                            control={control}
+                            render={({ field }) => (
+                              <NumberInput
+                                compact
+                                value={field.value ?? 0}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                min={0}
+                                maxFractionDigits={2}
+                              />
+                            )}
                           />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 tabular-nums text-sm text-muted-foreground align-middle">{formatNumberVN(thanhTien)}</td>
+                        </td>
+                        <td className="px-4 py-2.5 tabular-nums text-sm text-muted-foreground align-middle">{formatNumberVN(thanhTien)}</td>
+                      </>
+                    )}
                     <td className="px-4 py-2.5 text-xs text-muted-foreground align-middle">{donVi}</td>
                     <td className="px-4 py-2.5 align-top">
                       <Input {...register(`chi_tiet.${index}.so_lot`)} className="h-9" />

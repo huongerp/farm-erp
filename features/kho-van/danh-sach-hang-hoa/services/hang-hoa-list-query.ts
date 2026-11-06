@@ -11,6 +11,8 @@ export interface HangHoaListServerQuery {
   dvt: string[];
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
+  /** Người không được xem giá nhập: ô tìm kiếm không quét `don_gia`, không sắp xếp theo giá. */
+  anGia?: boolean;
 }
 
 export const HANG_HOA_SORTABLE_DB_COLUMNS = new Set([

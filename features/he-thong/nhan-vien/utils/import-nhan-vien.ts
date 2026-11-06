@@ -173,6 +173,8 @@ export function planNhanVienImport(rows: Record<string, unknown>[], input: NhanV
       id_phong_ban: phongBan?.id ?? '',
       id_chuc_vu: chucVu?.id ?? '',
       id_cap_bac: capBacId,
+      // Import Excel KHÔNG được cấp super admin: bỏ giá trị mặc định của form để service không gửi cột này.
+      is_super_admin: undefined,
       loai_hop_dong: loaiHd ?? '',
       ngay_het_han_hd: ngayHetHan,
       ngay_sinh: ngaySinh,

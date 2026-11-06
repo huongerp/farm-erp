@@ -5,6 +5,7 @@
 import { createHash } from 'node:crypto';
 import * as db from '../db.ts';
 import { cotChu, vungA1, type MauSoCot, type OSheet } from '../core/bang-tinh.ts';
+import { conCotDaBo, locCotGia } from '../core/cot-gia.ts';
 import { dinhDangOXuat, mauSoCotSheet, type KieuCotXuat } from '../core/dinh-dang.ts';
 import { doiSoatKeTiep, lanChayKeTiep, thuLaiSau, type TanSuat } from '../core/lich.ts';
 import { NGUON_DONG_BO } from '../core/nguon-dong-bo.ts';
@@ -70,6 +71,8 @@ async function ghiLenSheet(opts: {
   rows: OSheet[][];
   mauSo: (MauSoCot | null)[];
   toanBo: boolean;
+  /** Nhãn cột lịch có nhưng bị lọc bỏ (cột giá) — còn trên Sheet thì phải ghi lại toàn bộ. */
+  nhanDaBo: string[];
 }): Promise<string> {
   const { at, lich, header, rows, mauSo } = opts;
   let file;
@@ -92,7 +95,9 @@ async function ghiLenSheet(opts: {
   if (opts.toanBo) return ghiLaiToanBo('Đối soát');
 
   const headerCu = (await docHeaderCacTab(at, file.spreadsheetId, [lich.sheetTitle])).get(lich.sheetTitle) ?? [];
-  if (!giongHeader(headerCu, header)) return ghiLaiToanBo('Cột thay đổi');
+  if (!giongHeader(headerCu, header) || conCotDaBo(headerCu, header.length, opts.nhanDaBo)) {
+    return ghiLaiToanBo('Cột thay đổi');
+  }
 
   const soCot = header.length;
   const hienCo = await docVung(at, file.spreadsheetId, vungA1(lich.sheetTitle, `A2:${cotChu(soCot)}`));
@@ -115,7 +120,9 @@ export async function chayMotLich(lich: db.LichDaNhan, opts: { batBuocToanBo?: b
   const cauHinh = { tanSuat: lich.tanSuat as TanSuat, gio: lich.gio, thu: lich.thu, ngayThang: lich.ngayThang };
   try {
     const { email, accessToken } = await kiemTraTruocKhiChay(lich);
-    const cot = lich.cot;
+    // Lọc lại mỗi lần chạy: lịch cũ có thể đã lưu cột giá, hoặc chủ lịch vừa mất toàn quyền.
+    const cot = locCotGia(lich.cot, lich.moduleId, await db.laToanQuyen(lich.nhanVienId));
+    const nhanDaBo = lich.cot.filter((c) => !cot.includes(c)).map((c) => c.label);
     const du = await docNguon({ nguon: lich.nguon, cot: cot.map((c) => c.key), nhanVienId: lich.nhanVienId, email });
 
     const header = cot.map((c) => c.label);
@@ -127,7 +134,7 @@ export async function chayMotLich(lich: db.LichDaNhan, opts: { batBuocToanBo?: b
     const thongDiep =
       !toanBo && vanTay === lich.vanTay
         ? 'Không có thay đổi'
-        : await ghiLenSheet({ at: accessToken, lich, header, rows, mauSo, toanBo });
+        : await ghiLenSheet({ at: accessToken, lich, header, rows, mauSo, toanBo, nhanDaBo });
 
     await db.ketThucThanhCong(lich.id, {
       soDong: rows.length,

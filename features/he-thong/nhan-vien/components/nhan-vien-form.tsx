@@ -15,7 +15,10 @@ import Combobox from '../../../../components/ui/Combobox';
 import MultiSelect from '../../../../components/ui/MultiSelect';
 import RadioGroup from '../../../../components/ui/RadioGroup';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
+import ToggleSwitch from '../../../../components/ui/ToggleSwitch';
 import { uploadAnh } from '../../../../lib/media-upload';
+import { useAuthStore } from '../../../../store/useStore';
+import '../locales/nap-locale';
 
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
@@ -48,6 +51,8 @@ interface Props {
 const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) => {
   const { t } = useTranslation();
   const isEdit = !!initialData;
+  // Chỉ super admin mới thấy / đổi được cờ Super admin (trigger DB cũng chặn người khác).
+  const nguoiDungLaSuperAdmin = useAuthStore((s) => s.user?.is_super_admin) === true;
   const createMutation = useCreateEmployee(onClose);
   const updateMutation = useUpdateEmployee(onClose);
 
@@ -148,7 +153,9 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  const xuLySubmit = (data: EmployeeFormValues) => {
+  const xuLySubmit = (formData: EmployeeFormValues) => {
+    // Không phải super admin: không gửi cột is_super_admin (để undefined → service bỏ qua).
+    const data = nguoiDungLaSuperAdmin ? formData : { ...formData, is_super_admin: undefined };
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
     } else {
@@ -424,6 +431,20 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
                         {...register('noi_lam_viec')}
                     />
                 </FormGrid>
+                {nguoiDungLaSuperAdmin && (
+                    <Controller
+                        name="is_super_admin"
+                        control={control}
+                        render={({ field }) => (
+                            <ToggleSwitch
+                                label={t('nhanVienSuperAdmin.label')}
+                                description={t('nhanVienSuperAdmin.moTa')}
+                                checked={field.value === true}
+                                onChange={field.onChange}
+                            />
+                        )}
+                    />
+                )}
              </FormSection>
 
              {/* ===== SECTION 3: Thông tin liên hệ ===== */}

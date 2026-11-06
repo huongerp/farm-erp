@@ -9,6 +9,9 @@ import { MobileFilterField, type FilterGroup } from '../../../../components/ui/M
 import DateRangePicker, { type DateRangeValue } from '../../../../components/ui/DateRangePicker';
 import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-commit';
 import { useChiTietPhieuKhoStore, type DatePresetId } from '../store/useChiTietPhieuKhoStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import { COT_GIA_CHI_TIET, locCotGia } from '../utils/loc-cot-gia';
+import { anhXaChiSoSapXep } from '../../../quan-ly-nha-so-che/phieu-kho-phan-thuoc/utils/loc-cot-gia';
 import type { ChiTietPhieuKhoFlat } from '../core/types';
 import { TRANG_THAI_CHO_DUYET, TRANG_THAI_DA_DUYET, TRANG_THAI_DOI_DUYET, TRANG_THAI_KHONG_DUYET } from '../core/constants';
 import type { Kho } from '../../danh-sach-kho/core/types';
@@ -48,9 +51,17 @@ const ChiTietPhieuKhoToolbar: React.FC<Props> = ({
   const commitSearchTerm = useChiTietPhieuKhoStore((s) => s.commitSearchTerm);
   const filters = useChiTietPhieuKhoStore((s) => s.filters);
   const setFilter = useChiTietPhieuKhoStore((s) => s.setFilter);
-  const columns = useChiTietPhieuKhoStore((s) => s.columns);
+  const xemGia = useXemGiaNhap();
+  const allColumns = useChiTietPhieuKhoStore((s) => s.columns);
+  // Bộ chọn ẩn/hiện cột không liệt kê cột giá khi không xem được giá nhập.
+  const columns = useMemo(() => locCotGia(allColumns, COT_GIA_CHI_TIET, xemGia), [allColumns, xemGia]);
   const toggleColumn = useChiTietPhieuKhoStore((s) => s.toggleColumn);
-  const reorderColumns = useChiTietPhieuKhoStore((s) => s.reorderColumns);
+  const reorderColumnsAll = useChiTietPhieuKhoStore((s) => s.reorderColumns);
+  // Bộ chọn cột báo chỉ số theo danh sách đã lọc giá → đổi sang chỉ số danh sách đầy đủ của store.
+  const reorderColumns = (from: number, to: number) => {
+    const idx = anhXaChiSoSapXep(allColumns, columns, from, to);
+    if (idx) reorderColumnsAll(idx[0], idx[1]);
+  };
   const resetColumns = useChiTietPhieuKhoStore((s) => s.resetColumns);
   const resetColumnWidths = useChiTietPhieuKhoStore((s) => s.resetColumnWidths);
 

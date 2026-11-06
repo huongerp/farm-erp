@@ -28,6 +28,7 @@ import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import ApproveOption, { APPROVE_OPTION_STYLE } from './ApproveOption';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 
 interface Props {
   data: PhieuKho;
@@ -44,6 +45,7 @@ interface Props {
 
 const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete, onCopy, canApprove = true, stackLevel = 0 }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const user = useAuthStore((s) => s.user);
   const confirm = useConfirmStore((s) => s.confirm);
   const nguoiDuyetId = user?.id != null ? Number(user.id) : null;
@@ -268,8 +270,12 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.phamCap')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-20">{t('phieuKho.form.unit')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap w-24">{t('phieuKho.form.quantity')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.unitPrice')}</th>
-                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.amount')}</th>
+                  {xemGia && (
+                    <>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.unitPrice')}</th>
+                      <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.amount')}</th>
+                    </>
+                  )}
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('phieuKho.preview.soLot')}</th>
                   <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('phieuKho.form.note')}</th>
                 </tr>
@@ -283,8 +289,12 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                     <td className="px-4 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate" title={ct.pham_cap ?? undefined}>{ct.pham_cap ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.don_vi_tinh ?? '—'}</td>
                     <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.so_luong)}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.thanh_tien)}</td>
+                    {xemGia && (
+                      <>
+                        <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.don_gia)}</td>
+                        <td className="px-4 py-2.5 tabular-nums">{formatNumberVN(ct.thanh_tien)}</td>
+                      </>
+                    )}
                     <td className="px-4 py-2.5 text-xs text-muted-foreground min-w-[160px]">{ct.so_lot ?? '—'}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{ct.ghi_chu ?? '—'}</td>
                   </tr>

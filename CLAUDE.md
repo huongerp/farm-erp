@@ -16,7 +16,7 @@ trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng d
 | Build production | `npm run build` |
 | Lint | `npm run lint` |
 | Kiểm tra kích thước bundle | `npm run check:bundle` |
-| Sao lưu DB trên VPS (chạy TRƯỚC migration) | `bash scripts/db-backup.sh <nhan>` |
+| Sao lưu DB trên VPS (chỉ khi Công yêu cầu) | `bash scripts/db-backup.sh <nhan>` |
 | Sao lưu kho ảnh trên VPS | `bash scripts/media-backup.sh` |
 | Chạy SQL / migration lên VPS | `bash scripts/db-sql.sh -v ON_ERROR_STOP=1 -f docs/migrations/NNN-*.sql` |
 
@@ -116,8 +116,8 @@ xem mẫu ở các hook `use-*-view-scope.ts`.
 ## Lưu ý khi sửa
 
 - Migration SQL mới: thêm `docs/migrations/NNN-<mo-ta>.sql` (đánh số tiếp), không sửa đè file đã chạy trên VPS.
-  Không có DB thử — migration chạy thẳng lên dữ liệu thật, nên LUÔN `bash scripts/db-backup.sh truoc-NNN`
-  trước (dump vào `backup/`, đã gitignore, chứa dữ liệu thật — không commit / gửi đi).
+  Không có DB thử — migration chạy thẳng lên dữ liệu thật; chỉ backup (`bash scripts/db-backup.sh truoc-NNN`,
+  dump vào `backup/`, đã gitignore, chứa dữ liệu thật — không commit / gửi đi) khi Công yêu cầu, không tự backup.
 - Hàm/RPC mới trong migration: Postgres mặc định cho PUBLIC gọi được → role `anon` (chưa đăng nhập)
   cũng gọi được. Luôn kèm `REVOKE ALL ON FUNCTION … FROM PUBLIC, anon;` + `GRANT EXECUTE … TO authenticated`
   (và service role cần dùng). Bảng mới không GRANT cho `anon`. Ghi bảng nhạy cảm theo

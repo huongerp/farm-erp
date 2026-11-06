@@ -10,6 +10,7 @@ import { jwtVerify } from 'jose';
 import { config } from './config.ts';
 import * as db from './db.ts';
 import { chuanHoaTenFile, chuanHoaTenTab, kiemTraYeuCauXuat } from './core/bang-tinh.ts';
+import { locCotGia } from './core/cot-gia.ts';
 import { dinhDangOXuat, type KieuCotXuat } from './core/dinh-dang.ts';
 import { DS_TAN_SUAT, doiSoatKeTiep, kiemTraYeuCauLich, lanChayKeTiep, type TanSuat } from './core/lich.ts';
 import { NGUON_DONG_BO } from './core/nguon-dong-bo.ts';
@@ -306,16 +307,17 @@ app.post('/lich/xem-thu', async (c) => {
   if (!quyen.duoc) return c.json({ loi: 'khong_duoc_phep', thongDiep: quyen.lyDo }, 403);
   try {
     const nt = await db.kiemNguoiTao(nv, kt.ok.moduleId);
+    const cot = locCotGia(kt.ok.cot, kt.ok.moduleId, await db.laToanQuyen(nv));
     const du = await docNguon({
       nguon: NGUON_DONG_BO[kt.ok.moduleId]!.nguon,
-      cot: kt.ok.cot.map((x) => x.key),
+      cot: cot.map((x) => x.key),
       nhanVienId: nv,
       email: nt?.email ?? null,
       gioiHan: 20,
     });
     return c.json({
-      header: kt.ok.cot.map((x) => x.label),
-      rows: du.map((r) => kt.ok.cot.map((x) => dinhDangOXuat(r[x.key], x.type as KieuCotXuat | undefined).hienThi)),
+      header: cot.map((x) => x.label),
+      rows: du.map((r) => cot.map((x) => dinhDangOXuat(r[x.key], x.type as KieuCotXuat | undefined).hienThi)),
     });
   } catch (e) {
     return c.json({ loi: 'doc_nguon_loi', thongDiep: e instanceof Error ? e.message : 'Không đọc được dữ liệu.' }, 400);
@@ -356,7 +358,8 @@ app.post('/lich', async (c) => {
       moduleId: y.moduleId,
       nguon: nguon.nguon,
       bangGoc: nguon.bangGoc,
-      cot: y.cot,
+      // Không tin danh sách cột client gửi: người không toàn quyền không lưu được cột giá.
+      cot: locCotGia(y.cot, y.moduleId, await db.laToanQuyen(nv)),
       spreadsheetId: file.spreadsheetId,
       spreadsheetUrl: file.url,
       tenFile: file.title,

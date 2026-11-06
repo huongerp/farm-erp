@@ -10,7 +10,8 @@ import { uploadAnh } from '../../../../lib/media-upload';
 import StatusToggle from '../../../../components/ui/StatusToggle';
 import Combobox from '../../../../components/ui/Combobox';
 import CurrencyInput from '../../../../components/ui/CurrencyInput';
-import { HangHoaFormValues, hangHoaSchema } from '../core/schema';
+import { HangHoaFormValues, hangHoaSchema, hangHoaSchemaAnGia } from '../core/schema';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import type { HangHoa } from '../core/types';
 import { TRANG_THAI_HOAT_DONG } from '../../../../lib/constants';
 import { useCreateHangHoa, useUpdateHangHoa } from '../hooks/use-hang-hoa';
@@ -80,8 +81,16 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
 
   const [isImageUploading, setIsImageUploading] = useState(false);
 
+  // Người không xem được giá: ô giá bị ẩn → dùng schema không bắt buộc giá (tạo mới = 0, sửa giữ giá cũ
+  // vì `don_gia` vẫn nằm trong form state — không dùng shouldUnregister).
+  const xemGia = useXemGiaNhap();
+  const resolver = useMemo(
+    () => zodResolver(xemGia ? hangHoaSchema : hangHoaSchemaAnGia) as Resolver<HangHoaFormValues>,
+    [xemGia]
+  );
+
   const { register, handleSubmit, formState: { errors, isDirty }, reset, control } = useForm<HangHoaFormValues>({
-    resolver: zodResolver(hangHoaSchema) as Resolver<HangHoaFormValues>,
+    resolver,
     defaultValues,
   });
 
@@ -123,7 +132,8 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
       hinh_anh: data.hinh_anh?.trim() || null,
     };
     if (isEdit && initialData) {
-      updateMutation.mutate({ id: initialData.id, data: sanitized });
+      // Không xem được giá nhập → không gửi `don_gia` (giữ nguyên giá DB, kể cả null).
+      updateMutation.mutate({ id: initialData.id, data: sanitized, boQuaDonGia: !xemGia });
     } else {
       createMutation.mutate(sanitized, {
         onSuccess: (created) => {
@@ -236,22 +246,24 @@ const DanhSachHangHoaForm: React.FC<Props> = ({
                 </datalist>
               )}
             </div>
-            <Controller
-              name="don_gia"
-              control={control}
-              render={({ field }) => (
-                <CurrencyInput
-                  label={t('hangHoa.form.price')}
-                  placeholder={t('hangHoa.form.pricePlaceholder')}
-                  icon={<DollarSign size={12} />}
-                  value={field.value ?? 0}
-                  onChange={(n) => field.onChange(n != null && !Number.isNaN(n) ? n : undefined)}
-                  required
-                  error={errors.don_gia?.message}
-                  suffix=""
-                />
-              )}
-            />
+            {xemGia && (
+              <Controller
+                name="don_gia"
+                control={control}
+                render={({ field }) => (
+                  <CurrencyInput
+                    label={t('hangHoa.form.price')}
+                    placeholder={t('hangHoa.form.pricePlaceholder')}
+                    icon={<DollarSign size={12} />}
+                    value={field.value ?? 0}
+                    onChange={(n) => field.onChange(n != null && !Number.isNaN(n) ? n : undefined)}
+                    required
+                    error={errors.don_gia?.message}
+                    suffix=""
+                  />
+                )}
+              />
+            )}
             <Input
               type="number"
               min={1}

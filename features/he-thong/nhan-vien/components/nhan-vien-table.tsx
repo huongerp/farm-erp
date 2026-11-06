@@ -16,6 +16,7 @@ import {
     EDUCATION_BADGE_CONFIG,
 } from '../core/constants';
 import { TRANG_THAI_NV } from '../../../../lib/constants';
+import SuperAdminBadge from './SuperAdminBadge';
 
 interface Props {
     data: Employee[];
@@ -51,7 +52,10 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                     <div className="flex items-center gap-2.5">
                         <AvatarWithFallback src={item.anh_dai_dien} name={item.ho_ten} seed={item.id} size="sm" alt={item.ho_ten} />
                         <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</span>
+                            <span className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</span>
+                                {item.is_super_admin && <SuperAdminBadge />}
+                            </span>
                             <span className="text-xs text-muted-foreground truncate">{item.so_dien_thoai}</span>
                         </div>
                     </div>
@@ -156,6 +160,7 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</h4>
+                        {item.is_super_admin && <SuperAdminBadge className="ml-2 shrink-0" />}
                         <div role="presentation" onClick={e => e.stopPropagation()} className="ml-2">
                             <input
                                 type="checkbox"

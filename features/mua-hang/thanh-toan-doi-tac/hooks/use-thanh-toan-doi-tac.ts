@@ -1,5 +1,8 @@
 import { keepPreviousData, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ThanhToanDoiTacListServerQuery } from '../services/thanh-toan-doi-tac-list-query';
+import type {
+  ThanhToanDoiTacListServerQuery,
+  ThanhToanDoiTacViewScopeQuery,
+} from '../services/thanh-toan-doi-tac-list-query';
 import { toast } from 'sonner';
 import {
   getAllThanhToanDoiTac,
@@ -17,11 +20,12 @@ import i18n from '../../../../lib/i18n';
 
 const QUERY_KEY = ['thanhToanDoiTac'] as const;
 
-/** Tóm tắt toàn bộ phiếu cho chip lọc + số đếm. */
-export function useThanhToanDoiTacTomTat() {
+/** Tóm tắt phiếu trong phạm vi xem cho chip lọc + số đếm. */
+export function useThanhToanDoiTacTomTat(scope: ThanhToanDoiTacViewScopeQuery, enabled = true) {
   return useQuery({
-    queryKey: [...QUERY_KEY, 'tomTat'],
-    queryFn: getThanhToanDoiTacTomTat,
+    queryKey: [...QUERY_KEY, 'tomTat', scope],
+    queryFn: () => getThanhToanDoiTacTomTat(scope),
+    enabled,
     staleTime: 1000 * 60 * 5,
   });
 }

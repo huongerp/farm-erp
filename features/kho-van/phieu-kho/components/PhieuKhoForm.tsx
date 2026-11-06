@@ -23,6 +23,7 @@ import { moTaDongVuot, timDongVuot } from '../../../../lib/thuc-hien-tung-phan';
 import { useHangHoaRefQuery, useDoiTacRefQuery, useDonDatHangSoPoMinimalQuery } from '../../../../lib/hooks/use-ref-queries';
 import type { DonDatHangSoPoOption } from '../../../mua-hang/don-dat-hang/services/don-dat-hang-db.service';
 import { useAuthStore } from '../../../../store/useStore';
+import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import GenericDrawer, { DRAWER_WIDTH_PHIEU_KHO } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
@@ -80,6 +81,7 @@ const PhieuKhoForm: React.FC<Props> = ({
   stackLevel = 0,
 }) => {
   const { t } = useTranslation();
+  const xemGia = useXemGiaNhap();
   const user = useAuthStore((s) => s.user);
   const canEditNgay = useCanEditPhieuKhoNgay();
   const isEdit = !!initialData?.id;
@@ -583,8 +585,12 @@ const PhieuKhoForm: React.FC<Props> = ({
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[200px]">{t('phieuKho.form.item')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">{t('phieuKho.form.phamCap')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.quantity')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.unitPrice')}</th>
-              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
+              {xemGia && (
+                <>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[100px]">{t('phieuKho.form.unitPrice')}</th>
+                  <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">{t('phieuKho.form.amount')}</th>
+                </>
+              )}
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[64px]">{t('phieuKho.form.unit')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[90px]">{t('phieuKho.form.stockAtWarehouse')}</th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[160px]">{t('phieuKho.preview.soLot')}</th>
@@ -598,7 +604,7 @@ const PhieuKhoForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={showTonKhoWarning ? 12 : 11} className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={(showTonKhoWarning ? 12 : 11) - (xemGia ? 0 : 2)} className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKho.form.noItems')}
                 </td>
               </tr>
@@ -676,26 +682,31 @@ const PhieuKhoForm: React.FC<Props> = ({
                         {...register(`chi_tiet.${index}.so_luong`, { valueAsNumber: true })}
                       />
                     </td>
-                    <td className="px-4 py-2.5 min-w-[100px] align-top">
-                      <Controller
-                        name={`chi_tiet.${index}.don_gia`}
-                        control={control}
-                        render={({ field }) => (
-                          <NumberInput
-                            compact
-                            value={field.value ?? 0}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            min={0}
-                            maxFractionDigits={2}
-                            className="text-sm border-border min-w-[6rem] max-w-[10rem]"
+                    {/* Ẩn ô giá khi không xem được giá nhập; giá vẫn nằm trong form state (tự điền ngầm / giữ giá cũ khi sửa). */}
+                    {xemGia && (
+                      <>
+                        <td className="px-4 py-2.5 min-w-[100px] align-top">
+                          <Controller
+                            name={`chi_tiet.${index}.don_gia`}
+                            control={control}
+                            render={({ field }) => (
+                              <NumberInput
+                                compact
+                                value={field.value ?? 0}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                min={0}
+                                maxFractionDigits={2}
+                                className="text-sm border-border min-w-[6rem] max-w-[10rem]"
+                              />
+                            )}
                           />
-                        )}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
-                      {formatNumberVN(thanhTien)}
-                    </td>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
+                          {formatNumberVN(thanhTien)}
+                        </td>
+                      </>
+                    )}
                     <td className="px-4 py-2.5 text-xs text-muted-foreground">{donVi}</td>
                     <td className="px-4 py-2.5 text-xs text-muted-foreground tabular-nums">
                       {idHangHoa ? `${ton} ${donVi !== '—' ? donVi : ''}` : '—'}
@@ -752,8 +763,12 @@ const PhieuKhoForm: React.FC<Props> = ({
                 <tr key="totals" className="bg-muted/50 border-t-2 border-border font-medium">
                   <td colSpan={3} className="px-4 py-2.5 text-muted-foreground text-xs" />
                   <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongSoLuong)}</td>
-                  <td className="px-4 py-2.5 text-xs" />
-                  <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
+                  {xemGia && (
+                    <>
+                      <td className="px-4 py-2.5 text-xs" />
+                      <td className="px-4 py-2.5 text-xs tabular-nums">{formatNumberVN(tongTien)}</td>
+                    </>
+                  )}
                   <td colSpan={showTonKhoWarning ? 7 : 6} className="px-4 py-2.5 text-xs" />
                 </tr>
               );
