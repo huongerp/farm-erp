@@ -75,6 +75,15 @@ export async function layNguoiDuyet(moduleId: string, chiNhanhId: number | null)
   return kq.rows.map((r) => ({ nhanVienId: Number(r.nhan_vien_id), capBac: Number(r.cap_bac) }));
 }
 
+/** Nhân viên đang làm có chức vụ trong danh sách — khâu kiểm tra lại của checklist (mig 073). */
+export async function layNhanVienTheoChucVu(chucVuIds: number[]): Promise<number[]> {
+  const kq = await pool.query<{ nhan_vien_id: string }>(
+    'SELECT nhan_vien_id FROM public.rpc_tb_nhan_vien_theo_chuc_vu($1::bigint[])',
+    [chucVuIds]
+  );
+  return kq.rows.map((r) => Number(r.nhan_vien_id));
+}
+
 /** Cấp bậc 1 + admin/all trên module — người nhận yêu cầu "xin sửa" (mig 035). */
 export async function layQuanTriModule(moduleId: string): Promise<NguoiDuyet[]> {
   const kq = await pool.query<{ nhan_vien_id: string; cap_bac: number }>(

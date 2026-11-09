@@ -1,0 +1,154 @@
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Check, ChevronDown, Save, X } from 'lucide-react';
+import { cn } from '../../../../lib/utils';
+import Input from '../../../../components/ui/Input';
+import Textarea from '../../../../components/ui/Textarea';
+import Button from '../../../../components/ui/Button';
+import type { DongPhieuChecklist, KetQuaCl } from '../core/types';
+import { useLuuDongKiemTra, useLuuDongThucHien } from '../hooks/use-checklist-ban-giao';
+import { KetQuaTick } from './Badges';
+
+interface Props {
+  dong: DongPhieuChecklist;
+  idPhieu: string;
+  cot: 'kq_thuc_hien' | 'kq_kiem_tra';
+  coTheSua: boolean;
+}
+
+/**
+ * Ô tích một cột (khâu làm / khâu kiểm tra): bấm Đạt / K.Đạt lưu ngay; nút mở ghi chú để
+ * điền tình trạng khắc phục / người xử lý / ghi chú rồi Lưu.
+ */
+const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
+  const { t } = useTranslation();
+  const isThucHien = cot === 'kq_thuc_hien';
+  const kq = dong[cot];
+  const luuThucHien = useLuuDongThucHien();
+  const luuKiemTra = useLuuDongKiemTra();
+
+  const [mo, setMo] = useState(false);
+  const [kp, setKp] = useState(dong.tinh_trang_khac_phuc ?? '');
+  const [nguoi, setNguoi] = useState(dong.nguoi_xu_ly ?? '');
+  const [ghi, setGhi] = useState(isThucHien ? (dong.ghi_chu ?? '') : (dong.ghi_chu_kiem_tra ?? ''));
+
+  // Dòng đổi (tải lại sau lưu / mở phiếu khác) → đồng bộ lại giá trị đã lưu.
+  useEffect(() => {
+    setKp(dong.tinh_trang_khac_phuc ?? '');
+    setNguoi(dong.nguoi_xu_ly ?? '');
+    setGhi(isThucHien ? (dong.ghi_chu ?? '') : (dong.ghi_chu_kiem_tra ?? ''));
+    setMo(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dong.id]);
+
+  if (!coTheSua) {
+    return (
+      <div className="space-y-1">
+        <KetQuaTick value={kq} />
+        {isThucHien ? (
+          (dong.ghi_chu || dong.tinh_trang_khac_phuc || dong.nguoi_xu_ly) && (
+            <p className="text-xs text-muted-foreground m-0 line-clamp-2">
+              {[dong.nguoi_xu_ly, dong.tinh_trang_khac_phuc, dong.ghi_chu].filter(Boolean).join(' · ')}
+            </p>
+          )
+        ) : (
+          dong.ghi_chu_kiem_tra && <p className="text-xs text-muted-foreground m-0 line-clamp-2">{dong.ghi_chu_kiem_tra}</p>
+        )}
+      </div>
+    );
+  }
+
+  const chon = (v: KetQuaCl | null) => {
+    // K.Đạt ở khâu làm phải ghi tình trạng & biện pháp khắc phục → mở sẵn ô nhập.
+    if (isThucHien && v === 'khong_dat') setMo(true);
+    if (isThucHien) {
+      luuThucHien.mutate({
+        idDong: dong.id,
+        idPhieu,
+        kq_thuc_hien: v,
+        tinh_trang_khac_phuc: kp.trim() || null,
+        nguoi_xu_ly: nguoi.trim() || null,
+        ghi_chu: ghi.trim() || null,
+      });
+    } else {
+      luuKiemTra.mutate({ idDong: dong.id, idPhieu, kq_kiem_tra: v, ghi_chu_kiem_tra: ghi.trim() || null });
+    }
+  };
+
+  const luu = () => chon(kq);
+
+  const pending = isThucHien ? luuThucHien.isPending : luuKiemTra.isPending;
+
+  const btn = (v: KetQuaCl, label: string, activeClass: string) => (
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => chon(kq === v ? null : v)}
+      className={cn(
+        'inline-flex h-11 flex-1 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border px-2 text-sm font-semibold transition-all active:scale-95 disabled:opacity-50',
+        kq === v ? activeClass : 'border-border text-muted-foreground hover:bg-muted'
+      )}
+    >
+      {v === 'dat' ? <Check size={16} /> : <X size={16} />}
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        {btn('dat', t('checklistBanGiao.ketQua.dat'), 'border-emerald-600 bg-emerald-600 text-white')}
+        {btn('khong_dat', t('checklistBanGiao.ketQua.khongDat'), 'border-rose-600 bg-rose-600 text-white')}
+        <button
+          type="button"
+          onClick={() => setMo((v) => !v)}
+          className={cn(
+            'h-11 w-9 shrink-0 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted',
+            mo && 'bg-muted'
+          )}
+          aria-label={t('checklistBanGiao.oChon.ghiChu')}
+          title={t('checklistBanGiao.oChon.ghiChu')}
+        >
+          <ChevronDown size={13} className={cn('transition-transform', mo && 'rotate-180')} />
+        </button>
+      </div>
+
+      {mo && (
+        <div className="space-y-1.5 rounded-lg border border-border bg-muted/20 p-2">
+          {isThucHien && (
+            <>
+              {kq === 'khong_dat' && (
+                <Textarea
+                  rows={2}
+                  label={t('checklistBanGiao.oChon.tinhTrangKhacPhuc')}
+                  value={kp}
+                  onChange={(e) => setKp(e.target.value)}
+                  placeholder={t('checklistBanGiao.oChon.tinhTrangKhacPhucPh')}
+                />
+              )}
+              <Input
+                label={t('checklistBanGiao.oChon.nguoiXuLy')}
+                value={nguoi}
+                onChange={(e) => setNguoi(e.target.value)}
+              />
+            </>
+          )}
+          <Textarea
+            rows={2}
+            label={t('checklistBanGiao.oChon.ghiChu')}
+            value={ghi}
+            onChange={(e) => setGhi(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Button type="button" size="sm" variant="outline" onClick={luu} disabled={pending}>
+              <Save size={13} className="mr-1" />
+              {t('common.save')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OChonKetQua;

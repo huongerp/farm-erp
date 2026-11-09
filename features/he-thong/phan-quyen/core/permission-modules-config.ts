@@ -122,6 +122,16 @@ export const PERMISSION_FUNCTIONS: PermissionFunction[] = [
         { id: BASE('quan-ly-nha-so-che', 'thong-ke-san-xuat'), nameKey: 'page.quanLyNhaSoChe.modules.thongKeSanXuat' },
       ]},
       /**
+       * Checklist công đoạn (migration 073). Khâu kiểm tra lại xét theo CHỨC VỤ ghi trên mẫu (không theo
+       * cột Duyệt): chức vụ khâu sau chỉ cần quyền "xem" phiếu là tích / nhận / trả lại được.
+       * admin/all trên checklist-ban-giao = cấp cao: sửa mọi lúc, mở lại phiếu đã nhận.
+       */
+      { groupTitleKey: 'page.quanLyNhaSoChe.groupChecklist', modules: [
+        { id: BASE('quan-ly-nha-so-che', 'checklist-ban-giao'), nameKey: 'page.quanLyNhaSoChe.modules.checklistBanGiao' },
+        { id: BASE('quan-ly-nha-so-che', 'bao-duong-thiet-bi'), nameKey: 'page.quanLyNhaSoChe.modules.baoDuongThietBi' },
+        { id: BASE('quan-ly-nha-so-che', 'checklist-mau'), nameKey: 'page.quanLyNhaSoChe.modules.checklistMau' },
+      ]},
+      /**
        * Kho nhà sơ chế (vật tư, thành phẩm) — bố cục nhóm giống Kho vận (Mua hàng): nhập xuất / báo cáo / danh mục.
        * Slug giữ hậu tố "-phan-thuoc" vì module_id đã nằm trong fp_var_phan_quyen (tránh migrate quyền).
        * Bản Phân thuốc (bảng fp_pt_* riêng) nằm ở khối `phan-thuoc` bên dưới, dùng chung component.

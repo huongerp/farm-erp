@@ -284,6 +284,30 @@ export function renderThongBao(nc: NguCanhRender): NoiDungThongBao {
         noiDung: boiActor(tenActor, 'đã huỷ đơn đặt hàng này.'),
       };
 
+    // --- Checklist công đoạn -----------------------------------------------------
+    case 'checklist.cho_kiem_tra': {
+      const lan = Number(suKien.duLieu['lanTraLai'] ?? 0);
+      return {
+        tieuDe: `${nhan} chờ bạn kiểm tra lại`,
+        noiDung: boiActor(
+          tenActor,
+          lan > 0 ? 'đã sửa và chuyển lại phiếu bị trả, chờ khâu bạn kiểm tra.' : 'đã làm xong và chuyển phiếu, chờ khâu bạn kiểm tra lại.'
+        ),
+      };
+    }
+    case 'checklist.tra_lai':
+      return {
+        tieuDe: `${nhan} bị trả lại`,
+        noiDung: lyDo
+          ? `${boiActor(tenActor, 'trả lại phiếu, cần xử lý rồi chuyển lại.')} Lý do: ${catBot(lyDo, DAI_TOI_DA_TRAO_DOI)}`
+          : boiActor(tenActor, 'trả lại phiếu, cần xử lý rồi chuyển lại.'),
+      };
+    case 'checklist.da_nhan':
+      return {
+        tieuDe: `${nhan} đã được khâu sau nhận`,
+        noiDung: boiActor(tenActor, 'đã kiểm tra lại và nhận phiếu.'),
+      };
+
     // --- Sổ quỹ: duyệt / không duyệt ------------------------------------------
     case 'quy.da_duyet':
       return {

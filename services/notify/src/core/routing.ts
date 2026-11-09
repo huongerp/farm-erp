@@ -35,7 +35,7 @@ function soNguyen(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function mangSo(v: unknown): number[] {
+export function mangSo(v: unknown): number[] {
   if (!Array.isArray(v)) return [];
   return v.map(soNguyen).filter((n): n is number => n !== null);
 }
@@ -77,6 +77,8 @@ export function giaiVaiTheoPayload(
       return mangSo(p['nguoi_ho_tro']);
     case 'ho_tro_moi':
       return mangSo(suKien.duLieu['hoTroMoi']);
+    case 'khau_kiem_tra':
+      return mangSo(suKien.duLieu['nguoiKhauKiemTra']);
     case 'nhom_duyet':
     case 'quan_tri_module':
       return [];

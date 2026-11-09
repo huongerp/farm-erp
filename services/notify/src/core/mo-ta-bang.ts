@@ -145,6 +145,17 @@ export const MO_TA_BANG: Record<string, MoTaBang> = {
     cotNguoiTao: 'id_nguoi_tao',
   },
 
+  // --- Checklist công đoạn (mig 073): Chuyển / Trả lại / Nhận ------------------
+  fp_farm_cl_phieu: {
+    bang: 'fp_farm_cl_phieu',
+    moduleId: 'quan-ly-nha-so-che/checklist-ban-giao',
+    duongDan: '/quan-ly-nha-so-che/checklist-ban-giao',
+    tenChungTu: 'Phiếu checklist',
+    cotSoPhieu: 'so_phieu',
+    cotNguoiTao: 'id_nguoi_tao',
+    thamSoPhieu: 'phieu',
+  },
+
   // --- Đơn đặt hàng ---------------------------------------------------------
   fp_mh_don_dat_hang: {
     bang: 'fp_mh_don_dat_hang',

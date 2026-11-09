@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, ClipboardPen, Settings, BadgeCheck, UserCheck } from 'lucide-react';
+import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, ClipboardPen, Settings, BadgeCheck, UserCheck, ListChecks, Wrench } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -39,6 +39,9 @@ export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
   'ton-kho-phan-thuoc',
   'hang-hoa-phan-thuoc',
   'thiet-lap-de-xuat-mua-hang',
+  'checklist-ban-giao',
+  'bao-duong-thiet-bi',
+  'checklist-mau',
 ];
 
 function buildItem(
@@ -136,6 +139,32 @@ export function getQuanLyNhaSoCheGroups(
           descKey: 'page.quanLyNhaSoChe.descs.thongKeSanXuat',
           icon: BarChart3,
           color: 'bg-indigo-600',
+        }),
+      ],
+    },
+    {
+      groupTitle: t('page.quanLyNhaSoChe.groupChecklist'),
+      items: [
+        item({
+          slug: 'checklist-ban-giao',
+          titleKey: 'page.quanLyNhaSoChe.modules.checklistBanGiao',
+          descKey: 'page.quanLyNhaSoChe.descs.checklistBanGiao',
+          icon: ClipboardCheck,
+          color: 'bg-emerald-600',
+        }),
+        item({
+          slug: 'bao-duong-thiet-bi',
+          titleKey: 'page.quanLyNhaSoChe.modules.baoDuongThietBi',
+          descKey: 'page.quanLyNhaSoChe.descs.baoDuongThietBi',
+          icon: Wrench,
+          color: 'bg-green-700',
+        }),
+        item({
+          slug: 'checklist-mau',
+          titleKey: 'page.quanLyNhaSoChe.modules.checklistMau',
+          descKey: 'page.quanLyNhaSoChe.descs.checklistMau',
+          icon: ListChecks,
+          color: 'bg-lime-700',
         }),
       ],
     },

@@ -350,6 +350,39 @@ function phanTichQuyThuChi(dong: DongOutbox): SuKienDaPhanTich[] {
   }
 }
 
+// --- Checklist công đoạn (mig 073) -------------------------------------------
+
+/**
+ * - → cho_kiem_tra (Chuyển, hoặc cấp cao mở lại phiếu đã nhận): báo khâu kiểm tra lại.
+ * - → tra_lai: báo người tạo phiếu, mức cao, kèm lý do.
+ * - cho_kiem_tra → hoan_thanh (khâu sau Nhận): báo người tạo phiếu.
+ * Huỷ, mở lại phiếu huỷ, Chuyển của mẫu không có khâu sau: không báo.
+ */
+function phanTichChecklist(dong: DongOutbox): SuKienDaPhanTich[] {
+  if (!daDoiTrangThai(dong)) return [];
+  switch (dong.trang_thai_moi) {
+    case 'cho_kiem_tra':
+      return [{
+        loai: 'checklist.cho_kiem_tra',
+        muc: 'thuong',
+        vai: ['khau_kiem_tra'],
+        duLieu: { lanTraLai: Number(dong.payload['so_lan_tra_lai'] ?? 0) },
+      }];
+    case 'tra_lai':
+      return [{
+        loai: 'checklist.tra_lai',
+        muc: 'cao',
+        vai: ['nguoi_tao'],
+        duLieu: { lyDo: dong.payload['ly_do_tra_lai'] ?? null },
+      }];
+    case 'hoan_thanh':
+      if (dong.trang_thai_cu !== 'cho_kiem_tra') return [];
+      return [{ loai: 'checklist.da_nhan', muc: 'thuong', vai: ['nguoi_tao'], duLieu: {} }];
+    default:
+      return [];
+  }
+}
+
 // --- Cổng vào ----------------------------------------------------------------
 
 export function phanTichSuKien(dong: DongOutbox): SuKienDaPhanTich[] {
@@ -358,5 +391,6 @@ export function phanTichSuKien(dong: DongOutbox): SuKienDaPhanTich[] {
   if (dong.bang === 'fp_hr_phieu_hanh_chinh') return phanTichPhieuHanhChinh(dong);
   if (dong.bang === 'fp_mh_don_dat_hang') return phanTichDonDatHang(dong);
   if (dong.bang === 'fp_tc_quy_thu_chi') return phanTichQuyThuChi(dong);
+  if (dong.bang === 'fp_farm_cl_phieu') return phanTichChecklist(dong);
   return [];
 }

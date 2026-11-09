@@ -129,6 +129,22 @@ const GiamSatChatLuongPreviewPage = lazyWithFeatureI18n(
   'giam-sat-chat-luong',
   () => import('./features/quan-ly-nha-so-che/giam-sat-chat-luong/GiamSatChatLuongPreviewPage')
 );
+const ChecklistMauPreviewPage = lazyWithFeatureI18n(
+  'checklist-mau',
+  () => import('./features/quan-ly-nha-so-che/checklist-mau/ChecklistMauPreviewPage')
+);
+const ThietBiPreviewPage = lazyWithFeatureI18n(
+  'bao-duong-thiet-bi',
+  () => import('./features/quan-ly-nha-so-che/bao-duong-thiet-bi/ThietBiPreviewPage')
+);
+const LichBaoDuongInPage = lazyWithFeatureI18n(
+  'bao-duong-thiet-bi',
+  () => import('./features/quan-ly-nha-so-che/bao-duong-thiet-bi/LichBaoDuongInPage')
+);
+const ChecklistPreviewPage = lazyWithFeatureI18n(
+  'checklist-ban-giao',
+  () => import('./features/quan-ly-nha-so-che/checklist-ban-giao/ChecklistPreviewPage')
+);
 const BaoCaoSoChePreviewPage = lazyWithFeatureI18n(
   'bao-cao-so-che',
   () => import('./features/quan-ly-nha-so-che/bao-cao-so-che/BaoCaoSoChePreviewPage')
@@ -440,6 +456,54 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-nha-so-che/dang-ky-tham-quan">
                 <Suspense fallback={<PageFallback />}>
                   <DangKyThamQuanPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/checklist-mau/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/checklist-mau">
+                <Suspense fallback={<PageFallback />}>
+                  <ChecklistMauPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/bao-duong-thiet-bi/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/bao-duong-thiet-bi">
+                <Suspense fallback={<PageFallback />}>
+                  <ThietBiPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/bao-duong-thiet-bi/in-lich"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/bao-duong-thiet-bi">
+                <Suspense fallback={<PageFallback />}>
+                  <LichBaoDuongInPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/checklist-ban-giao/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/checklist-ban-giao">
+                <Suspense fallback={<PageFallback />}>
+                  <ChecklistPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

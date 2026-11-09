@@ -400,3 +400,36 @@ describe('bảng chưa đấu thông báo', () => {
     expect(phanTichSuKien(dong({ bang: 'fp_hr_bang_luong', trang_thai_moi: 'x' }))).toEqual([]);
   });
 });
+
+describe('checklist công đoạn (fp_farm_cl_phieu)', () => {
+  const cl = (cu: string | null, moi: string, payload: Record<string, unknown> = {}) =>
+    phanTichSuKien(
+      dong({
+        bang: 'fp_farm_cl_phieu',
+        module_id: 'quan-ly-nha-so-che/checklist-ban-giao',
+        trang_thai_cu: cu,
+        trang_thai_moi: moi,
+        payload,
+      })
+    );
+
+  it('chuyển sang (kể cả chuyển lại sau khi bị trả) báo khâu kiểm tra lại', () => {
+    for (const cu of ['nhap', 'tra_lai', 'hoan_thanh']) {
+      const kq = cl(cu, 'cho_kiem_tra', { so_lan_tra_lai: 1 });
+      expect(kq[0]!.loai).toBe('checklist.cho_kiem_tra');
+      expect(kq[0]!.vai).toEqual(['khau_kiem_tra']);
+    }
+  });
+
+  it('trả lại báo người tạo mức cao kèm lý do; nhận báo người tạo', () => {
+    const tra = cl('cho_kiem_tra', 'tra_lai', { ly_do_tra_lai: 'Sai tem lô 12' });
+    expect(tra[0]).toMatchObject({ loai: 'checklist.tra_lai', muc: 'cao', vai: ['nguoi_tao'] });
+    expect(tra[0]!.duLieu['lyDo']).toBe('Sai tem lô 12');
+    expect(cl('cho_kiem_tra', 'hoan_thanh')[0]!.loai).toBe('checklist.da_nhan');
+  });
+
+  it('không báo khi huỷ hoặc mẫu không có khâu sau (nhap → hoan_thanh)', () => {
+    expect(cl('nhap', 'huy')).toEqual([]);
+    expect(cl('nhap', 'hoan_thanh')).toEqual([]);
+  });
+});

@@ -43,6 +43,7 @@ export const LOAI_SU_KIEN_THEO_MODULE: Record<string, readonly string[]> = {
     'don_hang.da_nhan_du', 'don_hang.huy',
   ],
   'tai-chinh/thu-chi-quy': ['quy.da_duyet', 'quy.khong_duyet'],
+  'quan-ly-nha-so-che/checklist-ban-giao': ['checklist.cho_kiem_tra', 'checklist.tra_lai', 'checklist.da_nhan'],
 };
 
 /** Module đã đấu thông báo, theo thứ tự hiện trên hàng chip lọc. */
@@ -79,6 +80,10 @@ const KIEU_THEO_LOAI: Record<string, NotificationType> = {
 
   'quy.da_duyet': 'success',
   'quy.khong_duyet': 'error',
+
+  'checklist.cho_kiem_tra': 'info',
+  'checklist.tra_lai': 'error',
+  'checklist.da_nhan': 'success',
   // Luồng khoá / xin mở cũ (bỏ ở migration 036) — giữ để thông báo đã gửi vẫn đúng màu.
   'quy.xin_mo_khoa': 'warning',
   'quy.duyet_mo_khoa': 'success',

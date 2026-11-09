@@ -9,7 +9,7 @@ import type { PoolClient } from 'pg';
 import { config } from './config.ts';
 import * as db from './db.ts';
 import { phanTichSuKien } from './core/su-kien.ts';
-import { dinhTuyen, giaiVaiTheoPayload } from './core/routing.ts';
+import { dinhTuyen, giaiVaiTheoPayload, mangSo } from './core/routing.ts';
 import { renderThongBao } from './core/render.ts';
 import { layMoTaBang, dungLink } from './core/mo-ta-bang.ts';
 import { nenGop } from './core/dedupe.ts';
@@ -91,6 +91,10 @@ export async function xuLyMotSuKien(dong: DongOutbox): Promise<void> {
   const link = dungLink(moTa, dong.ban_ghi_id);
 
   for (const suKien of dsSuKien) {
+    if (suKien.vai.includes('khau_kiem_tra')) {
+      const chucVu = mangSo(dong.payload['chuc_vu_kiem_tra_ids']);
+      suKien.duLieu['nguoiKhauKiemTra'] = chucVu.length > 0 ? await db.layNhanVienTheoChucVu(chucVu) : [];
+    }
     let nhomDuyet: Awaited<ReturnType<typeof db.layNguoiDuyet>> = [];
     if (suKien.vai.includes('quan_tri_module')) {
       nhomDuyet = await db.layQuanTriModule(moTa.moduleId);

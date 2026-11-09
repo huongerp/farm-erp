@@ -27,7 +27,12 @@ export type VaiNguoiNhan =
    * Cấp bậc 1 + người có admin/all trên module (rpc_tb_quan_tri_module) — KHÔNG gồm
    * người chỉ có approve như 'nhom_duyet'. Giống 'nhom_duyet', phải tra phân quyền.
    */
-  | 'quan_tri_module';
+  | 'quan_tri_module'
+  /**
+   * Checklist công đoạn (mig 073): nhân viên có chức vụ trong `chuc_vu_kiem_tra_ids` của phiếu.
+   * Worker tra sẵn (rpc_tb_nhan_vien_theo_chuc_vu) và đặt vào duLieu.nguoiKhauKiemTra.
+   */
+  | 'khau_kiem_tra';
 
 /** Một dòng trong fp_var_su_kien_thong_bao. */
 export interface DongOutbox {
