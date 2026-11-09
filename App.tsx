@@ -145,6 +145,11 @@ const ChecklistPreviewPage = lazyWithFeatureI18n(
   'checklist-ban-giao',
   () => import('./features/quan-ly-nha-so-che/checklist-ban-giao/ChecklistPreviewPage')
 );
+// Trang tra cứu công khai khi quét QR tem thùng mẫu — mở không cần đăng nhập.
+const TraCuuTemPage = lazyWithFeatureI18n(
+  'giam-sat-chat-luong',
+  () => import('./features/quan-ly-nha-so-che/giam-sat-chat-luong/TraCuuTemPage')
+);
 const BaoCaoSoChePreviewPage = lazyWithFeatureI18n(
   'bao-cao-so-che',
   () => import('./features/quan-ly-nha-so-che/bao-cao-so-che/BaoCaoSoChePreviewPage')
@@ -266,6 +271,7 @@ const App = () => {
       <Routes>
         <Route path="/dang-nhap" element={<Suspense fallback={<PageFallback />}><Login /></Suspense>} />
         <Route path="/dat-lai-mat-khau" element={<ResetPassword />} />
+        <Route path="/qr/:maTem" element={<Suspense fallback={<PageFallback />}><TraCuuTemPage /></Suspense>} />
         <Route path="/login" element={<Navigate to="/dang-nhap" replace />} />
         <Route path="/phieu-luong/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><PayslipPreviewPage /></Suspense></ProtectedRoute>} />
         <Route path="/ho-so-nhan-vien/:id" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><EmployeeProfilePreviewPage /></Suspense></ProtectedRoute>} />

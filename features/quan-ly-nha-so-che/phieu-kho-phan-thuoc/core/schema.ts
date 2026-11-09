@@ -8,6 +8,7 @@ export const phieuKhoPTChiTietFormItemSchema = z.object({
   so_luong: z.coerce.number(),
   don_gia: z.coerce.number().optional(),
   pham_cap: z.string().optional().nullable(),
+  hang_muc: z.string().optional().nullable(),
   so_lot: z.string().optional(),
   ghi_chu: z.string().optional(),
 });

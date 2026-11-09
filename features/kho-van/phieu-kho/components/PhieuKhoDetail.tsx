@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, X, Copy, AlertTriangle } from 'lucide-react';
+import { FileText, Calendar, Warehouse, ArrowRightLeft, Package, Truck, Printer, CheckCircle, X, Copy, AlertTriangle, PackageCheck, MessagesSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
 import DetailDrawerFooter from '../../../../components/shared/DetailDrawerFooter';
@@ -24,11 +24,14 @@ import DetailField from '../../../../components/shared/DetailField';
 import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
-import { useUpdatePhieuKhoTrangThai } from '../hooks/use-phieu-kho';
+import { useUpdatePhieuKhoTrangThai, useXacNhanNhanPhieuKho, useSuaTraoDoiPhieuKho } from '../hooks/use-phieu-kho';
 import { useAuthStore } from '../../../../store/useStore';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import ApproveOption, { APPROVE_OPTION_STYLE } from './ApproveOption';
 import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
+import TraoDoiDialog from '../../../../components/shared/trao-doi/TraoDoiDialog';
+import { hienThiThoiDiemTraoDoi } from '../../../../components/shared/trao-doi/hien-thi';
+import { tachTraoDoi } from '../../../../lib/trao-doi-log';
 
 interface Props {
   data: PhieuKho;
@@ -55,6 +58,9 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
   const updateTrangThaiMutation = useUpdatePhieuKhoTrangThai(() => setShowDuyetPopup(false));
+  const [showTraoDoi, setShowTraoDoi] = useState(false);
+  const xacNhanNhanMutation = useXacNhanNhanPhieuKho();
+  const suaTraoDoiMutation = useSuaTraoDoiPhieuKho(() => setShowTraoDoi(false));
 
   const showApproveButton = canApprove;
   const isDaQuyetDinh = isTrangThaiDaQuyetDinh(data.trang_thai);
@@ -108,6 +114,11 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   const isNhap = loai === 'nhap';
   const isXuat = loai === 'xuat';
 
+  const daNhan = data.id_nguoi_nhan != null;
+  const canXacNhanNhan = isChuyen && data.trang_thai === 'Chờ duyệt' && !daNhan;
+
+  const mucTraoDoi = useMemo(() => tachTraoDoi(data.trao_doi), [data.trao_doi]);
+
   const detailToolbarActions: DetailToolbarAction[] = useMemo(() => {
     const actions: DetailToolbarAction[] = [];
     if (showApproveButton) {
@@ -128,13 +139,35 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
         onClick: () => { onCopy(data); onClose(); },
       });
     }
+    if (canXacNhanNhan) {
+      actions.push({
+        label: t('phieuKho.detail.xacNhanNhanAction'),
+        icon: <PackageCheck size={16} />,
+        onClick: () =>
+          confirm({
+            title: t('phieuKho.detail.xacNhanNhanConfirmTitle'),
+            message: t('phieuKho.detail.xacNhanNhanConfirmMessage'),
+            variant: 'info',
+            confirmText: CONFIRM_YES(),
+            onConfirm: () => xacNhanNhanMutation.mutate(data.id),
+          }),
+        variant: 'success',
+      });
+    }
+    if (isChuyen) {
+      actions.push({
+        label: t('phieuKho.detail.traoDoiAction'),
+        icon: <MessagesSquare size={16} />,
+        onClick: () => setShowTraoDoi(true),
+      });
+    }
     actions.push({
       label: t('phieuKho.printAction'),
       icon: <Printer size={16} />,
       onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
     });
     return actions;
-  }, [data, showApproveButton, isDaQuyetDinh, onCopy, onClose, t]);
+  }, [data, showApproveButton, isDaQuyetDinh, onCopy, onClose, canXacNhanNhan, isChuyen, confirm, xacNhanNhanMutation, t]);
 
   const renderFooter = (
     <DetailDrawerFooter
@@ -163,7 +196,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-foreground leading-tight truncate">{data.so_phieu}</h2>
             <p className="text-body-sm text-muted-foreground mt-0.5">{data.ngay}</p>
-            <div className="mt-1.5">
+            <div className="mt-1.5 flex items-center gap-1.5">
               <span
                 className={cn(
                   'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
@@ -172,6 +205,12 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               >
                 {statusLabel}
               </span>
+              {daNhan && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900">
+                  <PackageCheck size={12} />
+                  {t('phieuKho.detail.daNhanBadge')}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -228,14 +267,6 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               icon={<FileText size={12} />}
               className="col-span-1 sm:col-span-2"
             />
-            {data.trao_doi && (
-              <DetailField
-                label={t('phieuKho.detail.traoDoi')}
-                value={<span className="whitespace-pre-line break-words">{data.trao_doi}</span>}
-                icon={<FileText size={12} />}
-                className="col-span-1 sm:col-span-2"
-              />
-            )}
             <DetailField
               label={t('phieuKho.detail.creator')}
               value={data.ten_nguoi_tao ?? '—'}
@@ -248,6 +279,13 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
                 icon={<CheckCircle size={12} />}
               />
             ) : null}
+            {daNhan && (
+              <DetailField
+                label={t('phieuKho.detail.daNhanHang')}
+                value={`${data.ten_nguoi_nhan ?? ''}${data.tg_nhan ? ` · ${formatDateTimeShort(data.tg_nhan)}` : ''}`}
+                icon={<PackageCheck size={12} />}
+              />
+            )}
           </DetailFieldGrid>
         </DetailSection>
 
@@ -317,6 +355,25 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               icon={<Calendar size={12} />}
             />
           </DetailFieldGrid>
+        </DetailSection>
+
+        <DetailSection title={t('phieuKho.detail.traoDoi')} icon={<MessagesSquare size={14} />} variant="secondary">
+          {mucTraoDoi.length > 0 ? (
+            <ul className="space-y-2.5 pb-1 m-0 p-0 list-none">
+              {mucTraoDoi.map((m, i) => (
+                <li key={i} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  {m.thoiDiem && (
+                    <span className="block text-caption tabular-nums text-muted-foreground">
+                      {hienThiThoiDiemTraoDoi(m.thoiDiem, true)}
+                    </span>
+                  )}
+                  <span className="block text-body-sm text-foreground whitespace-pre-line break-words">{m.noiDung || '—'}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground italic m-0">{t('common.traoDoi.empty')}</p>
+          )}
         </DetailSection>
       </div>
     </GenericDrawer>
@@ -419,6 +476,16 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showTraoDoi && (
+        <TraoDoiDialog
+          tenDong={data.so_phieu}
+          traoDoi={data.trao_doi}
+          dangLuu={suaTraoDoiMutation.isPending}
+          onSave={(giaTri, cu) => suaTraoDoiMutation.mutate({ id: data.id, traoDoi: giaTri, traoDoiCu: cu })}
+          onClose={() => setShowTraoDoi(false)}
+        />
+      )}
     </>
   );
 };

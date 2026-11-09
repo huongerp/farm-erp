@@ -101,6 +101,16 @@ export interface PhieuQcTomTat {
   ten_hang_hoa: string | null;
 }
 
+/**
+ * Thông tin công khai của một tem thùng mẫu (trang quét QR không cần đăng nhập).
+ * CỐ Ý chỉ 3 trường — không trả kết luận QC, người tạo hay id.
+ */
+export interface ThongTinTemCongKhai {
+  ten_hang_hoa: string | null;
+  ma_hang_hoa: string | null;
+  ma_cay_hang: string | null;
+}
+
 /** Một xe (phiếu Đăng ký nhận hàng) đã xếp cây hàng này. */
 export interface XeDaXepCayHang {
   id_phieu_xe: string;

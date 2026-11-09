@@ -39,3 +39,12 @@ export function TrangThaiPhieuKhoPTBadge({ trangThai }: { trangThai: TrangThaiPh
     </span>
   );
 }
+
+export function DaNhanPhieuKhoPTBadge() {
+  const { t } = useTranslation();
+  return (
+    <span className={cn(BADGE, 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900')}>
+      {t('phieuKhoPhanThuoc.detail.daNhanBadge')}
+    </span>
+  );
+}

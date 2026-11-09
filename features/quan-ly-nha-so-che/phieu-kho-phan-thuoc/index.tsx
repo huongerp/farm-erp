@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, ListChecks } from 'lucide-react';
+import { ClipboardList, ListChecks, BarChart3 } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DanhSachTab from './components/DanhSachTab';
 import ChiTietTab from './components/ChiTietTab';
+import TheoHangMucTab from './components/TheoHangMucTab';
 
-const VALID_TABS = ['danhSach', 'chiTiet'] as const;
+const VALID_TABS = ['danhSach', 'chiTiet', 'theoHangMuc'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const PhieuKhoPhanThuocPage: React.FC = () => {
@@ -38,6 +39,7 @@ const PhieuKhoPhanThuocPage: React.FC = () => {
     () => [
       { id: 'danhSach', label: t('phieuKhoPhanThuoc.tabs.danhSach'), icon: ClipboardList },
       { id: 'chiTiet', label: t('phieuKhoPhanThuoc.tabs.chiTiet'), icon: ListChecks },
+      { id: 'theoHangMuc', label: t('phieuKhoPhanThuoc.tabs.theoHangMuc'), icon: BarChart3 },
     ],
     [t]
   );
@@ -51,6 +53,7 @@ const PhieuKhoPhanThuocPage: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'danhSach' && <DanhSachTab />}
         {activeTab === 'chiTiet' && <ChiTietTab />}
+        {activeTab === 'theoHangMuc' && <TheoHangMucTab />}
       </div>
     </div>
   );

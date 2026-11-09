@@ -24,6 +24,10 @@ describe('chuanHoaCaiDatTem', () => {
     expect(chuanHoaCaiDatTem({ tenHang: 'x'.repeat(60) }).tenHang).toHaveLength(40);
   });
 
+  it('cài đặt cũ chưa có tenThanhPham → mặc định bật', () => {
+    expect(chuanHoaCaiDatTem({ rong: 50, truong: { ngay: false } }).truong.tenThanhPham).toBe(true);
+  });
+
   it('bỏ logo không phải ảnh data URL', () => {
     expect(chuanHoaCaiDatTem({ logo: 'https://x/y.png' }).logo).toBeNull();
     expect(chuanHoaCaiDatTem({ logo: 'data:image/png;base64,AAAA' }).logo).toBe('data:image/png;base64,AAAA');

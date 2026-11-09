@@ -24,6 +24,7 @@ export interface ChiTietPhieuKhoPTFilters {
   trangThaiKeys: string[];
   nguoiTaoIds: string[];
   nguoiDuyetIds: string[];
+  hangMuc: string[];
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -35,6 +36,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'ma_hang', label: i18n.t('phieuKhoPhanThuoc.form.itemCode'), visible: true, minWidth: 128, maxWidth: 200, order: 5 },
   { id: 'ten_hang', label: i18n.t('phieuKhoPhanThuoc.form.itemName'), visible: true, minWidth: 280, maxWidth: 480, order: 6 },
   { id: 'pham_cap', label: i18n.t('phieuKhoPhanThuoc.store.phamCapCol'), visible: true, minWidth: 100, maxWidth: 160, order: 6.5 },
+  { id: 'hang_muc', label: i18n.t('phieuKhoPhanThuoc.store.hangMucCol'), visible: true, minWidth: 100, maxWidth: 160, order: 6.75 },
   { id: 'so_luong', label: i18n.t('phieuKhoPhanThuoc.form.quantity'), visible: true, minWidth: 96, maxWidth: 120, order: 7 },
   { id: 'don_gia', label: i18n.t('phieuKhoPhanThuoc.form.unitPrice'), visible: true, minWidth: 112, maxWidth: 140, order: 8 },
   { id: 'thanh_tien', label: i18n.t('phieuKhoPhanThuoc.form.amount'), visible: true, minWidth: 120, maxWidth: 168, order: 9 },
@@ -55,6 +57,7 @@ const initialFilters: ChiTietPhieuKhoPTFilters = {
   trangThaiKeys: [],
   nguoiTaoIds: [],
   nguoiDuyetIds: [],
+  hangMuc: [],
 };
 
 export const useChiTietPhieuKhoPTStore = storeTheoBienThe((bt) =>

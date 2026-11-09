@@ -50,6 +50,8 @@ export interface PlannedLine {
   ten_hang_hoa: string | null;
   don_vi_tinh: string | null;
   pham_cap: string | null;
+  /** Hạng mục gõ tự do — không suy từ hàng hoá (migration 071). */
+  hang_muc: string | null;
   so_luong: number;
   don_gia: number;
   so_lot: string | null;
@@ -229,6 +231,7 @@ export function planPhieuKhoPTImport(
             don_vi_tinh: hang!.dvt || null,
             // Để trống → lấy theo danh mục hàng hoá, giống form lập phiếu.
             pham_cap: normalizeText(row.pham_cap) || hang!.pham_cap || null,
+            hang_muc: normalizeText(row.hang_muc) || null,
             so_luong: soLuong.ok ? soLuong.value! : 0,
             don_gia: (donGia.ok ? donGia.value : null) ?? hang!.don_gia ?? 0,
             so_lot: normalizeText(row.so_lot) || null,

@@ -33,6 +33,7 @@ const row = (over: Record<string, unknown> = {}) => ({
   so_luong: '10',
   don_gia: '',
   pham_cap: '',
+  hang_muc: '',
   so_lot: '',
   ghi_chu: '',
   ...over,
@@ -119,5 +120,11 @@ describe('planPhieuKhoPTImport', () => {
     const [a, b] = plan([row(), row({ ma_hang: 'HH-002', don_gia: '12.500', pham_cap: 'Loại 2' })]).phieus[0].lines;
     expect(a).toMatchObject({ don_gia: 250000, pham_cap: 'Loại 1', don_vi_tinh: 'Bao', ten_hang_hoa: 'Ure Phú Mỹ' });
     expect(b).toMatchObject({ don_gia: 12500, pham_cap: 'Loại 2' });
+  });
+
+  it('hạng mục lấy theo ô, trim; để trống → null (không suy từ hàng hoá)', () => {
+    const [a, b] = plan([row({ hang_muc: '  Chăm sóc vườn ' }), row({ ma_hang: 'HH-002' })]).phieus[0].lines;
+    expect(a.hang_muc).toBe('Chăm sóc vườn');
+    expect(b.hang_muc).toBeNull();
   });
 });

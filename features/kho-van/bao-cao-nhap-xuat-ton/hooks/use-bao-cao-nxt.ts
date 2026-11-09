@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { NXTReportFilters } from '../core/types';
-import { getNXTByPeriod, getPhieuInPeriod } from '../services/bao-cao-nxt-service';
+import { getNXTByPeriod, getNXTGiaTri, getPhieuInPeriod } from '../services/bao-cao-nxt-service';
 
 export function useNXTByPeriod(filters: NXTReportFilters | null) {
   return useQuery({
@@ -14,6 +14,14 @@ export function usePhieuInPeriod(filters: NXTReportFilters | null) {
   return useQuery({
     queryKey: ['baoCaonhapXuatTon', 'phieuInPeriod', filters],
     queryFn: () => getPhieuInPeriod(filters!),
+    enabled: !!filters && !!filters.dateFrom && !!filters.dateTo,
+  });
+}
+
+export function useNXTGiaTri(filters: NXTReportFilters | null) {
+  return useQuery({
+    queryKey: ['baoCaonhapXuatTon', 'giaTri', filters],
+    queryFn: () => getNXTGiaTri(filters!),
     enabled: !!filters && !!filters.dateFrom && !!filters.dateTo,
   });
 }

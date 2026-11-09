@@ -20,6 +20,7 @@ export function mapDeXuatChiTietToPhieuKhoPTLines(
       id_hang_hoa: ct.id_hang_hoa,
       so_luong: Number(ct.so_luong),
       don_gia: 0,
+      hang_muc: '',
       so_lot: '',
       ghi_chu: ct.ghi_chu?.trim() || '',
     }));
@@ -34,6 +35,7 @@ export function mapDongChonToPhieuKhoPTLines(
     id_hang_hoa: dong.id_hang_hoa,
     so_luong,
     don_gia: 0,
+    hang_muc: '',
     so_lot: '',
     ghi_chu: dong.ghi_chu?.trim() || '',
   }));

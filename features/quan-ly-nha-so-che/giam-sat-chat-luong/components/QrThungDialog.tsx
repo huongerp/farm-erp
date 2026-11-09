@@ -6,7 +6,7 @@ import QrCodeImage from '../../../../components/shared/QrCodeImage';
 import Button from '../../../../components/ui/Button';
 import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
 import { formatDateTimeShort } from '../../../../lib/utils';
-import { taoNoiDungQr } from '../core/qr';
+import { taoUrlQrTem } from '../core/qr';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 
 interface Props {
@@ -45,7 +45,7 @@ const QrThungDialog: React.FC<Props> = ({ phieu, thung, onClose, onIn, dangIn = 
       }
     >
       <div className="flex flex-col items-center gap-2 py-2">
-        <QrCodeImage value={taoNoiDungQr(thung.ma_tem)} size={240} />
+        <QrCodeImage value={taoUrlQrTem(thung.ma_tem, window.location.origin)} size={240} />
         <div className="font-mono text-sm font-semibold tabular-nums">{thung.ma_tem}</div>
         {(thung.ten_nguoi_kiem || thung.tg_kiem) && (
           <div className="text-xs text-muted-foreground">

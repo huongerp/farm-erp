@@ -44,8 +44,9 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
 
   const theoDvt = tongTheoDvt(chiTiet);
   const coPhamCap = cotCoDuLieu(chiTiet, (c) => c.pham_cap);
+  const coHangMuc = cotCoDuLieu(chiTiet, (c) => c.hang_muc);
   const coLot = cotCoDuLieu(chiTiet, (c) => c.so_lot);
-  const soCotTruocDvt = 3 + (coPhamCap ? 1 : 0);
+  const soCotTruocDvt = 3 + (coPhamCap ? 1 : 0) + (coHangMuc ? 1 : 0);
   // +1: cột Ghi chú luôn có (để trống thì ghi tay khi giao nhận).
   const soCotSau = (coLot ? 1 : 0) + 1;
 
@@ -88,6 +89,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
               <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.preview.danhMuc')}</th>
               <th className={`${th} text-left`}>{t('phieuKhoPhanThuoc.form.itemName')}</th>
               {coPhamCap && <th className={`${th} text-left w-24`}>{t('phieuKhoPhanThuoc.form.phamCap')}</th>}
+              {coHangMuc && <th className={`${th} text-left w-24`}>{t('phieuKhoPhanThuoc.form.hangMuc')}</th>}
               <th className={`${th} text-center w-16`}>{t('common.phieuIn.dvt')}</th>
               <th className={`${th} text-right w-20`}>{t('phieuKhoPhanThuoc.form.quantity')}</th>
               {coLot && <th className={`${th} text-center w-20`}>{t('phieuKhoPhanThuoc.preview.soLot')}</th>}
@@ -101,6 +103,7 @@ const PhieuKhoPTPreviewContent: React.FC<Props> = ({ phieu, bienThe }) => {
                 <td className={`${td} text-[0.9em]`}>{c.ten_danh_muc}</td>
                 <td className={td}>{c.ten_hang ?? c.ten_hang_hoa}</td>
                 {coPhamCap && <td className={`${td} text-[0.9em]`}>{c.pham_cap}</td>}
+                {coHangMuc && <td className={`${td} text-[0.9em]`}>{c.hang_muc}</td>}
                 <td className={`${td} text-center`}>{c.don_vi_tinh}</td>
                 <td className={`${td} tabular-nums text-right`}>{formatNumberVN(c.so_luong)}</td>
                 {coLot && <td className={`${td} text-center text-[0.9em]`}>{c.so_lot}</td>}

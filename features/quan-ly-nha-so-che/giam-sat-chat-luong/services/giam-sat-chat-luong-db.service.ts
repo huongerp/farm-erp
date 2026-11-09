@@ -269,6 +269,31 @@ export async function getGsclTomTatDb(viewAll: boolean, allowedBranchIds: string
   );
 }
 
+/** Tham số truy vấn tab Thống kê — toàn bộ phiếu trong phạm vi + khoảng ngày. */
+export interface GsclThongKeParams {
+  viewAll: boolean;
+  allowedBranchIds: string[];
+  idChiNhanh: string[];
+  /** YYYY-MM-DD, bỏ trống = không giới hạn. */
+  ngayFrom?: string;
+  ngayTo?: string;
+}
+
+/** Toàn bộ phiếu trong phạm vi + khoảng ngày cho tab Thống kê (tính toán ở client). */
+export async function fetchAllGsclThongKeDb(params: GsclThongKeParams): Promise<GiamSatChatLuong[]> {
+  const rows = await fetchAllRows<DbRow>((from, to) => {
+    let q = applyPhamVi(db.from(TABLE).select(ROW_COLUMNS), params.viewAll, params.allowedBranchIds);
+    if (params.idChiNhanh.length > 0) q = q.in('id_chi_nhanh', nums(params.idChiNhanh));
+    if (params.ngayFrom) q = q.gte('ngay', params.ngayFrom);
+    if (params.ngayTo) q = q.lte('ngay', params.ngayTo);
+    return q
+      .order('ngay', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, to);
+  });
+  return rows.map(rowToModel);
+}
+
 export async function getGsclByIdDb(id: string): Promise<GiamSatChatLuong | null> {
   const { data, error } = await db.from(TABLE).select(ROW_COLUMNS).eq('id', toIntId(id)).maybeSingle();
   if (error) throwDbError(error);
@@ -624,6 +649,23 @@ export async function dsPhieuQcXepXeDb(idChiNhanh: string, soNgay = 60): Promise
     .limit(500);
   if (error) throwDbError(error);
   return ((data as unknown as DbPhieuQcRow[] | null) ?? []).map(phieuQcToModel);
+}
+
+// ── Số liệu dẫn xuất cho module khác ─────────────────────────────────────────
+
+/**
+ * % nải lỗi QC của một ngày + chi nhánh: Σ số lỗi / Σ tổng nhánh của các thùng đã kiểm
+ * thuộc mọi phiếu chưa huỷ (RPC `fn_gscl_ti_le_loi_ngay`, migration 072 — cộng dồn cả ngày).
+ * Không có thùng nào thoả → 0.
+ */
+export async function getTiLeLoiNgayDb(ngay: string, idChiNhanh: number): Promise<number> {
+  const { data, error } = await db.rpc('fn_gscl_ti_le_loi_ngay', {
+    p_ngay: ngay,
+    p_id_chi_nhanh: idChiNhanh,
+  });
+  if (error) throwDbError(error);
+  const n = Number(data);
+  return Number.isFinite(n) ? n : 0;
 }
 
 /** Các xe (phiếu Đăng ký nhận hàng) đã xếp những cây hàng này — map id phiếu QC → danh sách xe. */

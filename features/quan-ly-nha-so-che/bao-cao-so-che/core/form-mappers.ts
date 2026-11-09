@@ -62,6 +62,19 @@ export function apTongDgdvVaoBcscForm(
   return { ...values, tong_buong_thu_hoach: tong.tong_thu, tong_buong_khong_so_che: tong.ksc };
 }
 
+/**
+ * Ghép % nải lỗi QC của Giám sát chất lượng (`fn_gscl_ti_le_loi_ngay`) vào chỉ tiêu khoá
+ * `danh_gia_loi_qc_pct` trước khi lưu.
+ * Chưa có số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ nguyên; DB trigger vẫn ghi đè đúng số.
+ */
+export function apTiLeLoiGsclVaoBcscForm(
+  values: BaoCaoSoCheFormValues,
+  tiLe: number | null | undefined
+): BaoCaoSoCheFormValues {
+  if (tiLe == null || !Number.isFinite(tiLe)) return values;
+  return { ...values, danh_gia_loi_qc_pct: tiLe };
+}
+
 /** Ngày ISO yyyy-mm-dd + số ngày (theo lịch local). */
 export function addCalendarDaysIso(isoDate: string, deltaDays: number): string {
   const raw = isoDate.slice(0, 10);

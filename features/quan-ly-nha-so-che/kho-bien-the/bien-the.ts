@@ -54,6 +54,8 @@ export interface KhoBienThe {
     phieuKhoChiTietFlat: string;
     deXuatSummary: string;
     deXuatChiTietFlat: string;
+    /** Danh sách hạng mục đang dùng (migration 071) — cho combobox lọc/gõ hạng mục. */
+    hangMucDangDung: string;
   };
   rpc: {
     soPhieuKho: string;
@@ -64,11 +66,17 @@ export interface KhoBienThe {
     deXuatStats: string;
     tonKhoTheoKy: string;
     hangHoaDangDung: string;
+    /** Tổng hợp tiền xuất/luân chuyển theo hạng mục (migration 071). */
+    tongHopHangMuc: string;
     /** Xin sửa phiếu kho đã duyệt / cấp cao xử lý yêu cầu (migration 035). */
     xinSuaPhieuKho: string;
     xuLyXinSuaPhieuKho: string;
     /** Cấp cao ghi trao đổi một dòng hàng đề xuất (migration 039). */
     suaTraoDoiDeXuatCt: string;
+    /** Kho đến xác nhận đã nhận hàng (phiếu loại chuyển, migration 075). */
+    xacNhanNhan: string;
+    /** Ghi đè cả cột trao_doi của phiếu (khoá lạc quan, migration 075). */
+    suaTraoDoi: string;
   };
 }
 
@@ -95,6 +103,7 @@ export const BIEN_THE_SO_CHE: KhoBienThe = {
     phieuKhoChiTietFlat: 'v_farm_phieu_kho_phan_thuoc_chi_tiet_flat',
     deXuatSummary: 'v_farm_de_xuat_mua_hang_summary',
     deXuatChiTietFlat: 'v_farm_de_xuat_mua_hang_chi_tiet_flat',
+    hangMucDangDung: 'v_farm_pt_hang_muc_dang_dung',
   },
   rpc: {
     soPhieuKho: 'get_next_so_phieu_farm_pt',
@@ -105,9 +114,12 @@ export const BIEN_THE_SO_CHE: KhoBienThe = {
     deXuatStats: 'rpc_farm_de_xuat_mua_hang_stats',
     tonKhoTheoKy: 'rpc_farm_ton_kho_pt_theo_ky',
     hangHoaDangDung: 'rpc_farm_hang_hoa_dang_dung',
+    tongHopHangMuc: 'rpc_farm_pt_tong_hop_hang_muc',
     xinSuaPhieuKho: 'rpc_farm_pt_phieu_kho_xin_sua',
     xuLyXinSuaPhieuKho: 'rpc_farm_pt_phieu_kho_xu_ly_xin_sua',
     suaTraoDoiDeXuatCt: 'rpc_farm_de_xuat_mh_ct_sua_trao_doi',
+    xacNhanNhan: 'rpc_farm_pt_phieu_kho_xac_nhan_nhan',
+    suaTraoDoi: 'rpc_farm_pt_phieu_kho_sua_trao_doi',
   },
 };
 
@@ -135,6 +147,7 @@ export const BIEN_THE_PHAN_THUOC: KhoBienThe = {
     phieuKhoChiTietFlat: 'v_pt_phieu_kho_chi_tiet_flat',
     deXuatSummary: 'v_pt_de_xuat_mua_hang_summary',
     deXuatChiTietFlat: 'v_pt_de_xuat_mua_hang_chi_tiet_flat',
+    hangMucDangDung: 'v_pt_hang_muc_dang_dung',
   },
   rpc: {
     soPhieuKho: 'get_next_so_phieu_pt_phieu_kho',
@@ -145,9 +158,12 @@ export const BIEN_THE_PHAN_THUOC: KhoBienThe = {
     deXuatStats: 'rpc_pt_de_xuat_mua_hang_stats',
     tonKhoTheoKy: 'rpc_pt_ton_kho_theo_ky',
     hangHoaDangDung: 'rpc_pt_hang_hoa_dang_dung',
+    tongHopHangMuc: 'rpc_pt_tong_hop_hang_muc',
     xinSuaPhieuKho: 'rpc_pt_phieu_kho_xin_sua',
     xuLyXinSuaPhieuKho: 'rpc_pt_phieu_kho_xu_ly_xin_sua',
     suaTraoDoiDeXuatCt: 'rpc_pt_de_xuat_mh_ct_sua_trao_doi',
+    xacNhanNhan: 'rpc_pt_phieu_kho_xac_nhan_nhan',
+    suaTraoDoi: 'rpc_pt_phieu_kho_sua_trao_doi',
   },
 };
 

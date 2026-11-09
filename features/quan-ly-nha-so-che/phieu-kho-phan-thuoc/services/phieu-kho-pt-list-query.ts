@@ -97,6 +97,8 @@ export type ChiTietPhieuKhoPTListServerQuery = {
   ngayTo: string;
   nguoiTaoIds: number[];
   nguoiDuyetIds: number[];
+  /** Hạng mục đã chọn; `'__none__'` = dòng chưa phân hạng mục (NULL). */
+  hangMuc: string[];
   phamVi: PhieuKhoPTPhamVi;
 };
 
@@ -158,6 +160,7 @@ export function buildChiTietPhieuKhoPTListServerQuery(params: {
     ngayTo,
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
+    hangMuc: strArr(filters.hangMuc),
     phamVi,
   };
 }

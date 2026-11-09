@@ -170,6 +170,14 @@ const ChiTietList: React.FC<Props> = ({
             </span>
           </td>
         );
+      case 'hang_muc':
+        return (
+          <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>
+            <span className="block truncate whitespace-nowrap" title={row.hang_muc ?? undefined}>
+              {row.hang_muc ?? '—'}
+            </span>
+          </td>
+        );
       case 'don_vi_tinh':
         return (
           <td key={col.id} className="px-4 py-3 text-xs text-muted-foreground" style={getColumnCellStyle(col)}>

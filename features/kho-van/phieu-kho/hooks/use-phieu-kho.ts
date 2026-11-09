@@ -15,6 +15,8 @@ import {
   getNextSoPhieu,
   updatePhieuKhoTrangThai,
   updatePhieuKhoTrangThaiMany,
+  xacNhanNhanPhieuKho,
+  suaTraoDoiPhieuKho,
 } from '../services/phieu-kho-service';
 import type { ChiTietPhieuKhoListServerQuery, PhieuKhoListServerQuery } from '../services/phieu-kho-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -301,6 +303,59 @@ export const useDeletePhieuKhoMany = () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_BY_DON });
       invalidateTonKho(qc);
       toast.success(i18n.t('phieuKho.toast.deleteSuccess'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Kho đến xác nhận đã nhận hàng (phiếu chuyển) — làm mới danh sách + phiếu đang mở. */
+export const useXacNhanNhanPhieuKho = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: xacNhanNhanPhieuKho,
+    onSuccess: async (_void, id) => {
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
+      try {
+        const fresh = await getPhieuKhoById(id);
+        if (fresh) {
+          qc.setQueryData(QUERY_KEY, (old: PhieuKho[] | undefined) =>
+            old?.map((p) => (p.id === id ? fresh : p)) ?? [fresh]
+          );
+          qc.setQueryData([...QUERY_KEY, id], fresh);
+        }
+      } catch {
+        qc.invalidateQueries({ queryKey: [...QUERY_KEY, id] });
+      }
+      toast.success(i18n.t('phieuKho.toast.xacNhanNhanSuccess'));
+      onSuccess?.();
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+};
+
+/** Ghi đè cả cột trao_doi của phiếu — làm mới danh sách + phiếu đang mở. */
+export const useSuaTraoDoiPhieuKho = (onSuccess?: () => void) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, traoDoi, traoDoiCu }: { id: string; traoDoi: string | null; traoDoiCu: string | null }) =>
+      suaTraoDoiPhieuKho(id, traoDoi, traoDoiCu),
+    onSuccess: async (_void, { id }) => {
+      qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      try {
+        const fresh = await getPhieuKhoById(id);
+        if (fresh) {
+          qc.setQueryData(QUERY_KEY, (old: PhieuKho[] | undefined) =>
+            old?.map((p) => (p.id === id ? fresh : p)) ?? [fresh]
+          );
+          qc.setQueryData([...QUERY_KEY, id], fresh);
+        }
+      } catch {
+        qc.invalidateQueries({ queryKey: [...QUERY_KEY, id] });
+      }
+      toast.success(i18n.t('common.traoDoi.luuThanhCong'));
+      onSuccess?.();
     },
     onError: (err: Error) => toast.error(err.message),
   });

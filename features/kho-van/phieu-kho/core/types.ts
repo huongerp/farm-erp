@@ -93,6 +93,12 @@ export interface PhieuKho {
   id_nguoi_duyet?: number | null;
   /** Tên người duyệt (enrich từ danh sách nhân viên). */
   ten_nguoi_duyet?: string;
+  /** Id người (kho đến) xác nhận đã nhận hàng — chỉ phiếu chuyển kho (migration 075). */
+  id_nguoi_nhan?: number | null;
+  /** Tên người xác nhận đã nhận hàng. */
+  ten_nguoi_nhan?: string;
+  /** Thời điểm xác nhận đã nhận hàng. */
+  tg_nhan?: string;
   /** Id người tạo (fp_var_nhan_vien.id, int8). */
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;
@@ -137,6 +143,10 @@ export interface ChiTietPhieuKhoFlat {
   /** Người duyệt / từ chối gần nhất (theo phiếu). */
   id_nguoi_duyet?: number | null;
   ten_nguoi_duyet?: string;
+  /** Người (kho đến) xác nhận đã nhận hàng — chỉ phiếu chuyển kho (migration 075). */
+  id_nguoi_nhan?: number | null;
+  ten_nguoi_nhan?: string;
+  tg_nhan?: string;
   /** Người tạo phiếu (theo phiếu). */
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;

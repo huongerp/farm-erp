@@ -23,8 +23,8 @@ describe('mapDeXuatChiTietToPhieuKhoPTLines', () => {
   it('giữ nguyên hàng hóa + số lượng, đơn giá để 0 cho người lập điền', () => {
     const lines = mapDeXuatChiTietToPhieuKhoPTLines(phieu.chi_tiet);
     expect(lines).toEqual([
-      { id_hang_hoa: '11', so_luong: 5, don_gia: 0, so_lot: '', ghi_chu: 'gấp' },
-      { id_hang_hoa: '12', so_luong: 2.5, don_gia: 0, so_lot: '', ghi_chu: '' },
+      { id_hang_hoa: '11', so_luong: 5, don_gia: 0, hang_muc: '', so_lot: '', ghi_chu: 'gấp' },
+      { id_hang_hoa: '12', so_luong: 2.5, don_gia: 0, hang_muc: '', so_lot: '', ghi_chu: '' },
     ]);
   });
 
@@ -79,7 +79,7 @@ describe('deXuatMuaHangToPhieuKhoPTPrefill', () => {
 describe('nhập từng phần theo lựa chọn ở popup', () => {
   it('chỉ lấy hàng được chọn với SL lần này, giữ ghi chú dòng đề xuất', () => {
     const prefill = deXuatMuaHangToPhieuKhoPTPrefill(phieu, [{ id_hang_hoa: '11', so_luong: 2 }]);
-    expect(prefill.chi_tiet).toEqual([{ id_hang_hoa: '11', so_luong: 2, don_gia: 0, so_lot: '', ghi_chu: 'gấp' }]);
+    expect(prefill.chi_tiet).toEqual([{ id_hang_hoa: '11', so_luong: 2, don_gia: 0, hang_muc: '', so_lot: '', ghi_chu: 'gấp' }]);
     expect(prefill.id_de_xuat_mua_hang).toBe('7');
   });
 });

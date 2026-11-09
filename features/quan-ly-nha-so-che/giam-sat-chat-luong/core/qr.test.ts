@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { docMaTem, taoNoiDungQr } from './qr';
+import { docMaTem, taoNoiDungQr, taoUrlQrTem } from './qr';
+
+describe('QR tem dạng URL (camera điện thoại mở trang thông tin)', () => {
+  it('tạo URL /qr/<ma_tem> rồi đọc lại đúng mã', () => {
+    const url = taoUrlQrTem('2026-012-11-05-01', 'https://erp.vd.vn');
+    expect(url).toBe('https://erp.vd.vn/qr/2026-012-11-05-01');
+    expect(docMaTem(url)).toBe('2026-012-11-05-01');
+  });
+
+  it('origin có dấu / cuối không sinh //', () => {
+    expect(taoUrlQrTem('2026-012-11-05-01', 'https://erp.vd.vn/')).toBe('https://erp.vd.vn/qr/2026-012-11-05-01');
+  });
+
+  it('URL kèm query/hash vẫn đọc được mã', () => {
+    expect(docMaTem('https://erp.vd.vn/qr/2026-012-11-05-01?x=1')).toBe('2026-012-11-05-01');
+    expect(docMaTem('http://localhost:5173/qr/2026-001-10-04-100#a')).toBe('2026-001-10-04-100');
+  });
+
+  it('URL khác đường /qr/ hoặc mã sai → null', () => {
+    expect(docMaTem('https://erp.vd.vn/khac/2026-012-11-05-01')).toBeNull();
+    expect(docMaTem('https://erp.vd.vn/qr/GS-00012-03')).toBeNull();
+    expect(docMaTem('https://erp.vd.vn/qr/')).toBeNull();
+  });
+});
 
 describe('QR tem giám sát chất lượng', () => {
   it('tạo rồi đọc lại đúng mã tem', () => {

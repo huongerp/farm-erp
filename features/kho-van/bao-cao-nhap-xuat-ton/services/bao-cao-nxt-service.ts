@@ -1,5 +1,6 @@
 import type { PhieuKho } from '../../phieu-kho/core/types';
 import type { NXTReportFilters, NXTByPeriodResult, TonTaiThoiDiemRow } from '../core/types';
+import { normalizeNXTGiaTri, type NXTGiaTriNormalized } from '../core/gia-tri-aggregate';
 import { db, throwDbError } from '../../../../lib/db';
 
 /* ────────────────────────── main report ────────────────────────── */
@@ -33,6 +34,20 @@ export async function getNXTByPeriod(filters: NXTReportFilters): Promise<NXTByPe
     );
   }
   return ket_qua;
+}
+
+/* ────────────────────────── giá trị xuất & luân chuyển ────────────────────────── */
+
+/**
+ * Báo cáo Giá trị xuất & luân chuyển (RPC rpc_nxt_gia_tri).
+ * Kết quả đã chuẩn hoá numeric (Postgres numeric có thể về dưới dạng chuỗi).
+ */
+export async function getNXTGiaTri(filters: NXTReportFilters): Promise<NXTGiaTriNormalized> {
+  const { data, error } = await db.rpc('rpc_nxt_gia_tri', {
+    p_filters: nxtFiltersToRpcPayload(filters),
+  });
+  if (error) throwDbError(error, { resource: 'rpc_nxt_gia_tri' });
+  return normalizeNXTGiaTri(data);
 }
 
 /* ────────────────────────── other exports ────────────────────────── */

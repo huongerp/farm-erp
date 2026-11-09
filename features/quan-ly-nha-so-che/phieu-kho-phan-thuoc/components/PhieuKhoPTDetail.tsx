@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   FileText,
@@ -15,6 +15,9 @@ import {
   Lock,
   Unlock,
   Truck,
+  RotateCcw,
+  PackageCheck,
+  MessagesSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '../../../../components/ui/Button';
@@ -33,7 +36,7 @@ import DetailFieldGrid from '../../../../components/shared/DetailFieldGrid';
 import GenericSubTableSection from '../../../../components/shared/GenericSubTableSection';
 import SubTable, { type SubTableColumn } from '../../../../components/shared/sub-table/SubTable';
 import { BTN_CLOSE, CONFIRM_YES } from '../../../../lib/button-labels';
-import { useUpdatePhieuKhoPTTrangThai, useXinSuaPhieuKhoPT, useXuLyXinSuaPhieuKhoPT } from '../hooks/use-phieu-kho-pt';
+import { useUpdatePhieuKhoPTTrangThai, useXinSuaPhieuKhoPT, useXuLyXinSuaPhieuKhoPT, useXacNhanNhanPhieuKhoPT, useSuaTraoDoiPhieuKhoPT } from '../hooks/use-phieu-kho-pt';
 import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
 import {
   canKhoaLaiQuyenSua,
@@ -44,6 +47,7 @@ import {
   TRANG_THAI_SUA_DA_CAP,
 } from '../core/quyen-sua-phieu';
 import type { HanhDongXinSuaPhieuKhoPT } from '../core/types';
+import { luaChonDuyetPT } from '../core/constants';
 import XinSuaPhieuDialog from './XinSuaPhieuDialog';
 import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { locCotTheoXemGia } from '../utils/loc-cot-gia';
@@ -52,6 +56,9 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 import { khoPreviewUrl } from '../../kho-bien-the/bien-the';
 import { useXeCuaPhieuKho } from '../../dang-ky-nhan-hang/hooks/use-dang-ky-nhan-hang';
+import TraoDoiDialog from '../../../../components/shared/trao-doi/TraoDoiDialog';
+import { hienThiThoiDiemTraoDoi } from '../../../../components/shared/trao-doi/hien-thi';
+import { tachTraoDoi } from '../../../../lib/trao-doi-log';
 
 interface Props {
   data: PhieuKhoPT;
@@ -81,8 +88,11 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const nguoiDuyetTen = user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
-  const [duyetOption, setDuyetOption] = useState<'Đã duyệt' | 'Không duyệt'>('Đã duyệt');
+  const [duyetOption, setDuyetOption] = useState<TrangThaiPhieuKhoPT>('Đã duyệt');
   const updateTrangThaiMutation = useUpdatePhieuKhoPTTrangThai(() => setShowDuyetPopup(false));
+  const [showTraoDoi, setShowTraoDoi] = useState(false);
+  const xacNhanNhanMutation = useXacNhanNhanPhieuKhoPT();
+  const suaTraoDoiMutation = useSuaTraoDoiPhieuKhoPT(() => setShowTraoDoi(false));
 
   // Phiếu đã duyệt: chỉ cấp cao / người được cấp quyền mới sửa xoá; người khác "Xin sửa".
   const capCao = usePhieuKhoPTCapCao();
@@ -119,6 +129,21 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
   const isNhap = data.loai === 'nhập';
   const isXuat = data.loai === 'xuất';
 
+  const daNhan = data.id_nguoi_nhan != null;
+  const canXacNhanNhan = isChuyen && data.trang_thai === 'Chờ duyệt' && !daNhan;
+
+  const xacNhanNhan = () => {
+    confirm({
+      title: t('phieuKhoPhanThuoc.detail.xacNhanNhanConfirmTitle'),
+      message: t('phieuKhoPhanThuoc.detail.xacNhanNhanConfirmMessage'),
+      variant: 'info',
+      confirmText: CONFIRM_YES(),
+      onConfirm: () => xacNhanNhanMutation.mutate({ id: data.id }),
+    });
+  };
+
+  const mucTraoDoi = useMemo(() => tachTraoDoi(data.trao_doi), [data.trao_doi]);
+
   const previewPath = khoPreviewUrl(bt, 'phieu-kho-phan-thuoc', data.id);
   // Phiếu xuất thành phẩm sinh từ Đăng ký nhận hàng (migration 042) — chỉ bảng Sơ chế có liên kết.
   const { data: xeNguon } = useXeCuaPhieuKho(data.id, bt.key === 'so-che' && isXuat);
@@ -130,7 +155,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         ? t('phieuKhoPhanThuoc.status.rejected')
         : t('phieuKhoPhanThuoc.status.pending');
 
-  const applyTrangThai = (trangThai: 'Đã duyệt' | 'Không duyệt') => {
+  const applyTrangThai = (trangThai: TrangThaiPhieuKhoPT) => {
     updateTrangThaiMutation.mutate(
       {
         id: data.id,
@@ -176,7 +201,9 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         icon: <CheckCircle size={16} />,
         onClick: () => {
           setDuyetGhiChu('');
-          setDuyetOption(data.trang_thai === 'Không duyệt' ? 'Đã duyệt' : data.trang_thai === 'Đã duyệt' ? 'Không duyệt' : 'Đã duyệt');
+          setDuyetOption(
+            data.trang_thai === 'Đã duyệt' ? 'Chờ duyệt' : data.trang_thai === 'Không duyệt' ? 'Đã duyệt' : 'Đã duyệt'
+          );
           setShowDuyetPopup(true);
         },
         variant: 'primary',
@@ -227,6 +254,21 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         },
       });
     }
+    if (canXacNhanNhan) {
+      actions.push({
+        label: t('phieuKhoPhanThuoc.detail.xacNhanNhanAction'),
+        icon: <PackageCheck size={16} />,
+        onClick: xacNhanNhan,
+        variant: 'success',
+      });
+    }
+    if (isChuyen) {
+      actions.push({
+        label: t('phieuKhoPhanThuoc.detail.traoDoiAction'),
+        icon: <MessagesSquare size={16} />,
+        onClick: () => setShowTraoDoi(true),
+      });
+    }
     actions.push({
       label: t('phieuKhoPhanThuoc.printAction'),
       icon: <Printer size={16} />,
@@ -247,6 +289,7 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
     { id: 'ten_hang', label: t('phieuKhoPhanThuoc.form.itemName'), width: 200, minWidth: 140, sticky: true, mobile: 'title' },
     { id: 'ma_hang', label: t('phieuKhoPhanThuoc.form.itemCode'), width: 110, minWidth: 80, mobile: 'hidden' },
     { id: 'pham_cap', label: t('phieuKhoPhanThuoc.form.phamCap'), width: 120, minWidth: 80 },
+    { id: 'hang_muc', label: t('phieuKhoPhanThuoc.form.hangMuc'), width: 120, minWidth: 80 },
     { id: 'so_luong', label: t('phieuKhoPhanThuoc.form.quantity'), width: 110, minWidth: 80, align: 'right' },
     { id: 'don_vi_tinh', label: t('phieuKhoPhanThuoc.form.unit'), width: 80, minWidth: 56, mobile: 'hidden' },
     { id: 'don_gia', label: t('phieuKhoPhanThuoc.form.unitPrice'), width: 110, minWidth: 80, align: 'right' },
@@ -269,6 +312,8 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
         return <span className="font-mono text-xs">{ct.ma_hang ?? '—'}</span>;
       case 'pham_cap':
         return <span className="text-xs text-muted-foreground truncate" title={ct.pham_cap ?? undefined}>{ct.pham_cap ?? '—'}</span>;
+      case 'hang_muc':
+        return <span className="text-xs text-muted-foreground truncate" title={ct.hang_muc ?? undefined}>{ct.hang_muc ?? '—'}</span>;
       case 'so_luong':
         // Mobile ẩn cột ĐVT → ghép đơn vị vào số lượng.
         return (
@@ -334,6 +379,12 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 />{' '}
                 {statusLabel}
               </span>
+              {daNhan && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900">
+                  <PackageCheck size={12} />
+                  {t('phieuKhoPhanThuoc.detail.daNhanBadge')}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -414,14 +465,6 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 className="col-span-1 sm:col-span-2"
               />
             )}
-            {data.trao_doi && (
-              <DetailField
-                label={t('phieuKhoPhanThuoc.detail.traoDoi')}
-                value={<span className="whitespace-pre-line break-words">{data.trao_doi}</span>}
-                icon={<FileText size={12} />}
-                className="col-span-1 sm:col-span-2"
-              />
-            )}
             <DetailField label={t('phieuKhoPhanThuoc.detail.creator')} value={data.ten_nguoi_tao ?? '—'} icon={<FileText size={12} />} />
             {(data.ten_nguoi_duyet != null && data.ten_nguoi_duyet !== '') || data.id_nguoi_duyet != null ? (
               <DetailField
@@ -430,6 +473,13 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
                 icon={<CheckCircle size={12} />}
               />
             ) : null}
+            {daNhan && (
+              <DetailField
+                label={t('phieuKhoPhanThuoc.detail.daNhanHang')}
+                value={`${data.ten_nguoi_nhan ?? ''}${data.tg_nhan ? ` · ${formatDateTimeShort(data.tg_nhan)}` : ''}`}
+                icon={<PackageCheck size={12} />}
+              />
+            )}
           </DetailFieldGrid>
         </DetailSection>
 
@@ -460,6 +510,25 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             <DetailField label={t('phieuKhoPhanThuoc.detail.updatedAt')} value={formatDateTimeShort(data.tg_cap_nhat)} icon={<Calendar size={12} />} />
           </DetailFieldGrid>
         </DetailSection>
+
+        <DetailSection title={t('phieuKhoPhanThuoc.detail.traoDoi')} icon={<MessagesSquare size={14} />} variant="secondary">
+          {mucTraoDoi.length > 0 ? (
+            <ul className="space-y-2.5 pb-1 m-0 p-0 list-none">
+              {mucTraoDoi.map((m, i) => (
+                <li key={i} className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  {m.thoiDiem && (
+                    <span className="block text-caption tabular-nums text-muted-foreground">
+                      {hienThiThoiDiemTraoDoi(m.thoiDiem, true)}
+                    </span>
+                  )}
+                  <span className="block text-body-sm text-foreground whitespace-pre-line break-words">{m.noiDung || '—'}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground italic m-0">{t('common.traoDoi.empty')}</p>
+          )}
+        </DetailSection>
       </div>
 
       {showXinSuaDialog && (
@@ -487,43 +556,58 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {(
-                [
-                  { value: 'Đã duyệt' as const, icon: <CheckCircle size={15} />, color: 'emerald' },
-                  { value: 'Không duyệt' as const, icon: <XCircle size={15} />, color: 'rose' },
-                ] as const
-              ).map((opt) => {
-                const selected = duyetOption === opt.value;
+            <div
+              className={cn(
+                'grid gap-2.5',
+                luaChonDuyetPT(data.trang_thai).length > 2 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'
+              )}
+            >
+              {luaChonDuyetPT(data.trang_thai).map((value) => {
+                const selected = duyetOption === value;
+                const color = value === 'Đã duyệt' ? 'emerald' : value === 'Không duyệt' ? 'rose' : 'amber';
+                const icon =
+                  value === 'Đã duyệt' ? (
+                    <CheckCircle size={15} />
+                  ) : value === 'Không duyệt' ? (
+                    <XCircle size={15} />
+                  ) : (
+                    <RotateCcw size={15} />
+                  );
                 const label =
-                  opt.value === 'Đã duyệt'
+                  value === 'Đã duyệt'
                     ? t('phieuKhoPhanThuoc.approveDialog.approveButton')
-                    : t('phieuKhoPhanThuoc.approveDialog.rejectButton');
+                    : value === 'Không duyệt'
+                      ? t('phieuKhoPhanThuoc.approveDialog.rejectButton')
+                      : t('phieuKhoPhanThuoc.approveDialog.pendingButton');
                 return (
                   <button
-                    key={opt.value}
+                    key={value}
                     type="button"
-                    onClick={() => setDuyetOption(opt.value)}
+                    onClick={() => setDuyetOption(value)}
                     className={cn(
                       'flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm font-medium transition-all duration-150 cursor-pointer',
                       selected &&
-                        opt.color === 'emerald' &&
+                        color === 'emerald' &&
                         'border-emerald-500/60 bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-950/25 dark:text-emerald-400 dark:border-emerald-700/50',
                       selected &&
-                        opt.color === 'rose' &&
+                        color === 'rose' &&
                         'border-rose-500/60 bg-rose-50 text-rose-700 shadow-sm dark:bg-rose-950/25 dark:text-rose-400 dark:border-rose-700/50',
+                      selected &&
+                        color === 'amber' &&
+                        'border-amber-500/60 bg-amber-50 text-amber-700 shadow-sm dark:bg-amber-950/25 dark:text-amber-400 dark:border-amber-700/50',
                       !selected && 'border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                     )}
                   >
                     <span
                       className={cn(
                         'shrink-0',
-                        selected && opt.color === 'emerald' && 'text-emerald-600 dark:text-emerald-400',
-                        selected && opt.color === 'rose' && 'text-rose-600 dark:text-rose-400',
+                        selected && color === 'emerald' && 'text-emerald-600 dark:text-emerald-400',
+                        selected && color === 'rose' && 'text-rose-600 dark:text-rose-400',
+                        selected && color === 'amber' && 'text-amber-600 dark:text-amber-400',
                         !selected && 'text-muted-foreground/60'
                       )}
                     >
-                      {opt.icon}
+                      {icon}
                     </span>
                     <span>{label}</span>
                   </button>
@@ -557,6 +641,15 @@ const PhieuKhoPTDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, on
             </div>
           </div>
         </div>
+      )}
+      {showTraoDoi && (
+        <TraoDoiDialog
+          tenDong={data.so_phieu}
+          traoDoi={data.trao_doi}
+          dangLuu={suaTraoDoiMutation.isPending}
+          onSave={(giaTri, cu) => suaTraoDoiMutation.mutate({ id: data.id, traoDoi: giaTri, traoDoiCu: cu })}
+          onClose={() => setShowTraoDoi(false)}
+        />
       )}
     </GenericDrawer>
   );

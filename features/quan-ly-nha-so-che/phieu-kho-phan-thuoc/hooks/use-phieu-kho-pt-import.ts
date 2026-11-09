@@ -21,6 +21,7 @@ const COLUMN_KEYS = [
   'so_luong',
   'don_gia',
   'pham_cap',
+  'hang_muc',
   'so_lot',
   'ghi_chu',
 ] as const;
@@ -36,6 +37,7 @@ const LABEL_KEY: Record<(typeof COLUMN_KEYS)[number], string> = {
   so_luong: 'colSoLuong',
   don_gia: 'colDonGia',
   pham_cap: 'colPhamCap',
+  hang_muc: 'colHangMuc',
   so_lot: 'colSoLot',
   ghi_chu: 'colGhiChu',
 };
@@ -51,6 +53,7 @@ const RULE_KEY: Record<(typeof COLUMN_KEYS)[number], string> = {
   so_luong: 'ruleSoLuong',
   don_gia: 'ruleDonGia',
   pham_cap: 'rulePhamCap',
+  hang_muc: 'ruleHangMuc',
   so_lot: 'ruleSoLot',
   ghi_chu: 'ruleGhiChu',
 };

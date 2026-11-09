@@ -48,7 +48,7 @@ import {
 } from '../core/trang-thai';
 import { taoUrlInPhieu } from '../core/preview-url';
 import { docCaiDatTem } from '../core/mau-tem';
-import { taoNoiDungQr } from '../core/qr';
+import { taoUrlQrTem } from '../core/qr';
 import { inTemGscl, temTuPhieu } from '../utils/in-tem-gscl';
 import QrCodeImage from '../../../../components/shared/QrCodeImage';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
@@ -298,7 +298,7 @@ const GiamSatChatLuongDetail: React.FC<Props> = ({
                       aria-label={t('giamSatChatLuong.detail.xemQr')}
                       className="rounded-md hover:ring-2 hover:ring-primary/40 shrink-0"
                     >
-                      <QrCodeImage value={taoNoiDungQr(x.ma_tem)} size={24} className="p-0.5 rounded-md" />
+                      <QrCodeImage value={taoUrlQrTem(x.ma_tem, window.location.origin)} size={24} className="p-0.5 rounded-md" />
                     </button>
                     {tt !== 'huy' && (
                       <button

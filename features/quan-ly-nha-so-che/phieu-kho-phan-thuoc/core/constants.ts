@@ -5,7 +5,7 @@ export const TRANG_THAI_PT_CHO_DUYET = 'Chờ duyệt';
 export const TRANG_THAI_PT_DA_DUYET = 'Đã duyệt';
 export const TRANG_THAI_PT_KHONG_DUYET = 'Không duyệt';
 
-/** Trạng thái đích của thao tác duyệt (không quay lại được "Chờ duyệt"). */
+/** Trạng thái đích của thao tác duyệt hàng loạt. */
 export const TRANG_THAI_PT_DICH_DUYET: TrangThaiPhieuKhoPT[] = [
   TRANG_THAI_PT_DA_DUYET,
   TRANG_THAI_PT_KHONG_DUYET,
@@ -19,6 +19,17 @@ export function isTrangThaiPTChoPheDuyet(trangThai: string): boolean {
 /** Đã có quyết định duyệt/từ chối — đổi lại phải làm lẻ ở drawer chi tiết. */
 export function isTrangThaiPTDaQuyetDinh(trangThai: string): boolean {
   return trangThai === TRANG_THAI_PT_DA_DUYET || trangThai === TRANG_THAI_PT_KHONG_DUYET;
+}
+
+/**
+ * Lựa chọn trong dialog đổi duyệt ở drawer chi tiết.
+ * Phiếu đã có quyết định được quay lại "Chờ duyệt" để người tạo sửa lại.
+ */
+export function luaChonDuyetPT(trangThaiHienTai: string): TrangThaiPhieuKhoPT[] {
+  if (isTrangThaiPTDaQuyetDinh(trangThaiHienTai)) {
+    return [TRANG_THAI_PT_DA_DUYET, TRANG_THAI_PT_KHONG_DUYET, TRANG_THAI_PT_CHO_DUYET];
+  }
+  return [TRANG_THAI_PT_DA_DUYET, TRANG_THAI_PT_KHONG_DUYET];
 }
 
 /**

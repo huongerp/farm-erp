@@ -7,6 +7,7 @@ import {
   isTrangThaiPTDaQuyetDinh,
   canBulkApprovePhieuKhoPT,
   trangThaiPTToI18nKey,
+  luaChonDuyetPT,
 } from './constants';
 
 describe('isTrangThaiPTChoPheDuyet / isTrangThaiPTDaQuyetDinh', () => {
@@ -42,5 +43,21 @@ describe('trangThaiPTToI18nKey', () => {
     expect(trangThaiPTToI18nKey(TRANG_THAI_PT_KHONG_DUYET)).toBe('rejected');
     expect(trangThaiPTToI18nKey(TRANG_THAI_PT_CHO_DUYET)).toBe('pending');
     expect(trangThaiPTToI18nKey('giá trị lạ')).toBe('pending');
+  });
+});
+
+describe('luaChonDuyetPT', () => {
+  it('phiếu chờ duyệt: chỉ chọn Đã duyệt / Không duyệt', () => {
+    expect(luaChonDuyetPT(TRANG_THAI_PT_CHO_DUYET)).toEqual([TRANG_THAI_PT_DA_DUYET, TRANG_THAI_PT_KHONG_DUYET]);
+  });
+
+  it('phiếu đã quyết định: thêm lựa chọn quay lại Chờ duyệt', () => {
+    const ketQua = [TRANG_THAI_PT_DA_DUYET, TRANG_THAI_PT_KHONG_DUYET, TRANG_THAI_PT_CHO_DUYET];
+    expect(luaChonDuyetPT(TRANG_THAI_PT_DA_DUYET)).toEqual(ketQua);
+    expect(luaChonDuyetPT(TRANG_THAI_PT_KHONG_DUYET)).toEqual(ketQua);
+  });
+
+  it('trạng thái lạ coi như chờ duyệt', () => {
+    expect(luaChonDuyetPT('giá trị lạ')).toEqual([TRANG_THAI_PT_DA_DUYET, TRANG_THAI_PT_KHONG_DUYET]);
   });
 });

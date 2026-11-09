@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { BarChart3, FileText } from 'lucide-react';
+import { BarChart3, Coins, FileText } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import TabGroup from '../../../components/ui/TabGroup';
+import LoadingSpinnerWithText from '../../../components/shared/LoadingSpinnerWithText';
 import BaoCaoNXTToolbar from './components/BaoCaoNXTToolbar';
 import TongHopNXTKyTab from './components/TongHopNXTKyTab';
 import ChiTietPhieuTab from './components/ChiTietPhieuTab';
@@ -23,7 +24,9 @@ const DEFAULT_FILTERS: NXTReportFilters = {
   categoryIds: [],
 };
 
-const VALID_TABS = ['tongHop', 'chiTietPhieu'] as const;
+const GiaTriXuatLuanChuyenTab = React.lazy(() => import('./components/GiaTriXuatLuanChuyenTab'));
+
+const VALID_TABS = ['tongHop', 'giaTri', 'chiTietPhieu'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const BaoCaoNhapXuatTonPage: React.FC = () => {
@@ -113,6 +116,7 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
   const tabs = useMemo(
     () => [
       { id: 'tongHop', label: t('baoCaonhapXuatTon.tabs.tongHop'), icon: BarChart3 },
+      { id: 'giaTri', label: t('baoCaonhapXuatTon.tabs.giaTri'), icon: Coins },
       { id: 'chiTietPhieu', label: t('baoCaonhapXuatTon.tabs.chiTietPhieu'), icon: FileText },
     ],
     [t]
@@ -138,6 +142,11 @@ const BaoCaoNhapXuatTonPage: React.FC = () => {
       </div>
       <div className="bao-cao-nxt-stats-content flex-1 min-h-0 flex flex-col mt-1.5 overflow-hidden print:overflow-visible">
         {activeTab === 'tongHop' && <TongHopNXTKyTab filters={effectiveFilters} onClearFilters={handleClearAllFilters} />}
+        {activeTab === 'giaTri' && (
+          <React.Suspense fallback={<LoadingSpinnerWithText text={t('common.loading')} />}>
+            <GiaTriXuatLuanChuyenTab filters={effectiveFilters} />
+          </React.Suspense>
+        )}
         {activeTab === 'chiTietPhieu' && <ChiTietPhieuTab filters={effectiveFilters} />}
       </div>
     </div>

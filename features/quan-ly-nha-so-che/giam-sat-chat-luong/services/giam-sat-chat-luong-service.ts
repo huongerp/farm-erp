@@ -1,8 +1,15 @@
-import type { PaginatedTableResult } from '../../../../lib/db';
+import { db, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
-import type { GiamSatChatLuong, KetLuanGscl, ThungMau, TrangThaiGscl } from '../core/types';
+import type { GiamSatChatLuong, KetLuanGscl, ThongTinTemCongKhai, ThungMau, TrangThaiGscl } from '../core/types';
 import type { GiamSatChatLuongListServerQuery } from './giam-sat-chat-luong-list-query';
-import { getGsclByIdDb, getGsclPageDb, getGsclTomTatDb, getThungDb } from './giam-sat-chat-luong-db.service';
+import {
+  fetchAllGsclThongKeDb,
+  getGsclByIdDb,
+  getGsclPageDb,
+  getGsclTomTatDb,
+  getThungDb,
+  type GsclThongKeParams,
+} from './giam-sat-chat-luong-db.service';
 
 export {
   createGsclDb as createGscl,
@@ -32,6 +39,7 @@ export {
   dsPhieuQcXepXeDb as dsPhieuQcXepXe,
   getXeDaXepCayHangDb as getXeDaXepCayHang,
   type CaiDatGscl,
+  type GsclThongKeParams,
   type LuuKetQuaThungInput,
 } from './giam-sat-chat-luong-db.service';
 
@@ -66,11 +74,27 @@ export async function getGsclById(id: string): Promise<GiamSatChatLuong | null> 
   return r;
 }
 
+/** Tab Thống kê: toàn bộ phiếu trong phạm vi + khoảng ngày (tên người tạo/nộp/xuất đã điền). */
+export async function fetchAllGsclThongKe(params: GsclThongKeParams): Promise<GiamSatChatLuong[]> {
+  return enrich(await fetchAllGsclThongKeDb(params));
+}
+
 export async function getThung(idPhieu: string): Promise<ThungMau[]> {
   const rows = await getThungDb(idPhieu);
   if (!rows.some((r) => r.id_nguoi_kiem)) return rows;
   const m = await hoTenMap();
   return rows.map((r) => ({ ...r, ten_nguoi_kiem: ten(m, r.id_nguoi_kiem) }));
+}
+
+/**
+ * Tra cứu công khai theo mã tem (QR trên thùng mẫu) — trang `/qr/:maTem` mở
+ * không cần đăng nhập. RPC `rpc_gscl_tra_cuu_tem` CỐ Ý cấp quyền anon và chỉ
+ * trả 3 trường không nhạy cảm; mã không có → null.
+ */
+export async function traCuuTemCongKhai(maTem: string): Promise<ThongTinTemCongKhai | null> {
+  const { data, error } = await db.rpc('rpc_gscl_tra_cuu_tem', { p_ma_tem: maTem });
+  if (error) throwDbError(error);
+  return (data as ThongTinTemCongKhai | null) ?? null;
 }
 
 /** Bản rút gọn: chip lọc năm/tháng/trạng thái/kết luận/farm/thành phẩm. */

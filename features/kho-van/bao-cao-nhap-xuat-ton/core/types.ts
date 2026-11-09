@@ -73,3 +73,54 @@ export interface NXTByPeriodResult {
   /** Ma trận chi tiết kho × hàng — dùng cho pivot cột theo kho. */
   byCell?: NXTKHCell[];
 }
+
+/* ─────────────────────── Giá trị xuất & luân chuyển ─────────────────────── */
+
+/** Tổng giá trị xuất & luân chuyển (tab Giá trị xuất & luân chuyển) */
+export interface NXTGiaTriTong {
+  tien_xuat: number;
+  tien_chuyen: number;
+  so_dong_chua_gia: number;
+}
+
+export interface NXTGiaTriTheoPhamCap {
+  pham_cap: string | null;
+  tien_xuat: number;
+  tien_chuyen: number;
+  so_dong: number;
+}
+
+export interface NXTGiaTriTheoKho {
+  id_kho: string;
+  ten_kho: string;
+  ten_chi_nhanh: string;
+  tien_xuat: number;
+  tien_chuyen_di: number;
+  tien_nhan_ve: number;
+}
+
+export interface NXTGiaTriLuanChuyen {
+  id_kho_di: string;
+  ten_kho_di: string;
+  id_kho_den: string;
+  ten_kho_den: string;
+  tien: number;
+  so_dong: number;
+}
+
+export interface NXTGiaTriChuaCoGia {
+  id_hang_hoa: string;
+  ma_hang: string;
+  ten_hang: string;
+  so_dong: number;
+  so_luong: number;
+}
+
+/** Kết quả thô RPC rpc_nxt_gia_tri (trước khi chuẩn hoá numeric). */
+export interface NXTGiaTriResult {
+  tong: NXTGiaTriTong;
+  theoPhamCap: NXTGiaTriTheoPhamCap[];
+  theoKho: NXTGiaTriTheoKho[];
+  luanChuyen: NXTGiaTriLuanChuyen[];
+  chuaCoGia: NXTGiaTriChuaCoGia[];
+}

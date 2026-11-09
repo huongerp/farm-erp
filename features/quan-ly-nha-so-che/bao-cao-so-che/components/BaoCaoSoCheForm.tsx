@@ -12,12 +12,14 @@ import Combobox from '../../../../components/ui/Combobox';
 import { baoCaoSoCheFormSchema, type BaoCaoSoCheFormValues } from '../core/schema';
 import type { FarmBaoCaoSoChe } from '../core/types';
 import {
+  apTiLeLoiGsclVaoBcscForm,
   apTongDgdvVaoBcscForm,
   defaultFormValues,
   farmBaoCaoSoCheToForm,
   findBaoCaoSoCheDuplicateByBranchAndDate,
 } from '../core/form-mappers';
 import { useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
+import { useGsclTiLeLoiNgay } from '../../giam-sat-chat-luong/hooks/use-gscl-ti-le-loi-ngay';
 import { BCSC_KPI_STT_OFFSET, BCSC_SO_LIEU_STT_OFFSET, deriveDonViTinhSlipFromSoLieuMeta } from '../core/so-lieu-row-meta';
 import { useCreateBaoCaoSoChe, useUpdateBaoCaoSoChe } from '../hooks/use-bao-cao-so-che';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -147,6 +149,9 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [tongDgdv]
   );
 
+  // % nải lỗi QC khoá theo Giám sát chất lượng của ngày + chi nhánh.
+  const { data: tiLeGscl, isError: gsclLoi } = useGsclTiLeLoiNgay(ngay, idChiNhanh);
+
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
     [bcncList, ngay, idChiNhanh]
@@ -189,8 +194,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   }, [idChiNhanh, branches, setValue]);
 
   const onSubmit: SubmitHandler<BaoCaoSoCheFormValues> = (raw) => {
-    // Gửi đúng số đang hiện ở 2 ô khoá (DB trigger vẫn ghi đè theo Đánh giá đầu vào dù gửi gì).
-    const data = apTongDgdvVaoBcscForm(raw, tongDgdv);
+    // Gửi đúng số đang hiện ở các ô khoá (DB trigger vẫn ghi đè theo nguồn dù gửi gì).
+    const data = apTiLeLoiGsclVaoBcscForm(apTongDgdvVaoBcscForm(raw, tongDgdv), tiLeGscl);
     const dup = findBaoCaoSoCheDuplicateByBranchAndDate(
       existingList,
       data.ngay,
@@ -297,6 +302,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
               sttOffset={BCSC_SO_LIEU_STT_OFFSET}
               giaTriTuDgdv={giaTriTuDgdv}
               dgdvLoi={dgdvLoi}
+              giaTriTuGscl={tiLeGscl ?? null}
+              gsclLoi={gsclLoi}
             />
           </div>
         </FormSection>

@@ -25,6 +25,7 @@ import {
   SO_LIEU_ROW_DVT_QC_PCT,
   SO_LIEU_ROW_KEYS,
   laSoLieuRowTuDgdv,
+  laSoLieuRowTuGscl,
   type SoLieuRowKeyTuDgdv,
 } from '../core/so-lieu-row-meta';
 import { formatNumberVN } from '../../../../lib/utils';
@@ -39,6 +40,10 @@ interface Props {
   giaTriTuDgdv: Record<SoLieuRowKeyTuDgdv, number | null>;
   /** RPC tổng ngày lỗi → hiện dòng báo dưới ghi chú nguồn. */
   dgdvLoi?: boolean;
+  /** % nải lỗi QC lấy từ Giám sát chất lượng (ngày + chi nhánh đang chọn); null → «—». */
+  giaTriTuGscl: number | null;
+  /** RPC tỉ lệ lỗi lỗi → hiện dòng báo dưới ghi chú nguồn. */
+  gsclLoi?: boolean;
 }
 
 const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
@@ -47,6 +52,8 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   sttOffset,
   giaTriTuDgdv,
   dgdvLoi = false,
+  giaTriTuGscl,
+  gsclLoi = false,
 }) => {
   const { t } = useTranslation();
   const rowMeta = useWatch({ control, name: 'so_lieu_row_meta' });
@@ -91,6 +98,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
             {SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
               const isQcPct = def.key === 'danh_gia_loi_qc_pct';
               const tuDgdv = laSoLieuRowTuDgdv(def.key);
+              const tuGscl = laSoLieuRowTuGscl(def.key);
               const numErr = errors[def.key as keyof BaoCaoSoCheFormValues]?.message as string | undefined;
               const metaErrGhi = errors.so_lieu_row_meta?.[def.key]?.ghi_chu?.message as string | undefined;
               const metaErrDvt = errors.so_lieu_row_meta?.[def.key]?.don_vi_tinh_phu?.message as string | undefined;
@@ -119,12 +127,32 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                         )}
                       </>
                     )}
+                    {tuGscl && (
+                      <>
+                        <span
+                          title={t('baoCaoSoChe.form.layTuGsclTitle')}
+                          className="mt-0.5 block text-[11px] text-primary"
+                        >
+                          {t('baoCaoSoChe.form.layTuGscl')}
+                        </span>
+                        {gsclLoi && (
+                          <span className="mt-0.5 block text-[11px] text-destructive">
+                            {t('baoCaoSoChe.form.gsclLoi')}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </td>
                   <td className={bcscSoLieuTdGiaTri}>
                     {laSoLieuRowTuDgdv(def.key) ? (
                       // Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay.
                       <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
                         {formatNumberVN(giaTriTuDgdv[def.key])}
+                      </span>
+                    ) : laSoLieuRowTuGscl(def.key) ? (
+                      // Ô khoá: số do DB ghi đè theo Giám sát chất lượng, không cho nhập tay.
+                      <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
+                        {formatNumberVN(giaTriTuGscl)}
                       </span>
                     ) : (
                       <Controller

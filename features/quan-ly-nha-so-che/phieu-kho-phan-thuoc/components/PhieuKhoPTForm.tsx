@@ -14,7 +14,7 @@ import type { PhieuKhoPT, LoaiPhieuKhoPT } from '../core/types';
 import { cn, formatNumberVN, getTodayISO } from '../../../../lib/utils';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 import type { FarmHangHoa } from '../../hang-hoa-phan-thuoc/core/types';
-import { useCreatePhieuKhoPT, useUpdatePhieuKhoPT } from '../hooks/use-phieu-kho-pt';
+import { useCreatePhieuKhoPT, useUpdatePhieuKhoPT, useHangMucDangDung } from '../hooks/use-phieu-kho-pt';
 import { usePhieuKhoPTCapCao } from '../hooks/use-phieu-kho-pt-cap-cao';
 import { getDaNhapTheoDeXuat, getDongDeXuat, getNextSoPhieuFarmPt } from '../services/phieu-kho-pt-service';
 import { moTaDongVuot, timDongVuot } from '../../../../lib/thuc-hien-tung-phan';
@@ -86,6 +86,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
   // Chỉ cấp cao đổi được ngày phiếu (trigger DB chặn cả khi sửa); người khác tạo mới luôn ngày hôm nay.
   const capCao = usePhieuKhoPTCapCao();
   const { data: hangHoaList = HANG_HOA_RONG, isLoading: isLoadingHangHoa, isError: isErrorHangHoa } = useFarmHangHoaList();
+  const { data: hangMucDangDung = [] } = useHangMucDangDung();
 
   // Giữ nguyên tham chiếu suốt vòng đời form để effect reset không chạy lại mỗi lần render.
   const defaultValues = useMemo<Partial<PhieuKhoPTFormValues>>(
@@ -216,6 +217,17 @@ const PhieuKhoPTForm: React.FC<Props> = ({
     [hangHoaList]
   );
 
+  /** Gợi ý hạng mục: các hạng mục đang dùng trong hệ thống + giá trị người lập đang gõ (creatable). */
+  const hangMucComboboxOptions = useMemo(() => {
+    const dangDung = (hangMucDangDung ?? []).filter((x): x is string => x != null && x.trim() !== '');
+    const dangGo = (Array.isArray(chiTietWatch) ? chiTietWatch : [])
+      .map((c) => c?.hang_muc?.trim() ?? '')
+      .filter(Boolean);
+    return [...new Set([...dangDung, ...dangGo])]
+      .sort((a, b) => a.localeCompare(b, 'vi'))
+      .map((v) => ({ value: v, label: v }));
+  }, [hangMucDangDung, chiTietWatch]);
+
   const { fields, append, remove } = useFieldArray({ control, name: 'chi_tiet' });
 
   const renderAddOption = (opt: { value: string | number; label: string }) =>
@@ -244,6 +256,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
           so_luong: ct.so_luong,
           don_gia: ct.don_gia,
           pham_cap: ct.pham_cap ?? hangHoaMap[ct.id_hang_hoa]?.pham_cap ?? '',
+          hang_muc: ct.hang_muc ?? '',
           so_lot: ct.so_lot ?? '',
           ghi_chu: ct.ghi_chu ?? '',
         })),
@@ -343,6 +356,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
         so_luong: Number(c.so_luong),
         don_gia: c.don_gia != null ? Number(c.don_gia) : undefined,
         pham_cap: c.pham_cap?.trim() || undefined,
+        hang_muc: c.hang_muc?.trim() || undefined,
         so_lot: c.so_lot?.trim() || undefined,
         ghi_chu: c.ghi_chu?.trim() || undefined,
       })),
@@ -357,7 +371,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
   const isLoading = createMutation.isPending || updateMutation.isPending;
   const isChuyen = loaiWatch === 'chuyển';
 
-  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; pham_cap?: string | null; so_lot?: string; ghi_chu?: string }[] =
+  const chiTietValues: { id_hang_hoa?: string; so_luong?: number; don_gia?: number; pham_cap?: string | null; hang_muc?: string | null; so_lot?: string; ghi_chu?: string }[] =
     Array.isArray(chiTietWatch) ? chiTietWatch : [];
 
   const loaiComboboxOptions = useMemo(
@@ -510,7 +524,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
           icon={<Package size={14} className="text-primary" />}
           count={fields.length}
           addLabel={t('phieuKhoPhanThuoc.form.addRow')}
-          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, pham_cap: '', so_lot: '', ghi_chu: '' })}
+          onAdd={() => append({ id_hang_hoa: '', so_luong: 0, don_gia: 0, pham_cap: '', hang_muc: '', so_lot: '', ghi_chu: '' })}
           emptyTitle={t('phieuKhoPhanThuoc.form.noItems')}
           emptyDescription={t('phieuKhoPhanThuoc.form.noItemsHint')}
           maxTableHeight="320px"
@@ -523,6 +537,9 @@ const PhieuKhoPTForm: React.FC<Props> = ({
               </th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
                 {t('phieuKhoPhanThuoc.form.phamCap')}
+              </th>
+              <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[120px]">
+                {t('phieuKhoPhanThuoc.form.hangMuc')}
               </th>
               <th className="px-4 py-2 font-semibold text-foreground/80 text-xs whitespace-nowrap min-w-[110px]">
                 {t('phieuKhoPhanThuoc.form.quantity')}
@@ -560,7 +577,7 @@ const PhieuKhoPTForm: React.FC<Props> = ({
           <tbody className="[&>tr>td]:border-b [&>tr>td]:border-border">
             {fields.length === 0 ? (
               <tr>
-                <td colSpan={xemGia ? 12 : 10}className="px-4 py-6 text-center text-muted-foreground text-xs">
+                <td colSpan={xemGia ? 13 : 11}className="px-4 py-6 text-center text-muted-foreground text-xs">
                   {t('phieuKhoPhanThuoc.form.noItems')}
                 </td>
               </tr>
@@ -638,6 +655,25 @@ const PhieuKhoPTForm: React.FC<Props> = ({
                             searchable
                             creatable
                             creatableLabel={t('phieuKhoPhanThuoc.form.phamCapCreatableLabel')}
+                            dropdownInPortal
+                            triggerClassName="h-9 text-sm border-border rounded-md"
+                          />
+                        )}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 min-w-[120px] align-top">
+                      <Controller
+                        name={`chi_tiet.${index}.hang_muc`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Combobox
+                            options={hangMucComboboxOptions}
+                            value={f.value || null}
+                            onChange={(v) => f.onChange(v ?? '')}
+                            placeholder={t('phieuKhoPhanThuoc.form.hangMucPlaceholder')}
+                            searchable
+                            creatable
+                            creatableLabel={t('phieuKhoPhanThuoc.form.hangMucCreatableLabel')}
                             dropdownInPortal
                             triggerClassName="h-9 text-sm border-border rounded-md"
                           />

@@ -16,6 +16,10 @@ import {
   importPhieuKhoPT,
   xinSuaPhieuKhoPT,
   xuLyXinSuaPhieuKhoPT,
+  getHangMucDangDung,
+  getTongHopHangMuc,
+  xacNhanNhanPhieuKhoPT,
+  suaTraoDoiPhieuKhoPT,
 } from '../services/phieu-kho-pt-service';
 import type { ChiTietPhieuKhoPTListServerQuery, PhieuKhoPTListServerQuery } from '../services/phieu-kho-pt-list-query';
 import { stableListQueryKeyPart } from '../../../../lib/list-query-key';
@@ -27,6 +31,7 @@ import { useKhoBienThe } from '../../kho-bien-the/KhoBienTheProvider';
 
 const QUERY_KEY = ['phieuKhoPhanThuoc'] as const;
 const QUERY_KEY_CHI_TIET = ['phieuKhoPhanThuoc', 'chiTiet'] as const;
+const QUERY_KEY_HANG_MUC = ['phieuKhoPhanThuoc', 'hangMuc'] as const;
 
 const PHIEU_KHO_PT_PAGE_SIZE = 50;
 const CHI_TIET_PAGE_SIZE = 100;
@@ -95,6 +100,32 @@ export const usePhieuKhoPTById = (id: string | undefined) => {
   });
 };
 
+/** Hạng mục đang dùng — gợi ý combobox gõ/chọn hạng mục và bộ lọc (migration 071). */
+export const useHangMucDangDung = () => {
+  const bt = useKhoBienThe();
+  return useQuery({
+    queryKey: [...QUERY_KEY_HANG_MUC, 'dangDung', bt.key] as const,
+    queryFn: () => getHangMucDangDung(bt),
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/** Tổng hợp tiền xuất + luân chuyển theo hạng mục trong khoảng ngày. */
+export const useTongHopHangMuc = (
+  { tu, den, khoIds }: { tu: string; den: string; khoIds: string[] },
+  /** false khi phạm vi xem chưa tải xong — tránh gọi RPC với toàn bộ kho. */
+  enabled = true
+) => {
+  const bt = useKhoBienThe();
+  const sortedKho = [...khoIds].sort();
+  return useQuery({
+    queryKey: [...QUERY_KEY_HANG_MUC, 'tongHop', tu, den, sortedKho, bt.key] as const,
+    queryFn: () => getTongHopHangMuc(bt, { tu, den, khoIds }),
+    enabled: enabled && !!tu && !!den,
+    staleTime: 1000 * 60 * 2,
+  });
+};
+
 export const useNextSoPhieuFarmPtQuery = (loai: LoaiPhieuKhoPT | undefined, enabled: boolean) => {
   const bt = useKhoBienThe();
   return useQuery({
@@ -116,6 +147,7 @@ export const useCreatePhieuKhoPT = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
       // Badge "Đã tạo phiếu kho" ở module Đề xuất mua hàng đọc từ query này.
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'byDeXuat'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_HANG_MUC });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.createSuccess'));
       // Tồn âm chỉ cảnh báo — phiếu đã lưu.
@@ -154,6 +186,7 @@ export const useUpdatePhieuKhoPT = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CHI_TIET });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_CHI_TIET, 'paged'] });
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'paged'] });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_HANG_MUC });
       qc.invalidateQueries({ queryKey: FARM_TON_KHO_PT_QUERY_KEY });
       toast.success(i18n.t('phieuKhoPhanThuoc.toast.updateSuccess'));
       if (result.canhBaoTon) toast.warning(result.canhBaoTon, { duration: 8000 });
@@ -339,4 +372,24 @@ export const useXuLyXinSuaPhieuKhoPT = (onSuccess?: () => void) =>
     onSuccess
   );
 
-export { QUERY_KEY as PHIEU_KHO_PT_QUERY_KEY, QUERY_KEY_CHI_TIET as PHIEU_KHO_PT_CHI_TIET_QUERY_KEY };
+/** Kho đến xác nhận đã nhận hàng (phiếu chuyển) — RPC migration 075. */
+export const useXacNhanNhanPhieuKhoPT = (onSuccess?: () => void) =>
+  useXinSuaMutation<{ id: string }>(
+    (bt, { id }) => xacNhanNhanPhieuKhoPT(bt, id),
+    () => 'phieuKhoPhanThuoc.toast.xacNhanNhanSuccess',
+    onSuccess
+  );
+
+/** Ghi đè cột trao_doi của phiếu — RPC migration 075 (optimistic lock). */
+export const useSuaTraoDoiPhieuKhoPT = (onSuccess?: () => void) =>
+  useXinSuaMutation<{ id: string; traoDoi: string | null; traoDoiCu: string | null }>(
+    (bt, { id, traoDoi, traoDoiCu }) => suaTraoDoiPhieuKhoPT(bt, id, traoDoi, traoDoiCu),
+    () => 'common.traoDoi.luuThanhCong',
+    onSuccess
+  );
+
+export {
+  QUERY_KEY as PHIEU_KHO_PT_QUERY_KEY,
+  QUERY_KEY_CHI_TIET as PHIEU_KHO_PT_CHI_TIET_QUERY_KEY,
+  QUERY_KEY_HANG_MUC as PHIEU_KHO_PT_HANG_MUC_QUERY_KEY,
+};

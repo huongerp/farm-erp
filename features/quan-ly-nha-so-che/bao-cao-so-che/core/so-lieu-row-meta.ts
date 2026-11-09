@@ -26,6 +26,17 @@ export function laSoLieuRowTuDgdv(k: SoLieuRowKey): k is SoLieuRowKeyTuDgdv {
   return (SO_LIEU_ROW_KEYS_TU_DGDV as readonly string[]).includes(k);
 }
 
+/**
+ * Chỉ tiêu khoá theo Giám sát chất lượng (migration 072): % nải lỗi QC của ngày + chi nhánh —
+ * form chỉ hiện, DB trigger ghi đè.
+ */
+export const SO_LIEU_ROW_KEYS_TU_GSCL = ['danh_gia_loi_qc_pct'] as const;
+export type SoLieuRowKeyTuGscl = (typeof SO_LIEU_ROW_KEYS_TU_GSCL)[number];
+
+export function laSoLieuRowTuGscl(k: SoLieuRowKey): k is SoLieuRowKeyTuGscl {
+  return (SO_LIEU_ROW_KEYS_TU_GSCL as readonly string[]).includes(k);
+}
+
 export interface SoLieuRowMetaEntry {
   ghi_chu?: string | null;
   don_vi_tinh_phu?: string | null;

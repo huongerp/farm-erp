@@ -4,7 +4,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuKhoPT } from '../core/types';
 import GenericTable from '../../../../components/shared/GenericTable';
-import { LoaiPhieuKhoPTBadge, TrangThaiPhieuKhoPTBadge } from './shared/PhieuKhoPTBadges';
+import { DaNhanPhieuKhoPTBadge, LoaiPhieuKhoPTBadge, TrangThaiPhieuKhoPTBadge } from './shared/PhieuKhoPTBadges';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 
 interface Props {
@@ -53,7 +53,12 @@ const DanhSachList: React.FC<Props> = ({
 
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order), [columns]);
 
-  const renderStatusBadge = (item: PhieuKhoPT) => <TrangThaiPhieuKhoPTBadge trangThai={item.trang_thai} />;
+  const renderStatusBadge = (item: PhieuKhoPT) => (
+    <span className="inline-flex items-center gap-1.5">
+      <TrangThaiPhieuKhoPTBadge trangThai={item.trang_thai} />
+      {item.id_nguoi_nhan != null && <DaNhanPhieuKhoPTBadge />}
+    </span>
+  );
 
   const renderCell = (colId: string, item: PhieuKhoPT) => {
     switch (colId) {

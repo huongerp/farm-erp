@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, PackageCheck } from 'lucide-react';
 import { cn, formatDateShort, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuKho, LoaiPhieuKhoTab } from '../core/types';
 import { getTrangThaiPhieuBadgeClass, trangThaiToI18nKey } from '../core/constants';
@@ -80,13 +80,21 @@ const PhieuKhoList: React.FC<Props> = ({
   }, [visibleColumns, loai, t]);
 
   const renderStatusBadge = (item: PhieuKho) => (
-    <span
-      className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-        getTrangThaiPhieuBadgeClass(item.trang_thai),
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className={cn(
+          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+          getTrangThaiPhieuBadgeClass(item.trang_thai),
+        )}
+      >
+        {t(`phieuKho.status.${trangThaiToI18nKey(item.trang_thai)}`)}
+      </span>
+      {item.id_nguoi_nhan != null && (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-900">
+          <PackageCheck size={12} />
+          {t('phieuKho.detail.daNhanBadge')}
+        </span>
       )}
-    >
-      {t(`phieuKho.status.${trangThaiToI18nKey(item.trang_thai)}`)}
     </span>
   );
 

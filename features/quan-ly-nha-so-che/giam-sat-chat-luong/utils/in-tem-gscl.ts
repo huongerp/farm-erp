@@ -9,7 +9,7 @@ import { taoQrDataUrl } from '../../../../components/shared/QrCodeImage';
 import i18n from '../../../../lib/i18n';
 import { formatYmdToDisplay } from '../../../../lib/utils';
 import { bocCucTem, type CaiDatTem } from '../core/mau-tem';
-import { taoNoiDungQr } from '../core/qr';
+import { taoUrlQrTem } from '../core/qr';
 import { HINH_CHUOI_SVG } from './hinh-chuoi';
 import type { GiamSatChatLuong, ThungMau } from '../core/types';
 
@@ -77,8 +77,13 @@ export function taoHtmlTemGscl(tems: { tem: TemGscl; qrSrc: string }[], c: CaiDa
         .join(' · ');
       if (ngayFarm) dong.push(`<div class="phu">${ngayFarm}</div>`);
       const tenHang = c.tenHang.trim() || tem.thanhPham;
-      if (f.thanhPham && tenHang) {
+      const inDongTenHang = f.thanhPham && !!tenHang;
+      if (inDongTenHang) {
         dong.push(`<div class="phu hang">${f.hinhChuoi ? HINH_CHUOI_SVG : ''}<span>${esc(tenHang)}</span></div>`);
+      }
+      // Không in trùng: dòng tên hàng đã hiện đúng tên thành phẩm thì thôi.
+      if (f.tenThanhPham && tem.thanhPham && (!inDongTenHang || tenHang !== tem.thanhPham)) {
+        dong.push(`<div class="phu" style="font-weight:700">${esc(tem.thanhPham)}</div>`);
       }
       if (f.cayHang && tem.cayHang) dong.push(`<div class="phu">${t('cayHang', { ma: tem.cayHang })}</div>`);
       return `<div class="tem"><img class="qr" src="${qrSrc}" alt="" /><div class="chu">${dong.join('')}</div></div>`;
@@ -124,7 +129,10 @@ ${cells}
 /** Sinh QR (mỗi tem một mã) rồi dựng HTML. */
 export async function dungHtmlTem(tems: TemGscl[], c: CaiDatTem): Promise<string> {
   const voiQr = await Promise.all(
-    tems.map(async (tem) => ({ tem, qrSrc: await taoQrDataUrl(taoNoiDungQr(tem.maTem), 360, 0) }))
+    tems.map(async (tem) => ({
+      tem,
+      qrSrc: await taoQrDataUrl(taoUrlQrTem(tem.maTem, window.location.origin), 360, 0),
+    }))
   );
   return taoHtmlTemGscl(voiQr, c);
 }

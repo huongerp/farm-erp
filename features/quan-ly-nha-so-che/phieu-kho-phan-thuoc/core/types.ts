@@ -34,6 +34,8 @@ export interface PhieuKhoPTChiTiet {
   don_vi_tinh?: string;
   /** Phẩm cấp (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.pham_cap). */
   pham_cap?: string | null;
+  /** Hạng mục (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.hang_muc, migration 071). */
+  hang_muc?: string | null;
   so_lot?: string;
   ghi_chu?: string;
   nguoi_tao_id?: number | null;
@@ -59,6 +61,10 @@ export interface PhieuKhoPT {
   trao_doi?: string;
   id_nguoi_duyet?: number | null;
   ten_nguoi_duyet?: string;
+  /** Người (kho đến) xác nhận đã nhận hàng — chỉ phiếu chuyển kho (migration 075). */
+  id_nguoi_nhan?: number | null;
+  ten_nguoi_nhan?: string;
+  tg_nhan?: string;
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;
   /** Đề xuất mua hàng farm đã sinh ra phiếu này (null nếu lập tay). */
@@ -99,6 +105,10 @@ export interface ChiTietPhieuKhoPTFlat {
   phieu_tg_cap_nhat?: string;
   id_nguoi_duyet?: number | null;
   ten_nguoi_duyet?: string;
+  /** Người (kho đến) xác nhận đã nhận hàng — chỉ phiếu chuyển kho (migration 075). */
+  id_nguoi_nhan?: number | null;
+  ten_nguoi_nhan?: string;
+  tg_nhan?: string;
   nguoi_tao_id?: number | null;
   ten_nguoi_tao?: string;
   id_hang_hoa: string;
@@ -111,6 +121,8 @@ export interface ChiTietPhieuKhoPTFlat {
   don_vi_tinh?: string;
   /** Phẩm cấp (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.pham_cap). */
   pham_cap?: string | null;
+  /** Hạng mục (snapshot fp_farm_phieu_kho_phan_thuoc_chi_tiet.hang_muc, migration 071). */
+  hang_muc?: string | null;
   so_lot?: string;
   ghi_chu?: string;
   chi_tiet_nguoi_tao_id?: number | null;

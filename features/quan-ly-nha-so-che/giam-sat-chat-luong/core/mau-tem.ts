@@ -11,6 +11,8 @@ export interface TruongTem {
   ngay: boolean;
   farm: boolean;
   thanhPham: boolean;
+  /** In thêm dòng tên thành phẩm của phiếu ngay dưới dòng tên hàng. */
+  tenThanhPham: boolean;
   cayHang: boolean;
   nhan: boolean;
   /** Hình quả chuối bên trái dòng tên hàng. */
@@ -59,7 +61,17 @@ export const CAI_DAT_TEM_MAC_DINH: CaiDatTem = {
   le: 1.5,
   tiLeQr: 90,
   coChu: 8,
-  truong: { soPhieu: true, thung: true, ngay: true, farm: true, thanhPham: true, cayHang: true, nhan: true, hinhChuoi: true },
+  truong: {
+    soPhieu: true,
+    thung: true,
+    ngay: true,
+    farm: true,
+    thanhPham: true,
+    tenThanhPham: true,
+    cayHang: true,
+    nhan: true,
+    hinhChuoi: true,
+  },
   tenHang: 'Cavendish banana',
   nhan: 'QC',
   logo: null,

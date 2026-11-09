@@ -25,6 +25,8 @@ import {
   getChiTietPhieuKhoPageDb,
   fetchAllPhieuKhoForListQueryDb,
   fetchAllChiTietPhieuKhoForListQueryDb,
+  xacNhanNhanPhieuKhoDb,
+  suaTraoDoiPhieuKhoDb,
   type UpdatePhieuKhoTrangThaiOptions,
   type UpdatePhieuKhoTrangThaiManyResult,
 } from './phieu-kho-db.service';
@@ -64,3 +66,5 @@ export const getPhieuKhoPage = getPhieuKhoPageDb;
 export const getChiTietPhieuKhoPage = getChiTietPhieuKhoPageDb;
 export const fetchAllPhieuKhoForListQuery = fetchAllPhieuKhoForListQueryDb;
 export const fetchAllChiTietPhieuKhoForListQuery = fetchAllChiTietPhieuKhoForListQueryDb;
+export const xacNhanNhanPhieuKho = xacNhanNhanPhieuKhoDb;
+export const suaTraoDoiPhieuKho = suaTraoDoiPhieuKhoDb;

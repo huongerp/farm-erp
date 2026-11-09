@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildPhieuKhoPTPhamVi, phamViOrFilter } from './phieu-kho-pt-list-query';
+import { buildPhieuKhoPTPhamVi, phamViOrFilter, buildChiTietPhieuKhoPTListServerQuery } from './phieu-kho-pt-list-query';
+import type { ChiTietPhieuKhoPTFilters } from '../store/useChiTietPhieuKhoPTStore';
 import type { Kho } from '../../../kho-van/danh-sach-kho/core/types';
 
 const khoList = [
@@ -41,5 +42,44 @@ describe('phạm vi xem phiếu kho phân thuốc', () => {
   it('không chi nhánh, không người dùng → rỗng = không thấy gì, KHÔNG phải thấy tất cả', () => {
     const pv = buildPhieuKhoPTPhamVi(scope({ allowedBranchIds: [], currentEmployeeId: null }), khoList);
     expect(phamViOrFilter(pv, 'nguoi_tao_id')).toBe('');
+  });
+});
+
+describe('bộ lọc hạng mục của tab Chi tiết', () => {
+  const pv = buildPhieuKhoPTPhamVi(scope({ viewAll: true }), khoList);
+  const filters = (hangMuc: string[]): ChiTietPhieuKhoPTFilters =>
+    ({
+      loai: [],
+      datePreset: 'all',
+      customDateFrom: '',
+      customDateEnd: '',
+      khoIds: [],
+      khoDenIds: [],
+      trangThaiKeys: [],
+      nguoiTaoIds: [],
+      nguoiDuyetIds: [],
+      hangMuc,
+    }) as unknown as ChiTietPhieuKhoPTFilters;
+
+  it('chuyển hạng mục đã chọn vào tham số server, giữ __none__ nguyên vẹn', () => {
+    const q = buildChiTietPhieuKhoPTListServerQuery({
+      searchTerm: '',
+      filters: filters(['Vật tư', '__none__']),
+      ngayFrom: '',
+      ngayTo: '',
+      phamVi: pv,
+    });
+    expect(q.hangMuc).toEqual(['Vật tư', '__none__']);
+  });
+
+  it('không chọn hạng mục → mảng rỗng', () => {
+    const q = buildChiTietPhieuKhoPTListServerQuery({
+      searchTerm: '',
+      filters: filters([]),
+      ngayFrom: '',
+      ngayTo: '',
+      phamVi: pv,
+    });
+    expect(q.hangMuc).toEqual([]);
   });
 });

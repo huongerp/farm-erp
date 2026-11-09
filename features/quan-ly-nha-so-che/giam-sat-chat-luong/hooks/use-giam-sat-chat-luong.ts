@@ -14,6 +14,7 @@ import {
   deleteGscl,
   deleteGsclMany,
   deleteTieuChi,
+  fetchAllGsclThongKe,
   getCaiDatGscl,
   getGsclById,
   getGsclPage,
@@ -33,6 +34,7 @@ import {
   xuatGscl,
   updateTieuChi,
   type CaiDatGscl,
+  type GsclThongKeParams,
   type LuuKetQuaThungInput,
 } from '../services/giam-sat-chat-luong-service';
 
@@ -66,6 +68,17 @@ export function useGiamSatChatLuongById(id: string | undefined) {
     queryKey: [...QUERY_KEY_GSCL, 'byId', id],
     queryFn: () => getGsclById(id!),
     enabled: !!id,
+  });
+}
+
+/** Tab Thống kê: toàn bộ phiếu trong phạm vi + khoảng ngày (tính toán ở client). */
+export function useGiamSatChatLuongThongKe(params: GsclThongKeParams, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_GSCL, 'thongKe', params],
+    queryFn: () => fetchAllGsclThongKe(params),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60,
   });
 }
 

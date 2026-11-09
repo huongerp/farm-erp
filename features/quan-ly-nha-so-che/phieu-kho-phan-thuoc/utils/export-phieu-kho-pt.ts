@@ -54,6 +54,7 @@ function colHeaders(t: (k: string) => string) {
     t('phieuKhoPhanThuoc.preview.danhMuc'),
     t('phieuKhoPhanThuoc.form.itemName'),
     t('phieuKhoPhanThuoc.form.phamCap'),
+    t('phieuKhoPhanThuoc.form.hangMuc'),
     t('phieuKhoPhanThuoc.form.unit'),
     t('phieuKhoPhanThuoc.form.quantity'),
     t('phieuKhoPhanThuoc.preview.soLot'),
@@ -94,6 +95,7 @@ export async function exportPhieuKhoPTToXLSX(
       safe(c.ten_danh_muc),
       safe(c.ten_hang ?? c.ten_hang_hoa),
       safe(c.pham_cap),
+      safe(c.hang_muc),
       safe(c.don_vi_tinh),
       Number(c.so_luong) || 0,
       safe(c.so_lot),
@@ -103,11 +105,11 @@ export async function exportPhieuKhoPTToXLSX(
 
   if (chiTiet.length > 0) {
     for (const d of tongTheoDvt(chiTiet)) {
-      rows.push([t('phieuKhoPhanThuoc.preview.totalQty'), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
+      rows.push([t('phieuKhoPhanThuoc.preview.totalQty'), '', '', '', '', d.dvt ?? '', d.soLuong, '', '']);
     }
     for (const d of tongTheoPhamCap(chiTiet)) {
       const phamCap = d.phamCap ?? t('phieuKhoPhanThuoc.preview.chuaPhanCap');
-      rows.push([t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', { phamCap }), '', '', '', d.dvt ?? '', d.soLuong, '', '']);
+      rows.push([t('phieuKhoPhanThuoc.preview.totalQtyByPhamCap', { phamCap }), '', '', '', '', d.dvt ?? '', d.soLuong, '', '']);
     }
   }
 
@@ -120,7 +122,7 @@ export async function exportPhieuKhoPTToXLSX(
   ]);
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 24 }];
+  ws['!cols'] = [{ wch: 6 }, { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 24 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Phieu_kho_PT');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(phieu)}.xlsx`);
