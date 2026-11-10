@@ -462,5 +462,9 @@
   "employee.import.errDate": "{{label}} không hợp lệ: \"{{value}}\"",
   "employee.import.errWrite": "Không tạo được: {{msg}}",
   "employee.import.successCount": "Đã tạo {{count}} nhân viên (mật khẩu mặc định, buộc đổi khi đăng nhập lần đầu)",
-  "employee.import.passwordWarn": "{{count}} nhân viên đã tạo nhưng chưa đặt được mật khẩu — đặt lại ở trang chi tiết. Lỗi: {{error}}"
+  "employee.import.passwordWarn": "{{count}} nhân viên đã tạo nhưng chưa đặt được mật khẩu — đặt lại ở trang chi tiết. Lỗi: {{error}}",
+  "nhanVienSuperAdmin.label": "Super admin",
+  "nhanVienSuperAdmin.moTa": "Toàn quyền mọi module như cấp bậc 1",
+  "nhanVienSuperAdmin.badge": "Super admin",
+  "nhanVienSuperAdmin.khong": "Không"
 }

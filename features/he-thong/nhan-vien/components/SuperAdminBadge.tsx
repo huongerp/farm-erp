@@ -2,7 +2,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShieldCheck } from 'lucide-react';
 import EnumBadge from '../../../../components/ui/EnumBadge';
-import '../locales/nap-locale';
 
 /** Badge "Super admin" cạnh tên nhân viên (bảng, drawer chi tiết). */
 const SuperAdminBadge: React.FC<{ className?: string }> = ({ className }) => {

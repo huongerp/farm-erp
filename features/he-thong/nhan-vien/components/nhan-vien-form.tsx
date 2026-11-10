@@ -18,7 +18,6 @@ import SingleImageInput from '../../../../components/ui/SingleImageInput';
 import ToggleSwitch from '../../../../components/ui/ToggleSwitch';
 import { uploadAnh } from '../../../../lib/media-upload';
 import { useAuthStore } from '../../../../store/useStore';
-import '../locales/nap-locale';
 
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
 import FormSection from '../../../../components/shared/FormSection';
