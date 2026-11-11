@@ -132,7 +132,11 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
     if (loiChuyen.length > 0) {
       const parts = loiChuyen.map((l) => {
         if (l.loai === 'thieu_tich') return t('checklistBanGiao.loi.thieuTich', { so: l.so });
-        if (l.loai === 'thieu_khac_phuc') return t('checklistBanGiao.loi.thieuKhacPhuc', { so: l.so });
+        if (l.loai === 'thieu_khac_phuc') {
+          return l.stt.length > 0
+            ? t('checklistBanGiao.loi.thieuKhacPhucStt', { stt: l.stt.join(', ') })
+            : t('checklistBanGiao.loi.thieuKhacPhuc', { so: l.so });
+        }
         return t('checklistBanGiao.loi.thieuKetLuan');
       });
       toast.info(parts.join(' · '));
@@ -304,6 +308,7 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
                     <span key={ten} className="rounded-full border border-border bg-muted/30 px-2.5 py-1">
                       <span className="font-semibold">{ten}:</span>{' '}
                       {t('checklistBanGiao.detail.demNhanh', { dat: d.dat, khongDat: d.khongDat, chuaTich: d.chuaTich, tong: d.tong })}
+                      {d.tungKhongDat > 0 && t('checklistBanGiao.detail.demDaSua', { so: d.tungKhongDat })}
                     </span>
                   ))}
                 </div>

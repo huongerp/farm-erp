@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, Edit, Plus, Star, Trash2 } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
@@ -27,12 +27,31 @@ const ICON_BTN =
 /** Nhóm không có mục (id_muc null) — chỉ gặp nếu dữ liệu nhập tay, vẫn hiện để không sót. */
 const MUC_NONE = '__khong_muc__';
 
+/** Hàm lưu bản nháp của một form con đang mở; trả false nếu dữ liệu chưa hợp lệ. */
+type BanNhapSaver = () => Promise<boolean>;
+type DangKySaver = (fn: BanNhapSaver) => () => void;
+
+export interface MucHangMucEditorHandle {
+  /** Lưu form mục / hạng mục đang mở (nếu có). false = dữ liệu chưa hợp lệ → người gọi nên dừng. */
+  luuBanNhapDangMo: () => Promise<boolean>;
+}
+
 interface Props {
   idMau: string;
   canEdit: boolean;
+  ref?: React.Ref<MucHangMucEditorHandle>;
 }
 
-const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit }) => {
+/** Enter ở ô nhập một dòng = Lưu (editor nằm trong <form> của drawer nên không dùng <form> lồng nhau). */
+function enterLuu(e: React.KeyboardEvent<HTMLElement>, luu: () => void) {
+  const el = e.target as HTMLElement;
+  if (e.key !== 'Enter' || el.tagName !== 'INPUT' || (el as HTMLInputElement).type === 'checkbox') return;
+  e.preventDefault();
+  e.stopPropagation();
+  luu();
+}
+
+const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit, ref }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const { data: chiTiet, isLoading } = useMauChiTiet(idMau);
@@ -44,6 +63,27 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit }) => {
   const [suaMuc, setSuaMuc] = useState<MucMauChecklist | null>(null);
   const [themHangMucCho, setThemHangMucCho] = useState<string | null>(null);
   const [suaHangMuc, setSuaHangMuc] = useState<HangMucMauChecklist | null>(null);
+
+  const saversRef = useRef(new Set<BanNhapSaver>());
+  const dangKy = useCallback<DangKySaver>((fn) => {
+    saversRef.current.add(fn);
+    return () => {
+      saversRef.current.delete(fn);
+    };
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      luuBanNhapDangMo: async () => {
+        for (const fn of Array.from(saversRef.current)) {
+          if (!(await fn())) return false;
+        }
+        return true;
+      },
+    }),
+    []
+  );
 
   const muc = chiTiet?.muc ?? [];
 
@@ -115,6 +155,7 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit }) => {
       initial={initial}
       idMau={idMau}
       muc={muc}
+      dangKy={dangKy}
       onDone={() => {
         setDangThemMuc(false);
         setSuaMuc(null);
@@ -129,6 +170,7 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit }) => {
       idMuc={idMuc}
       nhom={nhom}
       thietBiOptions={thietBiOptions}
+      dangKy={dangKy}
       onDone={() => {
         setThemHangMucCho(null);
         setSuaHangMuc(null);
@@ -278,15 +320,15 @@ const MucForm: React.FC<{
   initial: MucMauChecklist | null;
   idMau: string;
   muc: MucMauChecklist[];
+  dangKy: DangKySaver;
   onDone: () => void;
-}> = ({ initial, idMau, muc, onDone }) => {
+}> = ({ initial, idMau, muc, dangKy, onDone }) => {
   const { t } = useTranslation();
   const luu = useLuuMuc(onDone);
   const [ten, setTen] = useState(initial?.ten ?? '');
   const [err, setErr] = useState<string | null>(null);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     if (!ten.trim()) {
       setErr(t('checklistMau.muc.tenRequired'));
       return;
@@ -294,8 +336,33 @@ const MucForm: React.FC<{
     luu.mutate({ id: initial?.id ?? null, idMau, ten, muc });
   };
 
+  // Cho nút Lưu của drawer chủ: lưu luôn bản nháp đang gõ dở.
+  const luuBanNhap: BanNhapSaver = async () => {
+    if (!initial && !ten.trim()) return true; // form thêm mới để trống → bỏ qua
+    if (initial && ten.trim() === initial.ten) return true; // không đổi gì
+    if (!ten.trim()) {
+      setErr(t('checklistMau.muc.tenRequired'));
+      return false;
+    }
+    try {
+      await luu.mutateAsync({ id: initial?.id ?? null, idMau, ten, muc });
+      return true;
+    } catch {
+      return false; // onError của hook đã báo toast
+    }
+  };
+  const luuBanNhapRef = useRef(luuBanNhap);
+  useEffect(() => {
+    luuBanNhapRef.current = luuBanNhap;
+  });
+  useEffect(() => dangKy(() => luuBanNhapRef.current()), [dangKy]);
+
   return (
-    <form onSubmit={submit} className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Enter ở ô nhập = Lưu, thay cho <form> lồng
+    <div
+      onKeyDown={(e) => enterLuu(e, () => !luu.isPending && submit())}
+      className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2"
+    >
       <Input
         label={t('checklistMau.muc.tenMuc')}
         value={ten}
@@ -310,11 +377,11 @@ const MucForm: React.FC<{
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" size="sm" disabled={luu.isPending}>
+        <Button type="button" size="sm" disabled={luu.isPending} onClick={submit}>
           {t('common.save')}
         </Button>
       </div>
-    </form>
+    </div>
   );
 };
 
@@ -335,11 +402,12 @@ const HangMucForm: React.FC<{
   idMuc: string | null;
   nhom: HangMucMauChecklist[];
   thietBiOptions: { value: string; label: string }[];
+  dangKy: DangKySaver;
   onDone: () => void;
-}> = ({ initial, idMau, idMuc, nhom, thietBiOptions, onDone }) => {
+}> = ({ initial, idMau, idMuc, nhom, thietBiOptions, dangKy, onDone }) => {
   const { t } = useTranslation();
   const luu = useLuuHangMuc(onDone);
-  const [values, setValues] = useState<HangMucFormValues>(
+  const [giaTriDau] = useState<HangMucFormValues>(
     initial
       ? {
           doi_tuong: initial.doi_tuong,
@@ -351,6 +419,7 @@ const HangMucForm: React.FC<{
         }
       : RONG
   );
+  const [values, setValues] = useState<HangMucFormValues>(giaTriDau);
   const [err, setErr] = useState<string | null>(null);
 
   const set = <K extends keyof HangMucFormValues>(k: K, v: HangMucFormValues[K]) => {
@@ -358,8 +427,7 @@ const HangMucForm: React.FC<{
     setErr(null);
   };
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     if (!values.doi_tuong.trim()) {
       setErr(t('checklistMau.hangMuc.doiTuongRequired'));
       return;
@@ -367,8 +435,32 @@ const HangMucForm: React.FC<{
     luu.mutate({ id: initial?.id ?? null, idMau, idMuc, values, nhom });
   };
 
+  // Cho nút Lưu của drawer chủ: lưu luôn bản nháp đang gõ dở.
+  const luuBanNhap: BanNhapSaver = async () => {
+    if (JSON.stringify(values) === JSON.stringify(giaTriDau)) return true; // chưa đổi gì
+    if (!values.doi_tuong.trim()) {
+      setErr(t('checklistMau.hangMuc.doiTuongRequired'));
+      return false;
+    }
+    try {
+      await luu.mutateAsync({ id: initial?.id ?? null, idMau, idMuc, values, nhom });
+      return true;
+    } catch {
+      return false; // onError của hook đã báo toast
+    }
+  };
+  const luuBanNhapRef = useRef(luuBanNhap);
+  useEffect(() => {
+    luuBanNhapRef.current = luuBanNhap;
+  });
+  useEffect(() => dangKy(() => luuBanNhapRef.current()), [dangKy]);
+
   return (
-    <form onSubmit={submit} className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Enter ở ô nhập = Lưu, thay cho <form> lồng
+    <div
+      onKeyDown={(e) => enterLuu(e, () => !luu.isPending && submit())}
+      className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3"
+    >
       <FormGrid cols={2}>
         <Input
           label={t('checklistMau.hangMuc.doiTuong')}
@@ -414,11 +506,11 @@ const HangMucForm: React.FC<{
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" size="sm" disabled={luu.isPending}>
+        <Button type="button" size="sm" disabled={luu.isPending} onClick={submit}>
           {t('common.save')}
         </Button>
       </div>
-    </form>
+    </div>
   );
 };
 

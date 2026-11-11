@@ -37,6 +37,9 @@
   "checklistBanGiao.oChon.tinhTrangKhacPhuc": "Tình trạng khắc phục",
   "checklistBanGiao.oChon.tinhTrangKhacPhucPh": "Tình trạng khắc phục (nếu không đạt)",
   "checklistBanGiao.oChon.nguoiXuLy": "Người xử lý",
+  "checklistBanGiao.oChon.goiYKhacPhuc": "Xử lý xong vẫn giữ «Không đạt» — ghi cách đã xử lý ở đây để văn phòng nắm lỗi.",
+  "checklistBanGiao.oChon.tungKhongDat": "Từng Không đạt",
+  "checklistBanGiao.oChon.chuaLuu": "Chưa lưu",
   "checklistBanGiao.lyDo.traLaiTitle": "Trả lại phiếu",
   "checklistBanGiao.lyDo.huyTitle": "Huỷ phiếu",
   "checklistBanGiao.lyDo.moLaiTitle": "Mở lại phiếu",
@@ -88,6 +91,7 @@
   "checklistBanGiao.lichSu.huy": "Huỷ",
   "checklistBanGiao.loi.thieuTich": "Còn {{so}} hạng mục chưa tích Đạt / Không đạt",
   "checklistBanGiao.loi.thieuKhacPhuc": "Còn {{so}} hạng mục Không đạt chưa ghi tình trạng & biện pháp khắc phục",
+  "checklistBanGiao.loi.thieuKhacPhucStt": "Hạng mục Không đạt chưa ghi tình trạng khắc phục: số {{stt}} — bấm mũi tên cạnh nút Không đạt để ghi",
   "checklistBanGiao.loi.thieuKetLuan": "Chưa chọn kết luận vận hành",
   "checklistBanGiao.loi.chuaKiemTra": "Còn {{so}} hạng mục chưa kiểm tra lại",
   "checklistBanGiao.confirm.chuyenTitle": "Chuyển phiếu?",
@@ -121,6 +125,9 @@
   "checklistBanGiao.preview.kyQuanLy": "Người quản lý",
   "checklistBanGiao.detail.dongLech": "Khâu sau đánh khác khâu làm — kiểm tra lại hạng mục này",
   "checklistBanGiao.preview.tongHop": "{{ben}}: Đạt {{dat}}/{{tong}} – Không đạt {{khongDat}}/{{tong}}",
+  "checklistBanGiao.preview.tongHopKp": "{{ben}}: Đạt {{dat}}/{{tong}} – Không đạt {{khongDat}}/{{tong}} (đã khắc phục {{daKhacPhuc}})",
+  "checklistBanGiao.preview.chuThichDaSua": "✗→✓: hạng mục Không đạt, đã xử lý rồi kiểm lại Đạt.",
   "checklistBanGiao.detail.demNhanh": "Đạt {{dat}} · K.Đạt {{khongDat}} · chưa tích {{chuaTich}}/{{tong}}",
+  "checklistBanGiao.detail.demDaSua": " · đã sửa {{so}}",
   "checklistBanGiao.detail.phuongPhap": "Phương pháp"
 }

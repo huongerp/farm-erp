@@ -15,7 +15,7 @@ const TABLE_TS = 'fp_ts_tai_san';
 
 const TB_COLUMNS =
   'id,ten,ma_ts,so_luong,khu_vuc,id_tai_san,ghi_chu,dang_dung,thu_tu,id_nguoi_tao,tg_tao,tg_cap_nhat';
-const VIEC_COLUMNS = 'id,id_thiet_bi,noi_dung,chu_ky_ngay,lan_gan_nhat,han_ke_tiep,ghi_chu,dang_dung,thu_tu';
+const VIEC_COLUMNS = 'id,id_thiet_bi,noi_dung,chu_ky_ngay,lan_gan_nhat,han_ke_tiep,ghi_chu,dang_dung,thu_tu,kq_gan_nhat';
 const NK_COLUMNS = 'id,id_viec,ngay_thuc_hien,ket_qua,noi_dung,hinh_anh,id_nguoi_thuc_hien,id_nguoi_tao,tg_tao';
 
 interface DbThietBiRow {
@@ -43,6 +43,7 @@ interface DbViecRow {
   ghi_chu: string | null;
   dang_dung: boolean;
   thu_tu: number;
+  kq_gan_nhat: KetQuaBaoDuong | null;
 }
 
 interface DbNhatKyRow {
@@ -112,6 +113,7 @@ function viecToModel(row: DbViecRow): ViecBaoDuong {
     ghi_chu: row.ghi_chu,
     dang_dung: row.dang_dung,
     thu_tu: row.thu_tu,
+    kq_gan_nhat: row.kq_gan_nhat ?? null,
   };
 }
 
@@ -241,6 +243,8 @@ export async function updateViecDb(id: string, v: Omit<ViecInput, 'id_thiet_bi'>
 
 export async function deleteViecDb(id: string): Promise<void> {
   const { error } = await db.from(TABLE_VIEC).delete().eq('id', toIntId(id));
+  // FK RESTRICT (migration 076): việc đã có nhật ký không xoá được — giữ lịch sử bảo dưỡng.
+  if (error?.code === '23503') throw new Error(i18n.t('baoDuongThietBi.service.viecDaCoNhatKy'));
   if (error) throwDbError(error);
 }
 

@@ -21,6 +21,8 @@ export interface FarmDuBaoSlDongThung {
   /** Tồn đầu / tồn cuối ngày theo Báo cáo sơ chế cùng ngày + chi nhánh — DB trigger ghi. */
   sl_buong_ton_dau_ngay: number;
   sl_buong_ton_cuoi_ngay: number;
+  /** Buồng không sơ chế (ĐGĐV so_luong_huy) cùng ngày — trigger ghi (migration 076) */
+  so_buong_ksc: number;
   ty_le_thu_hoi_thuc_te: number;
   quy_cach_dong_thung_thuc_te: number;
   /** GENERATED ALWAYS STORED — null khi so_buong_can_mau = 0 */

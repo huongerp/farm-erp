@@ -167,8 +167,7 @@ const ViecForm: React.FC<{
     setErr(null);
   };
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     if (!values.noi_dung.trim()) {
       setErr(t('baoDuongThietBi.viec.noiDungRequired'));
       return;
@@ -197,8 +196,21 @@ const ViecForm: React.FC<{
     });
   };
 
+  // Form này nằm trong <form> của drawer: không dùng <form> lồng nhau, Enter ở ô nhập một dòng = Lưu.
+  const enterLuu = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const el = e.target as HTMLElement;
+    if (e.key !== 'Enter' || el.tagName !== 'INPUT' || (el as HTMLInputElement).type === 'checkbox') return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!luu.isPending) submit();
+  };
+
   return (
-    <form onSubmit={submit} className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- Enter ở ô nhập = Lưu, thay cho <form> lồng
+    <div
+      onKeyDown={enterLuu}
+      className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3"
+    >
       <FormGrid cols={2}>
         <div className="sm:col-span-2">
           <Input
@@ -245,11 +257,11 @@ const ViecForm: React.FC<{
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" size="sm" disabled={luu.isPending}>
+        <Button type="button" size="sm" disabled={luu.isPending} onClick={submit}>
           {t('common.save')}
         </Button>
       </div>
-    </form>
+    </div>
   );
 };
 

@@ -23,7 +23,7 @@ const PHIEU_COLUMNS =
 
 const DONG_COLUMNS =
   'id,id_phieu,id_hang_muc,ten_muc,thu_tu_muc,stt,doi_tuong,tieu_chuan,phuong_phap,quan_trong,ma_ts,so_luong,' +
-  'tan_suat_bao_duong,kq_thuc_hien,tinh_trang_khac_phuc,nguoi_xu_ly,ghi_chu,kq_kiem_tra,ghi_chu_kiem_tra';
+  'tan_suat_bao_duong,kq_thuc_hien,tinh_trang_khac_phuc,nguoi_xu_ly,ghi_chu,kq_kiem_tra,ghi_chu_kiem_tra,qlx_tung_khong_dat,gs_tung_khong_dat';
 
 const LS_COLUMNS = 'id,id_phieu,hanh_dong,tu_trang_thai,den_trang_thai,ly_do,id_nguoi,ten_nguoi,tg';
 
@@ -79,6 +79,8 @@ interface DbDongRow {
   ghi_chu: string | null;
   kq_kiem_tra: KetQuaCl | null;
   ghi_chu_kiem_tra: string | null;
+  qlx_tung_khong_dat: boolean | null;
+  gs_tung_khong_dat: boolean | null;
 }
 
 interface DbLichSuRow {
@@ -170,6 +172,8 @@ function dongToModel(row: DbDongRow): DongPhieuChecklist {
     ghi_chu: row.ghi_chu,
     kq_kiem_tra: row.kq_kiem_tra,
     ghi_chu_kiem_tra: row.ghi_chu_kiem_tra,
+    qlx_tung_khong_dat: row.qlx_tung_khong_dat === true,
+    gs_tung_khong_dat: row.gs_tung_khong_dat === true,
   };
 }
 

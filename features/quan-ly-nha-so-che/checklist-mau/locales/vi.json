@@ -65,6 +65,8 @@
   "checklistMau.hangMuc.xoaTitle": "Xoá hạng mục",
   "checklistMau.hangMuc.xoaMessage": "Xoá hạng mục \"{{doiTuong}}\"?",
   "checklistMau.toast.createSuccess": "Đã tạo mẫu checklist",
+  "checklistMau.toast.createThemMuc": "Đã tạo mẫu — thêm mục & hạng mục bên dưới",
+  "checklistMau.service.khongCoQuyenSua": "Bạn không có quyền sửa mẫu này",
   "checklistMau.toast.updateSuccess": "Đã cập nhật mẫu",
   "checklistMau.toast.deleteSuccess": "Đã xoá mẫu",
   "checklistMau.toast.mucSaved": "Đã lưu mục",

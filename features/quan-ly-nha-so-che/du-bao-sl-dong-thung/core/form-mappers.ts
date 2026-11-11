@@ -39,21 +39,23 @@ export function farmDuBaoSlDongThungToForm(row: FarmDuBaoSlDongThung): DuBaoSlDo
 }
 
 /**
- * Dòng 10 «Tổng số buồng nhập (thực tế)» = tồn đầu + Tổng thu Đánh giá đầu vào − tồn cuối
- * (tồn theo Báo cáo sơ chế cùng ngày + chi nhánh; khớp trigger `fn_dgdv_trg_du_bao_khoa_so`, migration 060).
+ * Dòng 10 «Tổng số buồng nhập (thực tế)» = tồn đầu + Tổng thu Đánh giá đầu vào + buồng không sơ chế (KSC) − tồn cuối
+ * (tồn theo Báo cáo sơ chế cùng ngày + chi nhánh; KSC = ĐGĐV so_luong_huy cùng ngày; khớp trigger
+ * `fn_dgdv_trg_du_bao_khoa_so`, migration 076).
  * Âm → 0. Thiếu một trong hai số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ số đã lưu; DB trigger vẫn ghi đè khi lưu.
  */
-export function tinhBuongNhapThucTe(tongThu: number, ton: DuBaoTonNgay): number {
-  return Math.max(0, Math.floor(ton.ton_dau + tongThu - ton.ton_cuoi));
+export function tinhBuongNhapThucTe(tongThu: number, ton: DuBaoTonNgay, ksc = 0): number {
+  return Math.max(0, Math.floor(ton.ton_dau + tongThu + (Number(ksc) || 0) - ton.ton_cuoi));
 }
 
 export function apTongThuDgdvVaoDuBaoForm(
   values: DuBaoSlDongThungFormValues,
   tongThu: number | null | undefined,
-  ton: DuBaoTonNgay | null | undefined
+  ton: DuBaoTonNgay | null | undefined,
+  ksc: number | null | undefined = 0
 ): DuBaoSlDongThungFormValues {
   if (tongThu == null || !Number.isFinite(tongThu) || !ton) return values;
-  return { ...values, tong_buong_nhap_thuc_te: tinhBuongNhapThucTe(tongThu, ton) };
+  return { ...values, tong_buong_nhap_thuc_te: tinhBuongNhapThucTe(tongThu, ton, ksc ?? 0) };
 }
 
 export function formValuesToKpiInput(values: DuBaoSlDongThungFormValues): DuBaoSlDongThungKpiInput {

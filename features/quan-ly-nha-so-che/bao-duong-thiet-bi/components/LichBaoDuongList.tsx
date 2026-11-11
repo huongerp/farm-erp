@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, History } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig } from '../../../../store/createGenericStore';
 import { cn, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import type { LichBaoDuongRow } from '../core/list-types';
-import { TinhTrangHanBadge } from './Badges';
+import { KetQuaBadge, TinhTrangHanBadge } from './Badges';
 
 interface Props {
   data: LichBaoDuongRow[];
@@ -24,6 +24,8 @@ interface Props {
   totalRecordsOverride: number;
   onResizeColumn?: (id: string, width: number) => void;
   onGhiNhan?: (item: LichBaoDuongRow) => void;
+  /** Bấm dòng / nút Lịch sử → mở chi tiết thiết bị, cuộn tới nhật ký. */
+  onXemLichSu?: (item: LichBaoDuongRow) => void;
 }
 
 const LichBaoDuongList: React.FC<Props> = ({
@@ -43,6 +45,7 @@ const LichBaoDuongList: React.FC<Props> = ({
   totalRecordsOverride,
   onResizeColumn,
   onGhiNhan,
+  onXemLichSu,
 }) => {
   const { t } = useTranslation();
   const homNay = getTodayISO();
@@ -73,7 +76,12 @@ const LichBaoDuongList: React.FC<Props> = ({
       case 'han_ke_tiep':
         return one(item.han_ke_tiep ? formatYmdToDisplay(item.han_ke_tiep) : '—', 'tabular-nums text-muted-foreground');
       case 'tinh_trang':
-        return <TinhTrangHanBadge han={item.han_ke_tiep} homNay={homNay} />;
+        return (
+          <div className="flex flex-wrap items-center gap-1">
+            {item.kq_gan_nhat === 'can_sua_chua' && <KetQuaBadge ketQua="can_sua_chua" />}
+            <TinhTrangHanBadge han={item.han_ke_tiep} homNay={homNay} />
+          </div>
+        );
       case 'actions':
         return onGhiNhan ? (
           <div className="flex items-center justify-end">
@@ -110,18 +118,33 @@ const LichBaoDuongList: React.FC<Props> = ({
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {item.kq_gan_nhat === 'can_sua_chua' && <KetQuaBadge ketQua="can_sua_chua" />}
           <TinhTrangHanBadge han={item.han_ke_tiep} homNay={homNay} />
         </div>
       </div>
-      {onGhiNhan && (
-        <button
-          type="button"
-          onClick={() => onGhiNhan(item)}
-          className="mt-2.5 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 active:scale-95 transition-all"
-        >
-          <ClipboardCheck size={15} />
-          {t('baoDuongThietBi.viec.ghiNhan')}
-        </button>
+      {(onGhiNhan || onXemLichSu) && (
+        <div className="mt-2.5 flex gap-2">
+          {onXemLichSu && (
+            <button
+              type="button"
+              onClick={() => onXemLichSu(item)}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:bg-muted active:scale-95 transition-all"
+            >
+              <History size={15} />
+              {t('baoDuongThietBi.viec.lichSu')}
+            </button>
+          )}
+          {onGhiNhan && (
+            <button
+              type="button"
+              onClick={() => onGhiNhan(item)}
+              className="inline-flex h-9 flex-[2] items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/10 active:scale-95 transition-all"
+            >
+              <ClipboardCheck size={15} />
+              {t('baoDuongThietBi.viec.ghiNhan')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -145,6 +168,7 @@ const LichBaoDuongList: React.FC<Props> = ({
       onResizeColumn={onResizeColumn}
       renderCell={renderCell}
       renderMobileCard={renderMobileCard}
+      onRowClick={onXemLichSu}
       keyExtractor={(item) => item.id}
       actionsColumnWidth={116}
       loadingText={t('baoDuongThietBi.loading')}

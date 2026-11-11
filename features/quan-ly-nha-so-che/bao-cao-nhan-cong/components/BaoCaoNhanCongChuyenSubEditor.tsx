@@ -19,6 +19,9 @@ import {
 import {
   bcncTrSub,
   bcncTdTt,
+  bcncStickyTt,
+  bcncStickyChuyen,
+  bcncBgSub,
   bcncTdSubLabel,
   bcncTdGhiChu,
   bcncTdInput,
@@ -216,8 +219,8 @@ const BaoCaoNhanCongChuyenSubEditor: React.FC<Props> = ({ chiTietIndex, control,
     <>
       {Array.from({ length: rowCount }, (_, rowIdx) => (
         <tr key={rowIdx} className={bcncTrSub}>
-          <td className={`${bcncTdTt} text-muted-foreground/50 text-xs`}>·</td>
-          <td className={bcncTdSubLabel}>
+          <td className={`${bcncTdTt} text-muted-foreground/50 text-xs ${bcncStickyTt} ${bcncBgSub}`}>·</td>
+          <td className={`${bcncTdSubLabel} ${bcncStickyChuyen} ${bcncBgSub}`}>
             <div className="flex items-center justify-between gap-0.5">
               <span className="truncate">{t('baoCaoNhanCong.sub.detailRow', { index: rowIdx + 1 })}</span>
               <Button

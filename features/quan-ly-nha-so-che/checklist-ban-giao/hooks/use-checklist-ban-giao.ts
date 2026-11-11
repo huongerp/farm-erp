@@ -189,6 +189,8 @@ export function useLuuDongThucHien() {
         tinh_trang_khac_phuc: input.tinh_trang_khac_phuc,
         nguoi_xu_ly: input.nguoi_xu_ly,
         ghi_chu: input.ghi_chu,
+        // Khớp trigger 076: cờ chỉ bật, không tắt.
+        ...(input.kq_thuc_hien === 'khong_dat' ? { qlx_tung_khong_dat: true } : {}),
       });
       return { truoc };
     },
@@ -217,6 +219,7 @@ export function useLuuDongKiemTra() {
       const truoc = suaDongTrongCache(qc, input.idPhieu, input.idDong, {
         kq_kiem_tra: input.kq_kiem_tra,
         ghi_chu_kiem_tra: input.ghi_chu_kiem_tra,
+        ...(input.kq_kiem_tra === 'khong_dat' ? { gs_tung_khong_dat: true } : {}),
       });
       return { truoc };
     },

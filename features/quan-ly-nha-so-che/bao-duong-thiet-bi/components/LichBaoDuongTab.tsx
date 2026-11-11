@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useModulePermissionFromContext } from '../../../../components/shared/ModulePermissionGuard';
 import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
@@ -11,6 +12,7 @@ import { useThietBiList, useViecDangDung } from '../hooks/use-bao-duong-thiet-bi
 import { LICH_COLUMNS, useLichStore } from '../store/useBaoDuongThietBiStore';
 import LichBaoDuongToolbar, { type TinhTrangLoc } from './LichBaoDuongToolbar';
 import LichBaoDuongList from './LichBaoDuongList';
+import ThietBiDrawer from './ThietBiDrawer';
 
 interface Props {
   onGhiNhan: (row: LichBaoDuongRow) => void;
@@ -24,6 +26,8 @@ const KHONG_CO_THIET_BI: ThietBi[] = [];
 const LichBaoDuongTab: React.FC<Props> = ({ onGhiNhan }) => {
   const { t } = useTranslation();
   const { canCreate } = useModulePermissionFromContext();
+  // Xem lịch sử ghi nhận ngay từ tab Lịch (trước chỉ xem được ở tab Thiết bị → Nhật ký).
+  const [xemThietBiId, setXemThietBiId] = useState<string | null>(null);
 
   const viecQuery = useViecDangDung();
   const thietBiQuery = useThietBiList();
@@ -183,8 +187,23 @@ const LichBaoDuongTab: React.FC<Props> = ({ onGhiNhan }) => {
           totalRecordsOverride={total}
           onResizeColumn={resizeColumn}
           onGhiNhan={canCreate ? onGhiNhan : undefined}
+          onXemLichSu={(r) => setXemThietBiId(r.id_thiet_bi)}
         />
       </div>
+
+      <AnimatePresence>
+        {xemThietBiId && (
+          <ThietBiDrawer
+            id={xemThietBiId}
+            onClose={() => setXemThietBiId(null)}
+            canCreate={canCreate}
+            canUpdate={false}
+            canDelete={false}
+            onGhiNhan={onGhiNhan}
+            cuonToiNhatKy
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

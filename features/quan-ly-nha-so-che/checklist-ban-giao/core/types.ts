@@ -74,6 +74,9 @@ export interface DongPhieuChecklist {
   /** Cột khâu kiểm tra lại (xoá trắng mỗi lần khâu trước Chuyển lại) */
   kq_kiem_tra: KetQuaCl | null;
   ghi_chu_kiem_tra: string | null;
+  /** Khâu làm / khâu kiểm tra từng tích Không đạt (trigger DB bật, không tắt — migration 076) */
+  qlx_tung_khong_dat: boolean;
+  gs_tung_khong_dat: boolean;
 }
 
 export interface LichSuPhieuChecklist {

@@ -1,8 +1,13 @@
 /**
  * Tổng hợp dòng phiếu checklist: đếm Đạt/K.Đạt, kiểm điều kiện Chuyển / Nhận (khớp RPC
  * rpc_cl_chuyen / rpc_cl_nhan migration 073), nhóm dòng theo mục để hiển thị / in.
+ * Cờ «từng Không đạt» (migration 076): lỗi đã sửa rồi đổi sang Đạt vẫn hiện lên bảng / bản in.
  */
 import type { DongPhieuChecklist, KetLuanVanHanh } from './types';
+
+function trong(s: string | null | undefined): boolean {
+  return (s ?? '').trim() === '';
+}
 
 export type CotKetQua = 'kq_thuc_hien' | 'kq_kiem_tra';
 
@@ -11,27 +16,58 @@ export interface DemKetQua {
   dat: number;
   khongDat: number;
   chuaTich: number;
+  /** Đang Đạt nhưng từng tích Không đạt (cờ DB, migration 076) — vẫn là lỗi phải báo văn phòng. */
+  tungKhongDat: number;
+  /** Lỗi (Không đạt hoặc từng Không đạt) đã ghi tình trạng khắc phục — chỉ tính cột khâu làm. */
+  daKhacPhuc: number;
 }
 
-type DongKq = Pick<DongPhieuChecklist, 'kq_thuc_hien' | 'kq_kiem_tra' | 'tinh_trang_khac_phuc'>;
+type DongKq = Pick<DongPhieuChecklist, 'kq_thuc_hien' | 'kq_kiem_tra' | 'tinh_trang_khac_phuc'> &
+  Partial<Pick<DongPhieuChecklist, 'qlx_tung_khong_dat' | 'gs_tung_khong_dat' | 'stt'>>;
+
+/** Cờ «từng Không đạt» của một cột. */
+export function tungKhongDat(d: DongKq, cot: CotKetQua): boolean {
+  return (cot === 'kq_thuc_hien' ? d.qlx_tung_khong_dat : d.gs_tung_khong_dat) === true;
+}
+
+/** Dòng có lỗi ở cột: đang Không đạt, hoặc từng Không đạt rồi được đổi sang Đạt. */
+export function laLoi(d: DongKq, cot: CotKetQua): boolean {
+  return d[cot] === 'khong_dat' || (d[cot] === 'dat' && tungKhongDat(d, cot));
+}
 
 export function demKetQua(dong: readonly DongKq[], cot: CotKetQua): DemKetQua {
   let dat = 0;
   let khongDat = 0;
+  let tung = 0;
+  let daKp = 0;
   for (const d of dong) {
-    if (d[cot] === 'dat') dat++;
-    else if (d[cot] === 'khong_dat') khongDat++;
+    if (d[cot] === 'dat') {
+      dat++;
+      if (tungKhongDat(d, cot)) tung++;
+    } else if (d[cot] === 'khong_dat') khongDat++;
+    if (cot === 'kq_thuc_hien' && laLoi(d, cot) && !trong(d.tinh_trang_khac_phuc)) daKp++;
   }
-  return { tong: dong.length, dat, khongDat, chuaTich: dong.length - dat - khongDat };
+  return {
+    tong: dong.length,
+    dat,
+    khongDat,
+    chuaTich: dong.length - dat - khongDat,
+    tungKhongDat: tung,
+    daKhacPhuc: daKp,
+  };
 }
 
-function trong(s: string | null | undefined): boolean {
-  return (s ?? '').trim() === '';
+/** Ký hiệu ô kết quả trên bản in: ✗ / ✗→✓ (từng Không đạt, đã sửa) / ✓ / trống. */
+export function kyHieuKetQua(d: DongKq, cot: CotKetQua): string {
+  const v = d[cot];
+  if (v === 'khong_dat') return '✗';
+  if (v === 'dat') return tungKhongDat(d, cot) ? '✗→✓' : '✓';
+  return '';
 }
 
 export type LoiChuyen =
   | { loai: 'thieu_tich'; so: number }
-  | { loai: 'thieu_khac_phuc'; so: number }
+  | { loai: 'thieu_khac_phuc'; so: number; stt: number[] }
   | { loai: 'thieu_ket_luan' };
 
 /** Lỗi chặn nút Chuyển; rỗng = chuyển được. */
@@ -42,8 +78,10 @@ export function loiTruocKhiChuyen(
   const loi: LoiChuyen[] = [];
   const { chuaTich } = demKetQua(dong, 'kq_thuc_hien');
   if (chuaTich > 0) loi.push({ loai: 'thieu_tich', so: chuaTich });
-  const thieuKp = dong.filter((d) => d.kq_thuc_hien === 'khong_dat' && trong(d.tinh_trang_khac_phuc)).length;
-  if (thieuKp > 0) loi.push({ loai: 'thieu_khac_phuc', so: thieuKp });
+  const thieuKp = dong.filter((d) => d.kq_thuc_hien === 'khong_dat' && trong(d.tinh_trang_khac_phuc));
+  if (thieuKp.length > 0) {
+    loi.push({ loai: 'thieu_khac_phuc', so: thieuKp.length, stt: thieuKp.map((d) => d.stt ?? 0).filter((n) => n > 0) });
+  }
   if (phieu.co_ket_luan_van_hanh && phieu.ket_luan == null) loi.push({ loai: 'thieu_ket_luan' });
   return loi;
 }

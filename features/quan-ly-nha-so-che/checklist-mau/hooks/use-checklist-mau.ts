@@ -56,13 +56,16 @@ export function useThietBi() {
 
 // ── Mẫu ───────────────────────────────────────────────────────────────────────
 
-export function useCreateMau(onSuccess?: (created: MauChecklist) => void) {
+export function useCreateMau(
+  onSuccess?: (created: MauChecklist) => void,
+  thongBaoKey = 'checklistMau.toast.createSuccess'
+) {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (data: ChecklistMauFormValues) => createMau(data),
     onSuccess: (created) => {
       invalidate();
-      toast.success(i18n.t('checklistMau.toast.createSuccess'));
+      toast.success(i18n.t(thongBaoKey));
       onSuccess?.(created);
     },
     onError: onErr,

@@ -96,13 +96,14 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
   const ngay = useWatch({ control, name: 'ngay' });
   const watched = useWatch({ control }) as DuBaoSlDongThungFormValues;
-  // Dòng 10 khoá: tồn đầu + Tổng thu ĐGĐV − tồn cuối (tồn theo Báo cáo sơ chế cùng ngày), live;
+  // Dòng 10 khoá: tồn đầu + Tổng thu ĐGĐV + KSC − tồn cuối (tồn theo Báo cáo sơ chế cùng ngày), live;
   // dòng 11, 13, 15 tính lại theo số này.
   const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
   const { data: tonNgay, isError: tonLoi } = useDuBaoTonNgay(ngay, idChiNhanh);
   const tongThuDgdv = tongDgdv?.tong_thu ?? null;
-  const buongNhapThucTe = tongThuDgdv != null && tonNgay ? tinhBuongNhapThucTe(tongThuDgdv, tonNgay) : null;
-  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv, tonNgay));
+  const kscDgdv = tongDgdv?.ksc ?? 0;
+  const buongNhapThucTe = tongThuDgdv != null && tonNgay ? tinhBuongNhapThucTe(tongThuDgdv, tonNgay, kscDgdv) : null;
+  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv, tonNgay, kscDgdv));
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -121,7 +122,7 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
 
   const onSubmit: SubmitHandler<DuBaoSlDongThungFormValues> = (raw) => {
     // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo ĐGĐV + Báo cáo sơ chế dù gửi gì).
-    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv, tonNgay);
+    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv, tonNgay, kscDgdv);
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
       return;
@@ -374,6 +375,7 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                         ? t('duBaoSlDongThung.form.row10NoteChiTiet', {
                             tonDau: formatNumberVN(tonNgay.ton_dau),
                             thu: formatNumberVN(tongThuDgdv),
+                            ksc: formatNumberVN(kscDgdv),
                             tonCuoi: formatNumberVN(tonNgay.ton_cuoi),
                           })
                         : t('duBaoSlDongThung.form.row10Note')}

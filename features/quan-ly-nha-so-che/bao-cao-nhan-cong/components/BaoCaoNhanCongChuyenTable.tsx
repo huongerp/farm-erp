@@ -17,6 +17,14 @@ import {
 import {
   bcncTableClass,
   bcncColChuyen,
+  bcncStickyTt,
+  bcncStickyChuyen,
+  bcncStickyTong,
+  bcncStickyHeadZ,
+  bcncBgHead,
+  bcncScrollWrapClass,
+  bcncBgIv,
+  bcncBgTong,
   bcncColNum,
   bcncColTongGio,
   bcncColGhiChu,
@@ -87,14 +95,14 @@ const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className={bcncScrollWrapClass}>
       <table className={bcncTableClass}>
         <thead>
           <tr className="bg-muted/50 border-b border-border/60">
-            <th rowSpan={2} className={`text-center px-2 py-2 font-medium w-14 align-middle border-b border-border ${bcncThGroup}`}>
+            <th rowSpan={2} className={`text-center px-2 py-2 font-medium w-14 min-w-14 max-w-14 align-middle border-b border-border ${bcncThGroup} ${bcncStickyTt} ${bcncStickyHeadZ} ${bcncBgHead}`}>
               {t('baoCaoNhanCong.form.colTt')}
             </th>
-            <th rowSpan={2} className={`text-left px-2 py-2 font-medium align-middle border-b border-border ${bcncColChuyen} ${bcncThGroup}`}>
+            <th rowSpan={2} className={`text-left px-2 py-2 font-medium align-middle border-b border-border ${bcncColChuyen} ${bcncThGroup} ${bcncStickyChuyen} ${bcncStickyHeadZ} ${bcncBgHead}`}>
               {t('baoCaoNhanCong.form.colChuyen')}
             </th>
             <th colSpan={2} className={`text-center px-2 py-1.5 font-medium border-b border-border/60 ${bcncThGroup}`}>
@@ -133,8 +141,8 @@ const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
             <BaoCaoNhanCongDetailChuyenRow key={row.id || row.loai_chuyen} row={row} idx={idx} />
           ))}
           <tr className="border-b border-border/80 bg-primary/10 dark:bg-primary/15 font-semibold">
-            <td className={`${bcncTdMainNum} text-center text-primary`}>IV</td>
-            <td className={`${bcncTdChuyen} text-primary`}>{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
+            <td className={`${bcncTdMainNum} text-center text-primary ${bcncStickyTt} ${bcncBgIv}`}>IV</td>
+            <td className={`${bcncTdChuyen} text-primary ${bcncStickyChuyen} ${bcncBgIv}`}>{t('baoCaoNhanCong.form.rowCongNhanDinhBien')}</td>
             <td className={`${bcncTdMainNum} text-primary`}>{formatNumberVN(ivCnNgay.nhanSu)}</td>
             <td className={`${bcncTdMainNum} text-primary`}>{formatGioTbVN(ivCnNgay.nhanSu, ivCnNgay.tongGio)}</td>
             <td className={`${bcncTdMainNum} text-primary`}>{formatNumberVN(ivCnNua.nhanSu)}</td>
@@ -148,7 +156,7 @@ const BaoCaoNhanCongChuyenTable: React.FC<Props> = ({ data }) => {
           </tr>
           <BaoCaoNhanCongDetailChuyenRow row={vRow} tt="V" />
           <tr className="border-b border-border/80 bg-primary/15 dark:bg-primary/20 last:border-0 font-semibold">
-            <td className={`${bcncTdChuyen} text-left text-primary sm:pl-3 tracking-tight`} colSpan={2}>
+            <td className={`${bcncTdChuyen} text-left text-primary sm:pl-3 tracking-tight ${bcncStickyTong} ${bcncBgTong}`} colSpan={2}>
               {t('baoCaoNhanCong.form.rowTongNgay')}
             </td>
             <td className={`${bcncTdMainNum} text-primary text-base`}>{formatNumberVN(tongCnNgay.nhanSu)}</td>

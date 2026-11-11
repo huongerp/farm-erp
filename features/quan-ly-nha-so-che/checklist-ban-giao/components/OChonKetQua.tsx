@@ -24,6 +24,12 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
   const { t } = useTranslation();
   const isThucHien = cot === 'kq_thuc_hien';
   const kq = dong[cot];
+  const tung = isThucHien ? dong.qlx_tung_khong_dat : dong.gs_tung_khong_dat;
+  const nhanTung = kq === 'dat' && tung && (
+    <span className="inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+      {t('checklistBanGiao.oChon.tungKhongDat')}
+    </span>
+  );
   const luuThucHien = useLuuDongThucHien();
   const luuKiemTra = useLuuDongKiemTra();
 
@@ -44,7 +50,10 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
   if (!coTheSua) {
     return (
       <div className="space-y-1">
-        <KetQuaTick value={kq} />
+        <div className="flex flex-wrap items-center gap-1.5">
+          <KetQuaTick value={kq} />
+          {nhanTung}
+        </div>
         {isThucHien ? (
           (dong.ghi_chu || dong.tinh_trang_khac_phuc || dong.nguoi_xu_ly) && (
             <p className="text-xs text-muted-foreground m-0 line-clamp-2">
@@ -77,13 +86,22 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
 
   const luu = () => chon(kq);
 
+  const daLuuGhi = isThucHien ? (dong.ghi_chu ?? '') : (dong.ghi_chu_kiem_tra ?? '');
+  const chuaLuu =
+    ghi.trim() !== daLuuGhi.trim() ||
+    (isThucHien && (kp.trim() !== (dong.tinh_trang_khac_phuc ?? '').trim() || nguoi.trim() !== (dong.nguoi_xu_ly ?? '').trim()));
+  const hienKhacPhuc = isThucHien && (kq === 'khong_dat' || dong.qlx_tung_khong_dat || !!dong.tinh_trang_khac_phuc);
+
   const pending = isThucHien ? luuThucHien.isPending : luuKiemTra.isPending;
 
   const btn = (v: KetQuaCl, label: string, activeClass: string) => (
     <button
       type="button"
       disabled={pending}
-      onClick={() => chon(kq === v ? null : v)}
+      // Bấm lại nút đang chọn không xoá kết quả (tránh bấm nhầm làm mất dấu Không đạt).
+      onClick={() => {
+        if (kq !== v) chon(v);
+      }}
       className={cn(
         'inline-flex h-11 flex-1 min-w-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg border px-2 text-sm font-semibold transition-all active:scale-95 disabled:opacity-50',
         kq === v ? activeClass : 'border-border text-muted-foreground hover:bg-muted'
@@ -112,19 +130,24 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
           <ChevronDown size={13} className={cn('transition-transform', mo && 'rotate-180')} />
         </button>
       </div>
+      {nhanTung}
 
       {mo && (
         <div className="space-y-1.5 rounded-lg border border-border bg-muted/20 p-2">
           {isThucHien && (
             <>
-              {kq === 'khong_dat' && (
-                <Textarea
-                  rows={2}
-                  label={t('checklistBanGiao.oChon.tinhTrangKhacPhuc')}
-                  value={kp}
-                  onChange={(e) => setKp(e.target.value)}
-                  placeholder={t('checklistBanGiao.oChon.tinhTrangKhacPhucPh')}
-                />
+              {hienKhacPhuc && (
+                <div className="space-y-1">
+                  <Textarea
+                    rows={2}
+                    label={t('checklistBanGiao.oChon.tinhTrangKhacPhuc')}
+                    required={kq === 'khong_dat'}
+                    value={kp}
+                    onChange={(e) => setKp(e.target.value)}
+                    placeholder={t('checklistBanGiao.oChon.tinhTrangKhacPhucPh')}
+                  />
+                  <p className="m-0 text-[11px] text-muted-foreground">{t('checklistBanGiao.oChon.goiYKhacPhuc')}</p>
+                </div>
               )}
               <Input
                 label={t('checklistBanGiao.oChon.nguoiXuLy')}
@@ -139,8 +162,9 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
             value={ghi}
             onChange={(e) => setGhi(e.target.value)}
           />
-          <div className="flex justify-end">
-            <Button type="button" size="sm" variant="outline" onClick={luu} disabled={pending}>
+          <div className="flex items-center justify-end gap-2">
+            {chuaLuu && <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">{t('checklistBanGiao.oChon.chuaLuu')}</span>}
+            <Button type="button" size="sm" variant={chuaLuu ? 'default' : 'outline'} onClick={luu} disabled={pending}>
               <Save size={13} className="mr-1" />
               {t('common.save')}
             </Button>

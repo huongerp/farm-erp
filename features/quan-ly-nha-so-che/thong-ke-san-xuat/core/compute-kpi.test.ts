@@ -138,6 +138,7 @@ function minimalDbdt(overrides: Partial<FarmDuBaoSlDongThung> = {}): FarmDuBaoSl
     tong_buong_nhap_thuc_te: 0,
     sl_buong_ton_dau_ngay: 0,
     sl_buong_ton_cuoi_ngay: 0,
+    so_buong_ksc: 0,
     ty_le_thu_hoi_thuc_te: 0.88,
     quy_cach_dong_thung_thuc_te: 10,
     can_nang_binh_quan_buong: null,

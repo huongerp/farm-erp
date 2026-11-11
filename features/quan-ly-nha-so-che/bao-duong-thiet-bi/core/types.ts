@@ -34,6 +34,8 @@ export interface ViecBaoDuong {
   ghi_chu: string | null;
   dang_dung: boolean;
   thu_tu: number;
+  /** Kết quả lần ghi nhật ký mới nhất (trigger ghi, migration 076); null = chưa ghi lần nào */
+  kq_gan_nhat: KetQuaBaoDuong | null;
 }
 
 export const KET_QUA_BAO_DUONG = ['hoan_thanh', 'can_theo_doi', 'can_sua_chua'] as const;

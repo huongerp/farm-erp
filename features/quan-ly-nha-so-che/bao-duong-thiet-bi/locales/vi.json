@@ -69,8 +69,9 @@
   "baoDuongThietBi.viec.chuaCo": "Chưa có việc bảo dưỡng",
   "baoDuongThietBi.viec.chuaCoHint": "Bấm \"Thêm việc\" để lập kế hoạch bảo dưỡng cho thiết bị này.",
   "baoDuongThietBi.viec.ghiNhan": "Ghi nhận",
+  "baoDuongThietBi.viec.lichSu": "Lịch sử",
   "baoDuongThietBi.viec.xoaTitle": "Xoá việc bảo dưỡng",
-  "baoDuongThietBi.viec.xoaMessage": "Xoá việc \"{{noiDung}}\" sẽ xoá cả lịch sử ghi nhận của việc này. Không thể hoàn tác.",
+  "baoDuongThietBi.viec.xoaMessage": "Xoá việc \"{{noiDung}}\"? Chỉ xoá được việc chưa có lần ghi nhận nào — việc đã có lịch sử thì bỏ «Đang theo dõi» để ẩn khỏi lịch.",
   "baoDuongThietBi.viec.noiDung": "Nội dung việc",
   "baoDuongThietBi.viec.chuKyNgay": "Chu kỳ (ngày)",
   "baoDuongThietBi.viec.ngayBatDau": "Ngày bắt đầu",
@@ -99,12 +100,13 @@
   "baoDuongThietBi.validation.thuTuNguyen": "Thứ tự phải là số nguyên.",
 
   "baoDuongThietBi.service.khongTimThayThietBi": "Không tìm thấy thiết bị (có thể đã bị xoá).",
+  "baoDuongThietBi.service.viecDaCoNhatKy": "Việc này đã có lịch sử ghi nhận nên không xoá được (giữ lịch sử bảo dưỡng). Hãy bỏ «Đang theo dõi» để ẩn khỏi lịch.",
 
   "baoDuongThietBi.toast.daTaoThietBi": "Đã thêm thiết bị.",
   "baoDuongThietBi.toast.daCapNhatThietBi": "Đã cập nhật thiết bị.",
   "baoDuongThietBi.toast.daXoaThietBi": "Đã xoá thiết bị.",
   "baoDuongThietBi.toast.daLuuViec": "Đã lưu việc bảo dưỡng.",
-  "baoDuongThietBi.toast.daGhiNhan": "Đã ghi nhận bảo dưỡng.",
+  "baoDuongThietBi.toast.daGhiNhan": "Đã ghi nhận bảo dưỡng. Xem lại ở nút «Lịch sử» của việc hoặc tab Thiết bị → Nhật ký.",
 
   "baoDuongThietBi.hanhDong.inLich": "In lịch",
   "baoDuongThietBi.hanhDong.inLyLich": "In lý lịch",

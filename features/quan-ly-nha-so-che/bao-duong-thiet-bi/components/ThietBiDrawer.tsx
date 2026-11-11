@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Edit, History, Info, Printer, Trash2, Wrench } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
@@ -18,9 +18,12 @@ interface Props {
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
-  onEdit: (tb: ThietBi) => void;
-  onDelete: (tb: ThietBi) => void;
+  /** Không truyền = ẩn nút Sửa / Xoá (mở từ tab Lịch bảo dưỡng chỉ để xem lịch sử). */
+  onEdit?: (tb: ThietBi) => void;
+  onDelete?: (tb: ThietBi) => void;
   onGhiNhan: (row: LichBaoDuongRow) => void;
+  /** Mở xong cuộn tới mục Nhật ký (xem lịch sử ghi nhận). */
+  cuonToiNhatKy?: boolean;
 }
 
 /** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
@@ -34,7 +37,17 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode; className?: str
   </div>
 );
 
-const ThietBiDrawer: React.FC<Props> = ({ id, onClose, canCreate, canUpdate, canDelete, onEdit, onDelete, onGhiNhan }) => {
+const ThietBiDrawer: React.FC<Props> = ({
+  id,
+  onClose,
+  canCreate,
+  canUpdate,
+  canDelete,
+  onEdit,
+  onDelete,
+  onGhiNhan,
+  cuonToiNhatKy = false,
+}) => {
   const { t } = useTranslation();
   const { data: chiTiet, isLoading } = useThietBiChiTiet(id);
   const { data: taiSanList = [] } = useTaiSanRef();
@@ -59,6 +72,16 @@ const ThietBiDrawer: React.FC<Props> = ({ id, onClose, canCreate, canUpdate, can
     }));
   }, [nhatKy, viec, nhanVienList]);
 
+  const nhatKyRef = useRef<HTMLDivElement>(null);
+  const daCuon = useRef(false);
+  useEffect(() => {
+    if (!cuonToiNhatKy || daCuon.current || isLoading || !chiTiet) return;
+    daCuon.current = true;
+    // Chờ drawer trượt vào xong rồi mới cuộn.
+    const id = window.setTimeout(() => nhatKyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350);
+    return () => window.clearTimeout(id);
+  }, [cuonToiNhatKy, isLoading, chiTiet]);
+
   const footer = (
     <div className="flex items-center justify-between w-full gap-3">
       <Button variant="outline" size="sm" onClick={onClose} className="border-border text-muted-foreground">
@@ -80,13 +103,13 @@ const ThietBiDrawer: React.FC<Props> = ({ id, onClose, canCreate, canUpdate, can
             <Printer className="mr-2 h-4 w-4" />
             {t('baoDuongThietBi.hanhDong.inLyLich')}
           </Button>
-          {canUpdate && (
+          {canUpdate && onEdit && (
             <Button size="sm" variant="outline" onClick={() => onEdit(thietBi)}>
               <Edit className="mr-2 h-4 w-4" />
               {t('common.edit')}
             </Button>
           )}
-          {canDelete && (
+          {canDelete && onDelete && (
             <Button size="sm" variant="outline" onClick={() => onDelete(thietBi)} className="border-destructive/30 text-destructive hover:bg-destructive/10">
               <Trash2 className="mr-2 h-4 w-4" />
               {t('common.delete')}
@@ -150,6 +173,7 @@ const ThietBiDrawer: React.FC<Props> = ({ id, onClose, canCreate, canUpdate, can
           <p className="text-sm text-muted-foreground">{t('baoDuongThietBi.service.khongTimThayThietBi')}</p>
         )}
 
+        <div ref={nhatKyRef} className="scroll-mt-4">
         <DetailSection title={t('baoDuongThietBi.nhatKy.tieuDe')} icon={<History size={14} className="text-primary" />}>
           {nhatKyRows.length === 0 ? (
             <p className="text-sm text-muted-foreground m-0">{t('baoDuongThietBi.nhatKy.chuaCo')}</p>
@@ -180,6 +204,7 @@ const ThietBiDrawer: React.FC<Props> = ({ id, onClose, canCreate, canUpdate, can
             </ul>
           )}
         </DetailSection>
+        </div>
       </div>
     </GenericDrawer>
   );

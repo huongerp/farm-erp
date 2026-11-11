@@ -202,8 +202,10 @@ export async function createMauDb(values: ChecklistMauFormValues): Promise<MauCh
 }
 
 export async function updateMauDb(id: string, values: ChecklistMauFormValues): Promise<MauChecklist> {
-  const { error } = await db.from(TABLE).update(mauPayload(values)).eq('id', toIntId(id));
+  const { data, error } = await db.from(TABLE).update(mauPayload(values)).eq('id', toIntId(id)).select('id');
   if (error) throwDbError(error);
+  // RLS lọc hết dòng → PostgREST vẫn trả 204/200 rỗng, không báo lỗi: phải tự bắt.
+  if (!data || data.length === 0) throw new Error(i18n.t('checklistMau.service.khongCoQuyenSua'));
   const row = await getMauByIdDb(id);
   if (!row) throw new Error(i18n.t('checklistMau.service.notFound'));
   return row;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +20,7 @@ import { useDepartments } from '../../../he-thong/phong-ban/hooks/use-phong-ban'
 import { LOAI_MAU_CL, type MauChecklist } from '../core/types';
 import { checklistMauFormSchema, type ChecklistMauFormValues } from '../core/schema';
 import { useCreateMau, useUpdateMau } from '../hooks/use-checklist-mau';
-import MucHangMucEditor from './MucHangMucEditor';
+import MucHangMucEditor, { type MucHangMucEditorHandle } from './MucHangMucEditor';
 
 interface Props {
   initialData?: MauChecklist | null;
@@ -139,15 +139,18 @@ const ChucVuMultiSelect: React.FC<{
 
 const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
   const { t } = useTranslation();
-  const isEdit = !!initialData;
-  const createMutation = useCreateMau(() => onClose());
+  // Mẫu vừa tạo trong drawer này: chuyển sang chế độ sửa để thêm mục & hạng mục ngay, không đóng drawer.
+  const [daTao, setDaTao] = useState<MauChecklist | null>(null);
+  const current = daTao ?? initialData ?? null;
+  const isEdit = !!current;
+  const editorRef = useRef<MucHangMucEditorHandle>(null);
   const updateMutation = useUpdateMau(onClose);
   const { data: positions = [] } = usePositions();
   const { data: departments = [] } = useDepartments();
 
   const defaultValues = useMemo<ChecklistMauFormValues>(
-    () => (initialData ? toForm(initialData) : DEFAULT),
-    [initialData]
+    () => (current ? toForm(current) : DEFAULT),
+    [current]
   );
 
   const {
@@ -160,13 +163,20 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
     defaultValues,
   });
 
+  const createMutation = useCreateMau((created) => {
+    setDaTao(created);
+    reset(toForm(created));
+  }, 'checklistMau.toast.createThemMuc');
+
   useEffect(() => {
     if (isDirty) return;
     reset(defaultValues);
   }, [defaultValues, reset, isDirty]);
 
-  const onSubmit: SubmitHandler<ChecklistMauFormValues> = (values) => {
-    if (isEdit && initialData) updateMutation.mutate({ id: initialData.id, data: values });
+  const onSubmit: SubmitHandler<ChecklistMauFormValues> = async (values) => {
+    // Mục / hạng mục đang gõ dở thì lưu trước; lỗi nhập liệu → dừng, giữ drawer mở.
+    if (editorRef.current && !(await editorRef.current.luuBanNhapDangMo())) return;
+    if (current) updateMutation.mutate({ id: current.id, data: values });
     else createMutation.mutate(values);
   };
 
@@ -177,7 +187,7 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
   return (
     <GenericDrawer
       title={t(isEdit ? 'checklistMau.drawer.titleEdit' : 'checklistMau.drawer.titleCreate')}
-      subtitle={isEdit ? initialData?.ma ?? initialData?.ten : t('checklistMau.drawer.subtitle')}
+      subtitle={current ? current.ma ?? current.ten : t('checklistMau.drawer.subtitle')}
       icon={<ClipboardCheck className="text-primary" size={22} />}
       onClose={onClose}
       isDirty={isDirty}
@@ -194,18 +204,18 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
         />
       }
     >
-      <form id="checklist-mau-form" className="space-y-6 pb-4" onSubmit={handleSubmit(onSubmit)}>
+      <form id="checklist-mau-form" className="space-y-6 pb-4" onSubmit={(e) => void handleSubmit(onSubmit)(e)}>
         <FormSection
           title={t('checklistMau.form.thongTin')}
           action={
-            isEdit && initialData ? (
+            current ? (
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={() =>
                   window.open(
-                    `/quan-ly-nha-so-che/checklist-mau/preview/${initialData.id}`,
+                    `/quan-ly-nha-so-che/checklist-mau/preview/${current.id}`,
                     '_blank',
                     'noopener,noreferrer'
                   )
@@ -389,9 +399,9 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
           </div>
         </FormSection>
 
-        {isEdit && initialData && (
+        {current && (
           <div className="space-y-2">
-            <MucHangMucEditor idMau={initialData.id} canEdit />
+            <MucHangMucEditor ref={editorRef} idMau={current.id} canEdit />
           </div>
         )}
       </form>

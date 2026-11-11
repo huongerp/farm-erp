@@ -15,6 +15,9 @@ import {
 import {
   bcncTrMain,
   bcncTdTt,
+  bcncStickyTt,
+  bcncStickyChuyen,
+  bcncBgMain,
   bcncTdChuyen,
   bcncTdMainNum,
   bcncTdQuyDoi,
@@ -55,8 +58,8 @@ const BaoCaoNhanCongDetailChuyenRow: React.FC<Props> = ({ row, tt, idx }) => {
   return (
     <React.Fragment>
       <tr className={bcncTrMain}>
-        <td className={`${bcncTdTt} text-muted-foreground tabular-nums`}>{displayTt}</td>
-        <td className={`${bcncTdChuyen} text-muted-foreground`}>
+        <td className={`${bcncTdTt} text-muted-foreground tabular-nums ${bcncStickyTt} ${bcncBgMain}`}>{displayTt}</td>
+        <td className={`${bcncTdChuyen} text-muted-foreground ${bcncStickyChuyen} ${bcncBgMain}`}>
           <div className="flex items-center gap-2">
             <span className="text-sm leading-snug flex-1 min-w-0">{t(labelKey)}</span>
             {hasSub && (
