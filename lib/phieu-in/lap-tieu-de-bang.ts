@@ -84,6 +84,10 @@ export function dangKyLapTieuDeBang(): Promise<void> {
     }
 
     registerHandlers(LapTieuDeBang);
-  })();
+  })().catch((err: unknown) => {
+    // Tải chunk paged.js hụt (mạng chậm): không giữ promise lỗi, để «Thử lại» import lại được.
+    daDangKy = null;
+    throw err;
+  });
   return daDangKy;
 }

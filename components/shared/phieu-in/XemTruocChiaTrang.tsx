@@ -21,7 +21,17 @@ import { dangKyLapTieuDeBang } from '../../../lib/phieu-in/lap-tieu-de-bang';
 interface PagedPreviewer {
   preview: (c: string, s: Array<Record<string, string>>, to: HTMLElement) => Promise<unknown>;
   polisher?: { destroy: () => void };
+  chunker?: { loadFonts: () => Promise<unknown> };
 }
+
+/** Quá ngần này mà chưa dàn xong thì cho bấm «Thử lại» (mạng chậm, tải chunk / ảnh treo). */
+const NGUONG_LAU_MS = 15_000;
+/** Chờ font tối đa — quá thì dàn bằng font đang có. */
+const CHO_FONT_MS = 3_000;
+
+const cho = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+type TrangThaiDan = 'chia' | 'lau' | 'loi' | 'xong';
 
 export interface KetQuaChiaTrang {
   soTrang: number;
@@ -124,7 +134,8 @@ export function XemTruocChiaTrang({
   const runRef = useRef(0);
   const mountedRef = useRef(true);
   const onXongRef = useRef(onXong);
-  const [dangChia, setDangChia] = useState(true);
+  const [trangThai, setTrangThai] = useState<TrangThaiDan>('chia');
+  const [, setLanThu] = useState(0);
   const { wMm } = kichThuocGiayIn(caiDat.kho, caiDat.huong);
   const rongNoiDung = Math.max(40, wMm - caiDat.le.trai - caiDat.le.phai);
   const nhanTrang = t('common.phieuIn.trang');
@@ -168,41 +179,67 @@ export function XemTruocChiaTrang({
     if (chuKy === chuKyRef.current) return;
     chuKyRef.current = chuKy;
     const run = ++runRef.current;
-    setDangChia(true);
+    setTrangThai('chia');
 
     void (async () => {
-      await new Promise((r) => setTimeout(r, 200));
-      if (run !== runRef.current) return;
-      await choAnh(nguon);
-      await dangKyLapTieuDeBang();
-      const { Previewer } = await import('pagedjs');
-      if (run !== runRef.current) return;
-      previewerRef.current?.polisher?.destroy?.();
-      dich.innerHTML = '';
-      const previewer = new Previewer() as unknown as PagedPreviewer;
-      previewerRef.current = previewer;
-      // Dàn trong khung KHÔNG zoom rồi mới chuyển sang `dich` (đang mang zoom xem). paged.js trộn số đo
-      // getBoundingClientRect (đã nhân zoom) với columnGap / scrollWidth (chưa nhân): zoom < ~0,97 (điện
-      // thoại ≈ 0,3) là không thấy phần tràn → không ngắt trang, dòng bảng chảy sang cột ẩn của trang;
-      // html2canvas vẽ dòng bị tách cột thành khối phủ kín trang (PDF mất chữ).
-      const khungDan = document.createElement('div');
-      khungDan.className = 'phieu-in-dich';
-      khungDan.setAttribute('aria-hidden', 'true');
-      Object.assign(khungDan.style, { position: 'absolute', left: '-100000px', top: '0', height: '0', overflow: 'hidden' });
-      (dich.parentElement ?? document.body).appendChild(khungDan);
+      const conHieuLuc = () => mountedRef.current && run === runRef.current;
+      const henLau = setTimeout(() => conHieuLuc() && setTrangThai('lau'), NGUONG_LAU_MS);
+      let khungDan: HTMLDivElement | null = null;
       try {
-        await previewer.preview(html, [{ 'phieu-in.css': css }], khungDan);
+        await cho(200);
+        if (run !== runRef.current) return;
+        await choAnh(nguon);
+        // Mạng chậm / rớt: tải chunk paged.js hụt thì báo lỗi + Thử lại thay vì kẹt «Đang dàn trang…».
+        await dangKyLapTieuDeBang();
+        const { Previewer } = await import('pagedjs');
+        if (run !== runRef.current) return;
+        previewerRef.current?.polisher?.destroy?.();
+        dich.innerHTML = '';
+        const previewer = new Previewer() as unknown as PagedPreviewer;
+        previewerRef.current = previewer;
+        // paged.js `loadFonts()` ép tải MỌI FontFace khai báo (Google Fonts: mọi weight × mọi unicode-range,
+        // hàng chục file) và không timeout → mạng di động chậm là đứng mãi. Font phiếu dùng đã được tải khi
+        // render vùng nguồn, nên chỉ chờ font đang tải (`fonts.ready`), tối đa vài giây.
+        if (previewer.chunker) {
+          previewer.chunker.loadFonts = () => Promise.race([document.fonts?.ready ?? Promise.resolve(), cho(CHO_FONT_MS)]);
+        }
+        // Dàn trong khung KHÔNG zoom rồi mới chuyển sang `dich` (đang mang zoom xem). paged.js trộn số đo
+        // getBoundingClientRect (đã nhân zoom) với columnGap / scrollWidth (chưa nhân): zoom < ~0,97 (điện
+        // thoại ≈ 0,3) là không thấy phần tràn → không ngắt trang, dòng bảng chảy sang cột ẩn của trang;
+        // html2canvas vẽ dòng bị tách cột thành khối phủ kín trang (PDF mất chữ).
+        khungDan = document.createElement('div');
+        khungDan.className = 'phieu-in-dich';
+        khungDan.setAttribute('aria-hidden', 'true');
+        Object.assign(khungDan.style, { position: 'absolute', left: '-100000px', top: '0', height: '0', overflow: 'hidden' });
+        (dich.parentElement ?? document.body).appendChild(khungDan);
+        try {
+          await previewer.preview(html, [{ 'phieu-in.css': css }], khungDan);
+        } catch (err) {
+          if (import.meta.env.DEV) console.error('paged.js không chia trang được:', err);
+        }
+        khungDan.remove();
+        if (!conHieuLuc()) return;
+        dich.replaceChildren(...Array.from(khungDan.childNodes));
+        const soTrang = chenLopPhu(dich, dauChim, qrDataUrl, caiDat);
+        setTrangThai('xong');
+        onXongRef.current({ soTrang: Math.max(1, soTrang), bang });
       } catch (err) {
-        if (import.meta.env.DEV) console.error('paged.js không chia trang được:', err);
+        if (import.meta.env.DEV) console.error('Không dàn trang được:', err);
+        if (conHieuLuc()) setTrangThai('loi');
+      } finally {
+        clearTimeout(henLau);
+        khungDan?.remove();
       }
-      khungDan.remove();
-      if (!mountedRef.current || run !== runRef.current) return;
-      dich.replaceChildren(...Array.from(khungDan.childNodes));
-      const soTrang = chenLopPhu(dich, dauChim, qrDataUrl, caiDat);
-      setDangChia(false);
-      onXongRef.current({ soTrang: Math.max(1, soTrang), bang });
     })();
   });
+
+  /** Bỏ lần dàn đang treo / lỗi, xoá chữ ký để effect (chạy mỗi commit) dàn lại từ đầu. */
+  const thuLai = () => {
+    chuKyRef.current = '';
+    runRef.current++;
+    setTrangThai('chia');
+    setLanThu((n) => n + 1);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -222,7 +259,21 @@ export function XemTruocChiaTrang({
       >
         {children}
       </div>
-      {dangChia ? <div className="phieu-in-dang-chia print:hidden">{t('common.phieuIn.dangDanTrang')}</div> : null}
+      {trangThai !== 'xong' ? (
+        <div className="phieu-in-dang-chia print:hidden flex max-w-[calc(100%-32px)] flex-col items-center gap-2 text-center" role="status">
+          <span>{t(trangThai === 'loi' ? 'common.phieuIn.danTrangLoi' : 'common.phieuIn.dangDanTrang')}</span>
+          {trangThai === 'lau' ? <span className="text-xs">{t('common.phieuIn.danTrangLau')}</span> : null}
+          {trangThai === 'lau' || trangThai === 'loi' ? (
+            <button
+              type="button"
+              onClick={thuLai}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/50"
+            >
+              {t('common.retry')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 }

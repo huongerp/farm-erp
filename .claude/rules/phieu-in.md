@@ -55,6 +55,9 @@ Route `/in-hang-loat?mau=<mauKey>&ids=…` (`TrangInHangLoat.tsx`). Thêm mẫu:
 - Bảng đánh số `data-in-bang` THEO TỪNG LIÊN / CHỨNG TỪ; ẩn cột theo `data-in-o` (vị trí cột thật, tính
   rowSpan/colSpan), không `nth-child` trên ô.
 - Gom đổi liên tiếp (~200 ms) trước khi dàn; chờ logo xong mới dàn (tránh dàn 2 lần).
+- paged.js `Chunker.loadFonts()` ép tải MỌI FontFace khai báo (Google Fonts: mọi weight × unicode-range), không
+  timeout → mạng điện thoại chậm là kẹt «Đang dàn trang…». `XemTruocChiaTrang` ghi đè chỉ chờ `document.fonts.ready`
+  ≤ 3 s; cả khối dàn trang bọc try/catch, quá 15 s / lỗi thì hiện «Thử lại» (`dangKyLapTieuDeBang` không cache promise lỗi).
 - paged.js dùng requestAnimationFrame: tab/pane ẩn thì dàn trang treo — soi bằng trình duyệt phải để pane hiện
   (hoặc chụp màn hình để "bơm" khung hình).
 

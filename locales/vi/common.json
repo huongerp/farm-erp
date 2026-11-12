@@ -270,6 +270,8 @@
   "common.phieuIn.lien_keToan": "Kế toán",
   "common.phieuIn.trang": "Trang",
   "common.phieuIn.dangDanTrang": "Đang dàn trang…",
+  "common.phieuIn.danTrangLau": "Mạng chậm, dàn trang lâu hơn bình thường.",
+  "common.phieuIn.danTrangLoi": "Không dàn trang được — kiểm tra mạng rồi thử lại.",
   "common.phieuIn.thuNho": "Thu nhỏ",
   "common.phieuIn.phongTo": "Phóng to",
   "common.phieuIn.zoom100": "Xem 100%",
