@@ -17,7 +17,7 @@ nào bên phát triển tiếp tục quản lý thay (ghi vào hợp đồng). C
 | 4 | Postgres (trong Dokploy) | Dữ liệu nghiệp vụ | `PGRST_DB_URI`, `*_DATABASE_URL`, role `5fedu` | | — | | Role chủ hiện tên `5fedu` |
 | 5 | GitHub `huongerp/farm-erp` | Mã nguồn | `git remote` | | | | Chuyển quyền owner hoặc thêm khách làm admin |
 | 6 | Google Cloud project | Đăng nhập bằng Google; xuất / đồng bộ Google Sheet | `GOOGLE_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `VITE_GOOGLE_PICKER_API_KEY`, `VITE_GOOGLE_APP_ID` | | | | Màn hình xin quyền OAuth hiện tên + email liên hệ của chủ project. Xem [GOOGLE_SHEETS.md](GOOGLE_SHEETS.md) |
-| 7 | Cloudinary | Lưu ảnh upload (ảnh nhân viên, tài sản…) | `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET`, `CLOUDINARY_URL` | | | | Gói miễn phí có giới hạn dung lượng |
+| 7 | Kho ảnh trên VPS (`services/media`) | Lưu ảnh upload (ảnh nhân viên, tài sản…) | Volume `media-data`, đường `/media` sau Traefik | — | — | | Không phải tài khoản riêng — nằm trên VPS ở dòng 1; sao lưu bằng `scripts/media-backup.sh`. Cloudinary đã bỏ từ 09/10/2026 |
 | 8 | Sentry | Ghi lỗi giao diện | `VITE_SENTRY_DSN` | | | | Tuỳ chọn — bỏ trống thì tắt |
 | 9 | Khoá Web Push (VAPID) | Gửi thông báo đẩy | `VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | — | — | | Không phải tài khoản; `VAPID_SUBJECT` nên là email liên hệ của khách |
 | 10 | Tài khoản quản trị trong app | Đăng nhập app cấp bậc 1 | Bảng `fp_var_nhan_vien` | | — | | Trao cho người phụ trách bên khách |
@@ -40,4 +40,3 @@ nào bên phát triển tiếp tục quản lý thay (ghi vào hợp đồng). C
 | `GOOGLE_OAUTH_CLIENT_SECRET` | Tạo secret mới trong Google Cloud, xoá secret cũ |
 | `SHEETS_TOKEN_KEY` | **Không** đổi tuỳ tiện: dùng để giải mã token Google đã lưu — đổi thì mọi kết nối Google Sheet phải kết nối lại |
 | `VAPID_PRIVATE_KEY` | Đổi cặp khoá thì mọi thiết bị phải đăng ký nhận thông báo lại |
-| `CLOUDINARY_URL` (API secret) | Tạo key mới trong Cloudinary |

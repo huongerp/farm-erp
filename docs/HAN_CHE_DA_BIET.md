@@ -11,7 +11,7 @@ cùng biết rủi ro, không phải lỗi đang xảy ra.
 | 2 | Thông tin cá nhân nhân viên (CCCD, số tài khoản, BHXH) đọc được bởi mọi tài khoản đăng nhập qua API | Lộ thông tin cá nhân trong nội bộ | Giao diện chỉ hiện cho người có quyền module Nhân viên | Tách cột nhạy cảm ra bảng / view có kiểm quyền |
 | 3 | Phiên đăng nhập lưu trong localStorage của trình duyệt | Nếu trang bị chèn mã độc thì mất phiên | Đã escape dữ liệu ở mọi bản in/xuất; header bảo mật; CSP (đang ở chế độ chỉ ghi nhận) | Bật CSP chặn ([VAN_HANH.md](VAN_HANH.md) mục 7); về lâu dài chuyển sang cookie httpOnly |
 | 4 | "Bắt buộc đổi mật khẩu lần đầu" chỉ kiểm ở giao diện | Người dùng rành kỹ thuật có thể bỏ qua bước đổi mật khẩu tạm | Mật khẩu tạm ngẫu nhiên, mỗi người một mật khẩu, chỉ admin thấy một lần | Kiểm cờ ở auth-service khi cấp phiên |
-| 5 | Upload ảnh (Cloudinary) dùng preset không ký | Người ngoài biết tên preset có thể đẩy ảnh lên tài khoản Cloudinary | Giới hạn loại ảnh 2 MB ở giao diện | Chuyển sang upload có chữ ký từ server |
+| 5 | ~~Upload ảnh (Cloudinary) dùng preset không ký~~ — **đã xử lý 09/10/2026** | — | Ảnh lưu trên VPS qua `services/media`, upload phải có JWT đăng nhập | — |
 
 ## Vận hành
 

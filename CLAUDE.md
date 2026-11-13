@@ -4,6 +4,15 @@
 đăng nhập qua **auth-service** riêng (`services/auth`, Hono + JWT). Gói `@supabase/postgrest-js`
 trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng dịch vụ Supabase nào.
 
+## Yêu cầu và tiến độ — `docs/project/`
+
+- **`yeu-cau.md`** — khách là ai, module có/không, nghiệp vụ đặc thù, **ngoài phạm vi**. Đọc trước
+  khi làm tính năng mới; việc được giao trái với file này thì hỏi lại, đừng tự chọn. Chỗ ghi
+  `(chưa rõ — hỏi khách)` thì không đoán.
+- **`roadmap.md`** — xong một nghiệp vụ / module / giai đoạn thì **cập nhật trạng thái và dòng
+  «Cập nhật lần cuối» trong cùng commit**. Chỉ ghi giai đoạn và trạng thái, chi tiết từng commit
+  để `git log`.
+
 ## Lệnh chuẩn
 
 | Việc | Lệnh |
