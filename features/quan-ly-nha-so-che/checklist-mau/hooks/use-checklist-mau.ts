@@ -149,6 +149,7 @@ export function useLuuHangMuc(onSuccess?: () => void) {
         phuong_phap: v.values.phuong_phap || null,
         quan_trong: v.values.quan_trong,
         id_thiet_bi: v.values.id_thiet_bi,
+        tan_suat: v.values.tan_suat,
         dang_dung: v.values.dang_dung,
       };
       return v.id

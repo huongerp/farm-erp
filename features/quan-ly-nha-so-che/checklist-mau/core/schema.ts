@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
-import { LOAI_MAU_CL } from './types';
+import { LOAI_MAU_CL, type TanSuatVeSinh } from './types';
 
 /**
  * Form header mẫu checklist. Mục & hạng mục quản lý state riêng trong editor
@@ -33,5 +33,6 @@ export interface HangMucFormValues {
   phuong_phap: string;
   quan_trong: boolean;
   id_thiet_bi: string | null;
+  tan_suat: TanSuatVeSinh | null;
   dang_dung: boolean;
 }

@@ -6,6 +6,8 @@
 
 export interface ThietBi {
   id: string;
+  /** Farm (fp_var_chi_nhanh) — migration 077; mỗi farm một danh sách thiết bị riêng */
+  id_chi_nhanh: string;
   ten: string;
   /** Mã tài sản / mã máy, có thể nhiều mã: "MX-01, MX-02" */
   ma_ts: string | null;

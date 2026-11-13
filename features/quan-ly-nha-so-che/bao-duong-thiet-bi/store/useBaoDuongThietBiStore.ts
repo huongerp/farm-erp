@@ -1,3 +1,4 @@
+import { create } from 'zustand';
 import { createGenericStore, type ColumnConfig } from '../../../../store/createGenericStore';
 import i18n from '../../../../lib/i18n';
 
@@ -40,3 +41,15 @@ export const useThietBiStore = createGenericStore<BaoDuongFilters>(
   THIET_BI_COLUMNS,
   'table-bao-duong-thiet-bi'
 );
+
+interface FarmState {
+  /** Farm (id chi nhánh) đang xem — null = chưa chọn; hợp lệ hoá qua chonFarmMacDinh (useBaoDuongFarm). */
+  farmId: string | null;
+  setFarmId: (id: string | null) => void;
+}
+
+/** Farm đang xem — dùng chung thẻ số, tab Lịch, tab Thiết bị, form thêm thiết bị. */
+export const useBaoDuongFarmStore = create<FarmState>((set) => ({
+  farmId: null,
+  setFarmId: (farmId) => set({ farmId }),
+}));

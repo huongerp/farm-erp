@@ -14,12 +14,13 @@ const TABLE_NK = 'fp_farm_bd_nhat_ky';
 const TABLE_TS = 'fp_ts_tai_san';
 
 const TB_COLUMNS =
-  'id,ten,ma_ts,so_luong,khu_vuc,id_tai_san,ghi_chu,dang_dung,thu_tu,id_nguoi_tao,tg_tao,tg_cap_nhat';
+  'id,id_chi_nhanh,ten,ma_ts,so_luong,khu_vuc,id_tai_san,ghi_chu,dang_dung,thu_tu,id_nguoi_tao,tg_tao,tg_cap_nhat';
 const VIEC_COLUMNS = 'id,id_thiet_bi,noi_dung,chu_ky_ngay,lan_gan_nhat,han_ke_tiep,ghi_chu,dang_dung,thu_tu,kq_gan_nhat';
 const NK_COLUMNS = 'id,id_viec,ngay_thuc_hien,ket_qua,noi_dung,hinh_anh,id_nguoi_thuc_hien,id_nguoi_tao,tg_tao';
 
 interface DbThietBiRow {
   id: number;
+  id_chi_nhanh: number;
   ten: string;
   ma_ts: string | null;
   so_luong: string | null;
@@ -88,6 +89,7 @@ const idArr = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => String(
 function thietBiToModel(row: DbThietBiRow): ThietBi {
   return {
     id: String(row.id),
+    id_chi_nhanh: String(row.id_chi_nhanh),
     ten: row.ten,
     ma_ts: row.ma_ts,
     so_luong: row.so_luong,
@@ -149,6 +151,7 @@ export async function getThietBiByIdDb(id: string): Promise<ThietBi | null> {
 
 function thietBiPayload(v: ThietBiFormValues): Record<string, unknown> {
   return {
+    id_chi_nhanh: toIntId(v.id_chi_nhanh),
     ten: v.ten.trim(),
     ma_ts: blank(v.ma_ts),
     so_luong: blank(v.so_luong),
@@ -179,6 +182,16 @@ export async function updateThietBiDb(id: string, values: ThietBiFormValues): Pr
 export async function deleteThietBiDb(id: string): Promise<void> {
   const { error } = await db.from(TABLE_TB).delete().eq('id', toIntId(id));
   if (error) throwDbError(error);
+}
+
+/**
+ * Sao chép thiết bị + việc đang dùng từ farm `tu` sang farm `den` (RPC migration 077).
+ * Mã TS để trống, bỏ qua thiết bị trùng tên đã có ở farm đích. Trả số thiết bị đã tạo.
+ */
+export async function saoChepThietBiDb(tu: string, den: string): Promise<number> {
+  const { data, error } = await db.rpc('rpc_bd_sao_chep_thiet_bi', { p_tu: toIntId(tu), p_den: toIntId(den) });
+  if (error) throwDbError(error);
+  return Number(data ?? 0);
 }
 
 // ── Việc bảo dưỡng ────────────────────────────────────────────────────────────

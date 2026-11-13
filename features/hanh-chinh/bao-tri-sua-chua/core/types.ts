@@ -1,7 +1,7 @@
 import type { ThongTinDuyet } from './duyet';
 
-/** Trạng thái phiếu: chờ duyệt, đã duyệt, không duyệt */
-export type TrangThaiPhieu = 'cho_duyet' | 'da_duyet' | 'khong_duyet';
+/** Trạng thái phiếu: chờ duyệt, đã duyệt, không duyệt, trích quỹ (đã chi từ quỹ — sau duyệt) */
+export type TrangThaiPhieu = 'cho_duyet' | 'da_duyet' | 'khong_duyet' | 'trich_quy';
 
 /** Phiếu bảo trì / sửa chữa – yêu cầu bảo trì hoặc sửa chữa tài sản */
 export interface PhieuBaoTriSuaChua {

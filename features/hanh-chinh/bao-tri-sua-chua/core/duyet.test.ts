@@ -34,6 +34,19 @@ describe('thongTinDuyet', () => {
     expect(thongTinDuyet('cho_duyet', undefined, nv, now)).toBeNull();
   });
 
+  it('đã duyệt ↔ trích quỹ: giữ người duyệt cũ (null)', () => {
+    expect(thongTinDuyet('da_duyet', 'trich_quy', nv, now)).toBeNull();
+    expect(thongTinDuyet('trich_quy', 'da_duyet', nv, now)).toBeNull();
+  });
+
+  it('chờ duyệt nhảy thẳng sang trích quỹ: ghi người bấm', () => {
+    expect(thongTinDuyet('cho_duyet', 'trich_quy', nv, now)?.id_nguoi_duyet).toBe('12');
+  });
+
+  it('trích quỹ quay về chờ duyệt: xoá thông tin duyệt', () => {
+    expect(thongTinDuyet('trich_quy', 'cho_duyet', nv, now)?.nguoi_duyet).toBeNull();
+  });
+
   it('người dùng thiếu họ tên → tên null, vẫn ghi id', () => {
     expect(thongTinDuyet('cho_duyet', 'da_duyet', { id: '3', hoTen: '  ' }, now)).toMatchObject({
       id_nguoi_duyet: '3',

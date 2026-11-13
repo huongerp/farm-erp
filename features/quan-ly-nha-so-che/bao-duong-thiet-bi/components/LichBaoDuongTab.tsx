@@ -7,32 +7,26 @@ import { getTodayISO } from '../../../../lib/utils';
 import { soSanhTheoHan, tinhTrangHan } from '../core/han';
 import { tinhTrangHanLabel } from './Badges';
 import type { LichBaoDuongRow } from '../core/list-types';
-import type { ThietBi, ViecBaoDuong } from '../core/types';
-import { useThietBiList, useViecDangDung } from '../hooks/use-bao-duong-thiet-bi';
+import { useBaoDuongTheoFarm } from '../hooks/use-bao-duong-thiet-bi';
 import { LICH_COLUMNS, useLichStore } from '../store/useBaoDuongThietBiStore';
 import LichBaoDuongToolbar, { type TinhTrangLoc } from './LichBaoDuongToolbar';
 import LichBaoDuongList from './LichBaoDuongList';
 import ThietBiDrawer from './ThietBiDrawer';
 
 interface Props {
+  /** Farm đang xem — chỉ hiện việc của thiết bị thuộc farm này */
+  farmId: string | null;
   onGhiNhan: (row: LichBaoDuongRow) => void;
 }
 
-/** Mảng rỗng cố định khi chưa có dữ liệu — tránh tham chiếu mới mỗi render. */
-const KHONG_CO_VIEC: ViecBaoDuong[] = [];
-const KHONG_CO_THIET_BI: ThietBi[] = [];
-
 /** Tab "Lịch bảo dưỡng": mỗi dòng = một việc đang dùng, sắp theo hạn, chip lọc tình trạng + khu vực. */
-const LichBaoDuongTab: React.FC<Props> = ({ onGhiNhan }) => {
+const LichBaoDuongTab: React.FC<Props> = ({ farmId, onGhiNhan }) => {
   const { t } = useTranslation();
   const { canCreate } = useModulePermissionFromContext();
   // Xem lịch sử ghi nhận ngay từ tab Lịch (trước chỉ xem được ở tab Thiết bị → Nhật ký).
   const [xemThietBiId, setXemThietBiId] = useState<string | null>(null);
 
-  const viecQuery = useViecDangDung();
-  const thietBiQuery = useThietBiList();
-  const viec = viecQuery.data ?? KHONG_CO_VIEC;
-  const thietBi = thietBiQuery.data ?? KHONG_CO_THIET_BI;
+  const { viecQuery, thietBiQuery, viec, thietBi } = useBaoDuongTheoFarm(farmId);
 
   const searchTerm = useLichStore((s) => s.searchTerm);
   const {
@@ -137,9 +131,10 @@ const LichBaoDuongTab: React.FC<Props> = ({ onGhiNhan }) => {
     return sorted.slice(start, start + pagination.pageSize);
   }, [sorted, pagination.page, pagination.pageSize]);
 
-  // In lịch theo đúng bộ lọc đang xem (tình trạng hạn + khu vực).
+  // In lịch theo đúng farm + bộ lọc đang xem (tình trạng hạn + khu vực).
   const inLich = () => {
     const q = new URLSearchParams();
+    if (farmId) q.set('farm', farmId);
     if (tinhTrang !== 'tat_ca') q.set('loc', tinhTrang);
     if (khuVuc) q.set('khu_vuc', khuVuc);
     const qs = q.toString();

@@ -5,6 +5,20 @@
   "baoDuongThietBi.tabs.lich": "Lịch bảo dưỡng",
   "baoDuongThietBi.tabs.thietBi": "Thiết bị",
 
+  "baoDuongThietBi.farm.label": "Farm",
+  "baoDuongThietBi.farm.chon": "— Chọn farm —",
+  "baoDuongThietBi.farm.chuaPhan": "Bạn chưa được phân farm nào",
+
+  "baoDuongThietBi.saoChep.nut": "Sao chép từ farm khác",
+  "baoDuongThietBi.saoChep.tieuDe": "Sao chép thiết bị từ farm khác",
+  "baoDuongThietBi.saoChep.farmDich": "Sao chép vào: {{ten}}",
+  "baoDuongThietBi.saoChep.farmNguon": "Farm nguồn",
+  "baoDuongThietBi.saoChep.chonFarm": "— Chọn farm nguồn —",
+  "baoDuongThietBi.saoChep.khongCoNguon": "Chưa farm nào khác có thiết bị",
+  "baoDuongThietBi.saoChep.option": "{{ten}} ({{n}} thiết bị)",
+  "baoDuongThietBi.saoChep.ghiChu": "Chép thiết bị đang dùng kèm các việc bảo dưỡng đang theo dõi. Mã tài sản để trống để nhập lại theo farm; lịch sử và hạn không chép. Thiết bị trùng tên đã có ở farm này sẽ bỏ qua.",
+  "baoDuongThietBi.saoChep.xacNhan": "Sao chép",
+
   "baoDuongThietBi.stats.quaHan": "Quá hạn",
   "baoDuongThietBi.stats.sapToi": "Sắp tới hạn (≤7 ngày)",
   "baoDuongThietBi.stats.tong": "Tổng việc đang theo dõi",
@@ -62,6 +76,7 @@
   "baoDuongThietBi.thietBi.form.ghiChu": "Ghi chú",
   "baoDuongThietBi.thietBi.form.dangDung": "Đang dùng",
   "baoDuongThietBi.thietBi.form.khongTaiSan": "— Không liên kết —",
+  "baoDuongThietBi.thietBi.form.timTaiSan": "Gõ tên hoặc mã tài sản...",
 
   "baoDuongThietBi.viec.tieuDe": "Việc bảo dưỡng",
   "baoDuongThietBi.viec.gioiThieu": "Mỗi thiết bị có thể có nhiều việc định kỳ; hệ thống tự tính hạn kế tiếp sau mỗi lần ghi nhận.",
@@ -97,6 +112,7 @@
   "baoDuongThietBi.ghiNhan.khongChon": "— Không chọn —",
 
   "baoDuongThietBi.validation.tenRequired": "Nhập tên thiết bị.",
+  "baoDuongThietBi.validation.farmRequired": "Chọn farm của thiết bị.",
   "baoDuongThietBi.validation.thuTuNguyen": "Thứ tự phải là số nguyên.",
 
   "baoDuongThietBi.service.khongTimThayThietBi": "Không tìm thấy thiết bị (có thể đã bị xoá).",
@@ -106,6 +122,8 @@
   "baoDuongThietBi.toast.daCapNhatThietBi": "Đã cập nhật thiết bị.",
   "baoDuongThietBi.toast.daXoaThietBi": "Đã xoá thiết bị.",
   "baoDuongThietBi.toast.daLuuViec": "Đã lưu việc bảo dưỡng.",
+  "baoDuongThietBi.toast.daSaoChep": "Đã sao chép {{n}} thiết bị. Nhập lại mã tài sản cho farm này.",
+  "baoDuongThietBi.toast.khongCoGiDeSaoChep": "Không có thiết bị mới để sao chép (farm này đã có đủ thiết bị cùng tên).",
   "baoDuongThietBi.toast.daGhiNhan": "Đã ghi nhận bảo dưỡng. Xem lại ở nút «Lịch sử» của việc hoặc tab Thiết bị → Nhật ký.",
 
   "baoDuongThietBi.hanhDong.inLich": "In lịch",

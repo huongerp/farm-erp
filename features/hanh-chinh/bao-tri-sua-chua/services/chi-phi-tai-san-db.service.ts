@@ -1,7 +1,7 @@
 /**
  * Service chi phí tài sản – đọc/ghi DB.
  * Bảng: fp_ts_chi_phi_tai_san (phiếu), fp_ts_trang_thai_chi_phi_tai_san (thiết lập trạng thái).
- * Map: id_trang_thai + ten_trang_thai (DB) <-> trang_thai enum (app: cho_duyet | da_duyet | khong_duyet).
+ * Map: id_trang_thai + ten_trang_thai (DB) <-> trang_thai enum (app: cho_duyet | da_duyet | khong_duyet | trich_quy).
  */
 import {
   db,
@@ -92,17 +92,19 @@ function duyetPayload(duyet: ThongTinDuyet | null | undefined): {
   };
 }
 
-/** Map id_trang_thai (DB) -> TrangThaiPhieu (app). Seed order: 1=CHO_DUYET, 2=DA_DUYET, 3=KHONG_DUYET */
+/** Map id_trang_thai (DB) -> TrangThaiPhieu (app). Seed: 1=CHO_DUYET, 2=DA_DUYET, 3=KHONG_DUYET, 4=TRICH_QUY (migration 079) */
 const ID_TO_TRANG_THAI: Record<number, TrangThaiPhieu> = {
   1: 'cho_duyet',
   2: 'da_duyet',
   3: 'khong_duyet',
+  4: 'trich_quy',
 };
 
 const TRANG_THAI_TO_ID: Record<TrangThaiPhieu, number> = {
   cho_duyet: 1,
   da_duyet: 2,
   khong_duyet: 3,
+  trich_quy: 4,
 };
 
 function idTrangThaiToEnum(id: number): TrangThaiPhieu {
@@ -148,7 +150,7 @@ function phieuMatchesSearchQuery(p: PhieuBaoTriSuaChua, qRaw: string): boolean {
   const tien = p.so_tien ?? 0;
   const tienStr = String(tien).toLowerCase();
   const tienLocale = tien.toLocaleString('vi-VN').toLowerCase().replace(/\s/g, '');
-  const statusLabels = (['cho_duyet', 'da_duyet', 'khong_duyet'] as const).map((k) =>
+  const statusLabels = Object.values(ID_TO_TRANG_THAI).map((k) =>
     String(i18n.t(`baoTriSuaChua.trangThai.${k}`)).toLowerCase()
   );
 
@@ -247,7 +249,13 @@ function applyBtscListQuery(q: any, query: BaoTriSuaChuaListServerQuery): any {
     sel = sel.in('id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
   }
   if (query.hangMuc.length > 0) sel = sel.in('id_hang_muc', query.hangMuc);
-  if (query.trangThai.length > 0) sel = sel.in('id_trang_thai', query.trangThai);
+  if (query.trangThai.length > 0) {
+    // Chip lọc gửi enum app (cho_duyet…) → đổi sang id số của cột id_trang_thai.
+    const ids = query.trangThai
+      .map((k) => TRANG_THAI_TO_ID[k as TrangThaiPhieu])
+      .filter((n): n is number => n !== undefined);
+    sel = sel.in('id_trang_thai', ids);
+  }
   if (query.idNguoiTao.length > 0) {
     sel = sel.in('id_nguoi_tao', query.idNguoiTao.map(Number).filter(Number.isFinite));
   }

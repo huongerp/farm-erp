@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import { Controller, useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardCheck, Hash, ListOrdered, Printer } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -162,6 +162,7 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
     resolver: zodResolver(checklistMauFormSchema) as never,
     defaultValues,
   });
+  const loaiMau = useWatch({ control, name: 'loai' });
 
   const createMutation = useCreateMau((created) => {
     setDaTao(created);
@@ -401,7 +402,7 @@ const ChecklistMauDrawer: React.FC<Props> = ({ initialData, onClose }) => {
 
         {current && (
           <div className="space-y-2">
-            <MucHangMucEditor ref={editorRef} idMau={current.id} canEdit />
+            <MucHangMucEditor ref={editorRef} idMau={current.id} loai={loaiMau} canEdit />
           </div>
         )}
       </form>

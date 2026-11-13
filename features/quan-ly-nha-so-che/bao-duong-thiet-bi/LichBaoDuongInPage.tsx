@@ -1,6 +1,6 @@
 /**
  * Trang in "Lịch bảo dưỡng thiết bị" — route /quan-ly-nha-so-che/bao-duong-thiet-bi/in-lich
- * Nhận ?loc=qua_han|sap_toi và ?khu_vuc=<tên> để in đúng bộ lọc đang xem ở tab Lịch bảo dưỡng.
+ * Nhận ?farm=<id chi nhánh>, ?loc=qua_han|sap_toi và ?khu_vuc=<tên> để in đúng farm + bộ lọc đang xem ở tab Lịch.
  */
 import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -9,7 +9,8 @@ import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { getTodayISO } from '../../../lib/utils';
 import { soSanhTheoHan, tinhTrangHan } from './core/han';
 import type { LichBaoDuongRow } from './core/list-types';
-import { useThietBiList, useViecDangDung } from './hooks/use-bao-duong-thiet-bi';
+import { useBaoDuongTheoFarm } from './hooks/use-bao-duong-thiet-bi';
+import { useBaoDuongFarm } from './hooks/use-bao-duong-view-scope';
 import LichBaoDuongLichIn from './components/preview/LichBaoDuongLichIn';
 
 // Lịch nhiều cột → A4 ngang.
@@ -20,14 +21,18 @@ const LichBaoDuongInPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const loc = searchParams.get('loc');
   const khuVucParam = searchParams.get('khu_vuc');
-  const viecQuery = useViecDangDung();
-  const thietBiQuery = useThietBiList();
+  // ?farm= chỉ nhận farm trong phạm vi; không có / ngoài phạm vi (link cũ, sửa tay) → farm đang chọn của người in.
+  const farm = useBaoDuongFarm();
+  const farmParam = searchParams.get('farm');
+  const farmId = farmParam && farm.farms.some((b) => b.id === farmParam) ? farmParam : farm.farmId;
+  const tenFarm = farmId ? (farm.tenFarm.get(farmId) ?? null) : null;
+  const { viecQuery, thietBiQuery, viec, thietBi } = useBaoDuongTheoFarm(farmId);
 
   const homNay = getTodayISO();
 
   const rows = useMemo<LichBaoDuongRow[]>(() => {
-    const tbById = new Map((thietBiQuery.data ?? []).map((tb) => [tb.id, tb]));
-    return (viecQuery.data ?? [])
+    const tbById = new Map(thietBi.map((tb) => [tb.id, tb]));
+    return viec
       .map((v) => {
         const tb = tbById.get(v.id_thiet_bi);
         return {
@@ -44,7 +49,7 @@ const LichBaoDuongInPage: React.FC = () => {
         return true;
       })
       .sort(soSanhTheoHan);
-  }, [viecQuery.data, thietBiQuery.data, loc, khuVucParam, homNay]);
+  }, [viec, thietBi, loc, khuVucParam, homNay]);
 
   const subtitle = useMemo(() => {
     const parts: string[] = [];
@@ -61,20 +66,20 @@ const LichBaoDuongInPage: React.FC = () => {
 
   return (
     <PhieuInPage
-      title={t('baoDuongThietBi.inLich.title')}
+      title={tenFarm ? `${t('baoDuongThietBi.inLich.title')} — ${tenFarm}` : t('baoDuongThietBi.inLich.title')}
       mauKey="bao-duong-thiet-bi-lich"
       macDinh={MAC_DINH}
       coChuGocPt={9}
       tenFile="Lich-bao-duong-thiet-bi"
       duongDanVe="/quan-ly-nha-so-che/bao-duong-thiet-bi"
-      isLoading={viecQuery.isPending || thietBiQuery.isPending}
+      isLoading={viecQuery.isPending || thietBiQuery.isPending || farm.isLoading}
       loi={loi}
       onRetry={loi ? () => {
         void viecQuery.refetch();
         void thietBiQuery.refetch();
       } : undefined}
     >
-      <LichBaoDuongLichIn rows={rows} subtitle={subtitle} />
+      <LichBaoDuongLichIn rows={rows} subtitle={subtitle} tenFarm={tenFarm} />
     </PhieuInPage>
   );
 };

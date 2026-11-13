@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../../store/useStore';
 import type { DongPhieuChecklist } from '../core/types';
 import type { PhieuChecklistListItem } from '../core/list-types';
 import type { TaoPhieuFormValues } from '../core/schema';
+import { tinhKqVeSinh, type KqNgay } from '../../checklist-mau/core/ve-sinh-tuan';
 import type { ChecklistBanGiaoListServerQuery } from '../services/checklist-ban-giao-list-query';
 import {
   chuyenPhieu,
@@ -23,6 +24,7 @@ import {
   huyPhieu,
   moLaiPhieu,
   nhanPhieu,
+  tichNgayVeSinh,
   traLaiPhieu,
   updateDongKiemTra,
   updateDongThucHien,
@@ -32,6 +34,7 @@ import {
   type LuuDongThucHienInput,
   type PhieuKetLuanInput,
   type PhieuThongTinInput,
+  type TichNgayVeSinhInput,
 } from '../services/checklist-ban-giao-service';
 
 export const QUERY_KEY_CL = ['checklistBanGiao'] as const;
@@ -225,6 +228,40 @@ export function useLuuDongKiemTra() {
     },
     onSuccess: (_data, input, ctx) => {
       if (ctx?.truoc === undefined) qc.invalidateQueries({ queryKey: khoaDong(input.idPhieu) });
+      qc.invalidateQueries({ queryKey: QUERY_KEY_CL, predicate: (q) => q.queryKey[1] !== 'dong' });
+    },
+    onError: (err: Error, input, ctx) => {
+      if (ctx?.truoc) qc.setQueryData(khoaDong(input.idPhieu), ctx.truoc);
+      else qc.invalidateQueries({ queryKey: khoaDong(input.idPhieu) });
+      onErr(err);
+    },
+  });
+}
+
+/**
+ * Phiếu vệ sinh tuần: tích một ô ngày. Optimistic như các ô tích khác — kq_thuc_hien của dòng
+ * tính lại bằng `tinhKqVeSinh` (khớp trigger 080), xong ghi đè bằng kết quả server trả về.
+ */
+export function useTichNgayVeSinh() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TichNgayVeSinhInput & { lich: readonly number[]; kqNgayCu: KqNgay }) => tichNgayVeSinh(input),
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: khoaDong(input.idPhieu) });
+      const kqNgay: KqNgay = { ...input.kqNgayCu };
+      if (input.kq == null) delete kqNgay[String(input.thu)];
+      else kqNgay[String(input.thu)] = input.kq;
+      const kq = tinhKqVeSinh(input.lich, kqNgay);
+      const truoc = suaDongTrongCache(qc, input.idPhieu, input.idDong, {
+        kq_ngay: kqNgay,
+        kq_thuc_hien: kq,
+        ...(kq === 'khong_dat' ? { qlx_tung_khong_dat: true } : {}),
+      });
+      return { truoc };
+    },
+    onSuccess: (kq, input, ctx) => {
+      if (ctx?.truoc === undefined) qc.invalidateQueries({ queryKey: khoaDong(input.idPhieu) });
+      else suaDongTrongCache(qc, input.idPhieu, input.idDong, kq);
       qc.invalidateQueries({ queryKey: QUERY_KEY_CL, predicate: (q) => q.queryKey[1] !== 'dong' });
     },
     onError: (err: Error, input, ctx) => {

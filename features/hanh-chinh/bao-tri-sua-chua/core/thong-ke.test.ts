@@ -32,11 +32,11 @@ describe('tinhThongKe', () => {
     phieu({ so_tien: 1_000_000, trang_thai: 'da_duyet', id_chi_nhanh: '2', ten_chi_nhanh: 'Farm fp2', id_nha_cung_cap: '9', ten_nha_cung_cap: 'Minh Phát' }),
     phieu({ so_tien: 500_000, trang_thai: 'cho_duyet', id_chi_nhanh: '2', ten_chi_nhanh: 'Farm fp2', ngay: '2026-10-01' }),
     phieu({ so_tien: 2_000_000, trang_thai: 'khong_duyet', id_tai_san: 'TS2', ma_tai_san: 'TS-02', ten_tai_san: 'Xe tải', id_chi_nhanh: '3', ten_chi_nhanh: 'Farm fp3', ngay: '2026-10-20' }),
-    phieu({ so_tien: 300_000, trang_thai: 'da_duyet', id_hang_muc: 'bao_tri', ten_hang_muc: undefined, ngay: '2026-10-31' }),
+    phieu({ so_tien: 300_000, trang_thai: 'trich_quy', id_hang_muc: 'bao_tri', ten_hang_muc: undefined, ngay: '2026-10-31' }),
   ];
   const kq = tinhThongKe(ds, opts);
 
-  it('tổng quan: tổng tiền, tiền đã duyệt, số chờ duyệt, số tài sản', () => {
+  it('tổng quan: tổng tiền, tiền đã duyệt (gồm trích quỹ), số chờ duyệt, số tài sản', () => {
     expect(kq.tongQuan).toEqual({
       soPhieu: 4,
       tongTien: 3_800_000,

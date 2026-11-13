@@ -15,6 +15,7 @@ const MAU_DAU: Record<TrangThaiPhieu, string> = {
   da_duyet: '#15803d',
   khong_duyet: '#b91c1c',
   cho_duyet: '#b45309',
+  trich_quy: '#1d4ed8',
 };
 
 const BangTT: React.FC<{ rows: [string, string | null | undefined, string?][] }> = ({ rows }) => (

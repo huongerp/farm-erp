@@ -96,5 +96,12 @@
   "checklistMau.preview.coDieuKien": "Vận hành có điều kiện",
   "checklistMau.preview.tamDung": "Tạm dừng sửa chữa",
   "checklistMau.preview.yKien": "Ý kiến",
-  "checklistMau.preview.nguoiQuanLy": "Người quản lý"
+  "checklistMau.preview.nguoiQuanLy": "Người quản lý",
+  "checklistMau.hangMuc.tanSuat": "Tần suất",
+  "checklistMau.hangMuc.tanSuatKieu.hang_ngay": "Hằng ngày",
+  "checklistMau.hangMuc.tanSuatKieu.thu": "Theo thứ",
+  "checklistMau.hangMuc.tanSuatKieu.cuoi_thang": "Cuối tháng",
+  "checklistMau.hangMuc.cuoiThangThu": "Làm vào thứ (của tuần cuối tháng):",
+  "checklistMau.hangMuc.tanSuatThieuThu": "Chọn ít nhất một thứ trong tuần.",
+  "checklistMau.hangMuc.cuoiThangMoTa": "{{thu}} cuối tháng"
 }

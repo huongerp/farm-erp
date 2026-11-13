@@ -5,7 +5,7 @@
 > sửa ở đây và ghi một dòng vào §9. Nội dung dưới đây suy ra từ code, docs và git log, chưa
 > được khách xác nhận từng mục.
 
-Cập nhật lần cuối: 13/11/2026
+Cập nhật lần cuối: 14/11/2026
 
 ## 1. Khách hàng
 
@@ -38,7 +38,7 @@ Danh sách đầy đủ và trạng thái: [`roadmap.md`](roadmap.md). Mức ưu
 | Hành chính | bảng lương, thiết lập công lương, điểm cộng trừ, công việc, phiếu hành chính, tài sản (danh mục, thiết lập, cấp phát/thu hồi, kiểm kê, khấu hao, bảo trì), nơi quản lý | |
 | Kho vận | danh mục/danh sách hàng hoá, kho, đối tác, phiếu kho, phiếu đề xuất vật tư, kiểm kê, tồn kho, báo cáo nhập-xuất-tồn | Nhập/đặt hàng từng phần không vượt phiếu gốc; chặn xoá hàng hoá đang dùng |
 | Mua hàng | đơn đặt hàng, hợp đồng, thanh toán đối tác, báo cáo/thiết lập đề xuất vật tư | Hợp đồng tách đợt cọc, thanh toán theo số cây, trừ cọc |
-| Quản lý nhà sơ chế | thu hoạch, báo cáo sơ chế, báo cáo nhân công, thống kê sản xuất, dự báo SL đóng thùng, giám sát chất lượng, đánh giá đầu vào, đăng ký nhận hàng, đăng ký tham quan farm, đề xuất mua hàng, checklist & bảo trì, bộ kho Phân thuốc | Phân thuốc dùng lại module kho qua biến thể `fp_pt_*` |
+| Quản lý nhà sơ chế | thu hoạch, báo cáo sơ chế, báo cáo nhân công, thống kê sản xuất, dự báo SL đóng thùng, giám sát chất lượng, đánh giá đầu vào, đăng ký nhận hàng, đăng ký tham quan farm, nhật ký pha phèn, nhật ký pha thuốc phun cùi, đề xuất mua hàng, checklist & bảo trì, bộ kho Phân thuốc | Phân thuốc dùng lại module kho qua biến thể `fp_pt_*` |
 | Tài chính | thu chi quỹ, thiết lập quỹ, thống kê quỹ | Phiếu quỹ duyệt / không duyệt; chỉ quản trị / cấp 1 đổi ngày phiếu |
 
 ## 5. Nghiệp vụ đặc thù

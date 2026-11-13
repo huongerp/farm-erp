@@ -7,6 +7,7 @@ export {
   createThietBiDb as createThietBi,
   updateThietBiDb as updateThietBi,
   deleteThietBiDb as deleteThietBi,
+  saoChepThietBiDb as saoChepThietBi,
   getViecDangDungDb as getViecDangDung,
   getViecTheoThietBiDb as getViecTheoThietBi,
   createViecDb as createViec,

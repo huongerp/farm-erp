@@ -15,4 +15,5 @@ export const TRANG_THAI_OPTIONS: { value: TrangThaiPhieu; labelKey: string }[] =
   { value: 'cho_duyet', labelKey: 'baoTriSuaChua.trangThai.cho_duyet' },
   { value: 'da_duyet', labelKey: 'baoTriSuaChua.trangThai.da_duyet' },
   { value: 'khong_duyet', labelKey: 'baoTriSuaChua.trangThai.khong_duyet' },
+  { value: 'trich_quy', labelKey: 'baoTriSuaChua.trangThai.trich_quy' },
 ];

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
+import { Controller, useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardCheck, ClipboardList, Hash } from 'lucide-react';
 import GenericDrawer, { DRAWER_WIDTH_FORM } from '../../../../components/shared/GenericDrawer';
@@ -10,11 +10,12 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
-import { getTodayISO } from '../../../../lib/utils';
+import { formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import type { PhieuChecklistListItem } from '../core/list-types';
 import { taoPhieuSchema, type TaoPhieuFormValues } from '../core/schema';
 import { useCreatePhieu, useMauChoChon } from '../hooks/use-checklist-ban-giao';
+import { congNgay, dauTuan } from '../../checklist-mau/core/ve-sinh-tuan';
 
 interface Props {
   onClose: () => void;
@@ -46,8 +47,19 @@ const TaoPhieuDialog: React.FC<Props> = ({ onClose, onCreated }) => {
     defaultValues: DEFAULT,
   });
 
+  const idMau = useWatch({ control, name: 'id_mau' });
+  const ngay = useWatch({ control, name: 'ngay' });
+  const laVeSinh = mauList.find((m) => m.id === idMau)?.loai === 've_sinh_tuan';
+  const tuan = laVeSinh && ngay ? dauTuan(ngay) : null;
+
   const mauOptions = useMemo(
-    () => mauList.map((m) => ({ value: m.id, label: m.ma ? `${m.ma} — ${m.ten}` : m.ten, subLabel: m.co_khau_sau ? t('checklistBanGiao.form.coKhauSau') : undefined })),
+    () =>
+      mauList.map((m) => {
+        const ten = m.ma ? `${m.ma} — ${m.ten}` : m.ten;
+        // Picker gốc trên điện thoại không hiện subLabel → ghi loại vào nhãn để phân biệt mẫu vệ sinh tuần.
+        const label = m.loai === 've_sinh_tuan' ? `${ten} (${t('checklistBanGiao.vs.loai')})` : ten;
+        return { value: m.id, label, subLabel: m.co_khau_sau ? t('checklistBanGiao.form.coKhauSau') : undefined };
+      }),
     [mauList, t]
   );
 
@@ -104,13 +116,24 @@ const TaoPhieuDialog: React.FC<Props> = ({ onClose, onCreated }) => {
               name="ngay"
               control={control}
               render={({ field }) => (
-                <Input
-                  {...field}
-                  type="date"
-                  label={t('checklistBanGiao.form.ngay')}
-                  required
-                  error={errors.ngay?.message}
-                />
+                <div className="space-y-1">
+                  <Input
+                    {...field}
+                    type="date"
+                    label={laVeSinh ? t('checklistBanGiao.form.tuan') : t('checklistBanGiao.form.ngay')}
+                    required
+                    error={errors.ngay?.message}
+                  />
+                  {tuan && (
+                    <p className="m-0 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {t('checklistBanGiao.vs.tuan', { tu: formatYmdToDisplay(tuan), den: formatYmdToDisplay(congNgay(tuan, 6)) })}
+                      </span>
+                      {' · '}
+                      {t('checklistBanGiao.vs.chonNgayTrongTuan')}
+                    </p>
+                  )}
+                </div>
               )}
             />
             <Controller

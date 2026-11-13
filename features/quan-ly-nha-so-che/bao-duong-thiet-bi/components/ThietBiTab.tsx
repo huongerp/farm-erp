@@ -8,30 +8,34 @@ import { createListSearchMatcher } from '../../../../lib/list-search-matcher';
 import { getLanguage } from '../../../../lib/utils';
 import type { ThietBi } from '../core/types';
 import type { LichBaoDuongRow, ThietBiRow } from '../core/list-types';
-import { useDeleteThietBi, useTaiSanRef, useThietBiList } from '../hooks/use-bao-duong-thiet-bi';
+import { useBaoDuongTheoFarm, useDeleteThietBi, useTaiSanRef } from '../hooks/use-bao-duong-thiet-bi';
 import { THIET_BI_COLUMNS, useThietBiStore } from '../store/useBaoDuongThietBiStore';
 import ThietBiToolbar from './ThietBiToolbar';
 import ThietBiList from './ThietBiList';
 import ThietBiDrawer from './ThietBiDrawer';
 import ThietBiFormDrawer from './ThietBiFormDrawer';
+import SaoChepFarmDialog from './SaoChepFarmDialog';
 
 interface Props {
+  /** Farm đang xem — chỉ hiện thiết bị của farm này */
+  farmId: string | null;
   onGhiNhan: (row: LichBaoDuongRow) => void;
 }
 
-/** Tab "Thiết bị": danh sách + drawer chi tiết (việc + lịch sử) + form thêm/sửa. */
-const ThietBiTab: React.FC<Props> = ({ onGhiNhan }) => {
+/** Tab "Thiết bị": danh sách + drawer chi tiết (việc + lịch sử) + form thêm/sửa + sao chép từ farm khác. */
+const ThietBiTab: React.FC<Props> = ({ farmId, onGhiNhan }) => {
   const { t } = useTranslation();
   const { canCreate, canUpdate, canDelete } = useModulePermissionFromContext();
   const confirm = useConfirmStore((s) => s.confirm);
 
-  const thietBiQuery = useThietBiList();
+  const { thietBiQuery, thietBi, tatCaThietBi } = useBaoDuongTheoFarm(farmId);
   const { data: taiSanList = [] } = useTaiSanRef();
   const deleteMutation = useDeleteThietBi();
 
   const [chiTietId, setChiTietId] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [formTb, setFormTb] = useState<ThietBi | null>(null);
+  const [saoChepOpen, setSaoChepOpen] = useState(false);
 
   const {
     searchTerm,
@@ -53,11 +57,11 @@ const ThietBiTab: React.FC<Props> = ({ onGhiNhan }) => {
   const taiSanById = useMemo(() => new Map(taiSanList.map((x) => [x.id, x])), [taiSanList]);
   const rows = useMemo<ThietBiRow[]>(
     () =>
-      (thietBiQuery.data ?? []).map((tb) => {
+      thietBi.map((tb) => {
         const ts = tb.id_tai_san ? taiSanById.get(tb.id_tai_san) : null;
         return { ...tb, tai_san_ma: ts?.ma_tai_san ?? null, tai_san_ten: ts?.ten_tai_san ?? null };
       }),
-    [thietBiQuery.data, taiSanById]
+    [thietBi, taiSanById]
   );
 
   const khopTimKiem = useMemo(
@@ -153,7 +157,12 @@ const ThietBiTab: React.FC<Props> = ({ onGhiNhan }) => {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-      <ThietBiToolbar selectedCount={selectedIds.size} onAdd={openAdd} canUpdate={canUpdate} />
+      <ThietBiToolbar
+        selectedCount={selectedIds.size}
+        onAdd={openAdd}
+        canUpdate={canUpdate}
+        onSaoChep={canCreate && farmId ? () => setSaoChepOpen(true) : undefined}
+      />
       <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
         <ThietBiList
           data={pageData}
@@ -193,6 +202,9 @@ const ThietBiTab: React.FC<Props> = ({ onGhiNhan }) => {
           />
         )}
         {formOpen && <ThietBiFormDrawer initialData={formTb} onClose={closeForm} />}
+        {saoChepOpen && farmId && (
+          <SaoChepFarmDialog farmDich={farmId} tatCaThietBi={tatCaThietBi} onClose={() => setSaoChepOpen(false)} />
+        )}
       </AnimatePresence>
     </div>
   );

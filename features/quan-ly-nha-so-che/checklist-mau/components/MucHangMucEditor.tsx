@@ -10,7 +10,8 @@ import FormSection from '../../../../components/shared/FormSection';
 import FormGrid from '../../../../components/shared/FormGrid';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { cn } from '../../../../lib/utils';
-import type { HangMucMauChecklist, MucMauChecklist } from '../core/types';
+import type { HangMucMauChecklist, LoaiMauCl, MucMauChecklist, TanSuatVeSinh } from '../core/types';
+import { moTaTanSuat, nhanThu } from '../core/ve-sinh-tuan';
 import type { HangMucFormValues } from '../core/schema';
 import {
   useLuuHangMuc,
@@ -38,6 +39,8 @@ export interface MucHangMucEditorHandle {
 
 interface Props {
   idMau: string;
+  /** Loại mẫu đang chọn — 've_sinh_tuan' mới hiện ô tần suất hạng mục. */
+  loai?: LoaiMauCl;
   canEdit: boolean;
   ref?: React.Ref<MucHangMucEditorHandle>;
 }
@@ -51,7 +54,7 @@ function enterLuu(e: React.KeyboardEvent<HTMLElement>, luu: () => void) {
   luu();
 }
 
-const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit, ref }) => {
+const MucHangMucEditor: React.FC<Props> = ({ idMau, loai, canEdit, ref }) => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const { data: chiTiet, isLoading } = useMauChiTiet(idMau);
@@ -102,10 +105,10 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit, ref }) => {
   const thietBiOptions = useMemo(
     () => [
       { value: '', label: t('checklistMau.hangMuc.khongLienKet') },
-      ...thietBiList.map((tb) => ({
-        value: tb.id,
-        label: tb.ma_ts ? `${tb.ma_ts} — ${tb.ten}` : tb.ten,
-      })),
+      ...thietBiList.map((tb) => {
+        const ten = tb.ma_ts ? `${tb.ma_ts} — ${tb.ten}` : tb.ten;
+        return { value: tb.id, label: tb.ten_chi_nhanh ? `${ten} — ${tb.ten_chi_nhanh}` : ten };
+      }),
     ],
     [thietBiList, t]
   );
@@ -169,6 +172,7 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit, ref }) => {
       idMau={idMau}
       idMuc={idMuc}
       nhom={nhom}
+      veSinh={loai === 've_sinh_tuan'}
       thietBiOptions={thietBiOptions}
       dangKy={dangKy}
       onDone={() => {
@@ -201,6 +205,9 @@ const MucHangMucEditor: React.FC<Props> = ({ idMau, canEdit, ref }) => {
             {h.doi_tuong}
           </div>
           <div className="text-xs text-muted-foreground truncate">
+            {loai === 've_sinh_tuan' && (
+              <span className="mr-1 font-medium text-foreground/80">[{moTaTanSuat(h.tan_suat, t)}]</span>
+            )}
             {[h.tieu_chuan, h.phuong_phap].filter(Boolean).join(' · ') || '—'}
             {thietBi && (
               <span className="ml-1 text-primary/70">
@@ -393,7 +400,71 @@ const RONG: HangMucFormValues = {
   phuong_phap: '',
   quan_trong: false,
   id_thiet_bi: null,
+  tan_suat: null,
   dang_dung: true,
+};
+
+const THU_NUT = [2, 3, 4, 5, 6, 7, 8] as const;
+type KieuTanSuat = 'hang_ngay' | 'thu' | 'cuoi_thang';
+
+/** Chọn tần suất vệ sinh: hằng ngày / theo thứ (nhiều thứ) / cuối tháng (một thứ). */
+const TanSuatEditor: React.FC<{ value: TanSuatVeSinh | null; onChange: (v: TanSuatVeSinh | null) => void }> = ({
+  value,
+  onChange,
+}) => {
+  const { t } = useTranslation();
+  const kieu: KieuTanSuat = value?.kieu ?? 'hang_ngay';
+  const doiKieu = (k: KieuTanSuat) => {
+    if (k === 'hang_ngay') onChange(null);
+    else if (k === 'thu') onChange({ kieu: 'thu', thu: value?.kieu === 'thu' ? value.thu : [] });
+    else onChange({ kieu: 'cuoi_thang', thu: value?.kieu === 'cuoi_thang' ? value.thu : 7 });
+  };
+  const nut = (active: boolean, label: string, onClick: () => void) => (
+    <button
+      key={label}
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'min-w-9 rounded-md border px-2 py-1 text-xs font-medium',
+        active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground hover:bg-muted'
+      )}
+    >
+      {label}
+    </button>
+  );
+  const kieuOptions = (['hang_ngay', 'thu', 'cuoi_thang'] as const).map((k) => ({
+    value: k,
+    label: t(`checklistMau.hangMuc.tanSuatKieu.${k}`),
+  }));
+  return (
+    <div className="space-y-2">
+      <Select
+        label={t('checklistMau.hangMuc.tanSuat')}
+        value={kieu}
+        onChange={(e) => doiKieu(e.target.value as KieuTanSuat)}
+        options={kieuOptions}
+      />
+      {value?.kieu === 'thu' && (
+        <div className="flex flex-wrap gap-1.5">
+          {THU_NUT.map((th) =>
+            nut(value.thu.includes(th), nhanThu(th), () =>
+              onChange({
+                kieu: 'thu',
+                thu: value.thu.includes(th) ? value.thu.filter((x) => x !== th) : [...value.thu, th].sort((a, b) => a - b),
+              })
+            )
+          )}
+        </div>
+      )}
+      {value?.kieu === 'cuoi_thang' && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">{t('checklistMau.hangMuc.cuoiThangThu')}</span>
+          {THU_NUT.map((th) => nut(value.thu === th, nhanThu(th), () => onChange({ kieu: 'cuoi_thang', thu: th })))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const HangMucForm: React.FC<{
@@ -401,10 +472,11 @@ const HangMucForm: React.FC<{
   idMau: string;
   idMuc: string | null;
   nhom: HangMucMauChecklist[];
+  veSinh: boolean;
   thietBiOptions: { value: string; label: string }[];
   dangKy: DangKySaver;
   onDone: () => void;
-}> = ({ initial, idMau, idMuc, nhom, thietBiOptions, dangKy, onDone }) => {
+}> = ({ initial, idMau, idMuc, nhom, veSinh, thietBiOptions, dangKy, onDone }) => {
   const { t } = useTranslation();
   const luu = useLuuHangMuc(onDone);
   const [giaTriDau] = useState<HangMucFormValues>(
@@ -415,6 +487,7 @@ const HangMucForm: React.FC<{
           phuong_phap: initial.phuong_phap ?? '',
           quan_trong: initial.quan_trong,
           id_thiet_bi: initial.id_thiet_bi,
+          tan_suat: initial.tan_suat,
           dang_dung: initial.dang_dung,
         }
       : RONG
@@ -427,12 +500,20 @@ const HangMucForm: React.FC<{
     setErr(null);
   };
 
+  // Mẫu bàn giao: không ghi tần suất. "Theo thứ" phải chọn ≥ 1 thứ.
+  const tanSuatHopLe = !veSinh || values.tan_suat?.kieu !== 'thu' || values.tan_suat.thu.length > 0;
+  const giaTriLuu: HangMucFormValues = { ...values, tan_suat: veSinh ? values.tan_suat : null };
+
   const submit = () => {
     if (!values.doi_tuong.trim()) {
       setErr(t('checklistMau.hangMuc.doiTuongRequired'));
       return;
     }
-    luu.mutate({ id: initial?.id ?? null, idMau, idMuc, values, nhom });
+    if (!tanSuatHopLe) {
+      setErr(t('checklistMau.hangMuc.tanSuatThieuThu'));
+      return;
+    }
+    luu.mutate({ id: initial?.id ?? null, idMau, idMuc, values: giaTriLuu, nhom });
   };
 
   // Cho nút Lưu của drawer chủ: lưu luôn bản nháp đang gõ dở.
@@ -442,8 +523,12 @@ const HangMucForm: React.FC<{
       setErr(t('checklistMau.hangMuc.doiTuongRequired'));
       return false;
     }
+    if (!tanSuatHopLe) {
+      setErr(t('checklistMau.hangMuc.tanSuatThieuThu'));
+      return false;
+    }
     try {
-      await luu.mutateAsync({ id: initial?.id ?? null, idMau, idMuc, values, nhom });
+      await luu.mutateAsync({ id: initial?.id ?? null, idMau, idMuc, values: giaTriLuu, nhom });
       return true;
     } catch {
       return false; // onError của hook đã báo toast
@@ -489,6 +574,7 @@ const HangMucForm: React.FC<{
           onChange={(e) => set('phuong_phap', e.target.value)}
         />
       </FormGrid>
+      {veSinh && <TanSuatEditor value={values.tan_suat} onChange={(v) => set('tan_suat', v)} />}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <ToggleSwitch
           checked={values.quan_trong}

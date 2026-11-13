@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 
-const trangThaiEnum = z.enum(['cho_duyet', 'da_duyet', 'khong_duyet']);
+const trangThaiEnum = z.enum(['cho_duyet', 'da_duyet', 'khong_duyet', 'trich_quy']);
 
 export const phieuBaoTriSuaChuaSchema = z.object({
   ngay: z.string().min(1, { message: i18n.t('baoTriSuaChua.validation.ngayRequired') }),

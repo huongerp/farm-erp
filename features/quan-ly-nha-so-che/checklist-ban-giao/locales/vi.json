@@ -129,5 +129,17 @@
   "checklistBanGiao.preview.chuThichDaSua": "✗→✓: hạng mục Không đạt, đã xử lý rồi kiểm lại Đạt.",
   "checklistBanGiao.detail.demNhanh": "Đạt {{dat}} · K.Đạt {{khongDat}} · chưa tích {{chuaTich}}/{{tong}}",
   "checklistBanGiao.detail.demDaSua": " · đã sửa {{so}}",
-  "checklistBanGiao.detail.phuongPhap": "Phương pháp"
+  "checklistBanGiao.detail.phuongPhap": "Phương pháp",
+  "checklistBanGiao.vs.loai": "Vệ sinh tuần",
+  "checklistBanGiao.vs.tuan": "Tuần {{tu}} – {{den}}",
+  "checklistBanGiao.vs.chonNgayTrongTuan": "Chọn một ngày bất kỳ trong tuần — phiếu tính từ thứ Hai đến Chủ nhật.",
+  "checklistBanGiao.vs.khongDoiTuan": "Phiếu vệ sinh tuần chỉ đổi ngày trong cùng tuần; sang tuần khác thì huỷ phiếu và tạo phiếu mới.",
+  "checklistBanGiao.vs.khongLich": "Không có lịch",
+  "checklistBanGiao.vs.goiYTich": "Bấm ô ngày để tích: trống → Đạt → Không đạt → trống. Ô gạch là ngày không có lịch.",
+  "checklistBanGiao.vs.ketQuaTuan": "Kết quả cả tuần",
+  "checklistBanGiao.vs.tanSuat": "Tần suất",
+  "checklistBanGiao.vs.conONgay": "còn {{so}} ô",
+  "checklistBanGiao.vs.chuThichIn": "✓ Đạt · ✗ Không đạt · ô gạch: không có lịch",
+  "checklistBanGiao.loi.thieuTichNgay": "Còn {{so}} ô ngày chưa tích ở {{dong}} hạng mục",
+  "checklistBanGiao.form.tuan": "Tuần"
 }

@@ -4,7 +4,8 @@
  */
 import { db, fetchAllRows, throwDbError } from '../../../../lib/db';
 import i18n from '../../../../lib/i18n';
-import type { HangMucMauChecklist, LoaiMauCl, MauChecklist, MucMauChecklist } from '../core/types';
+import type { HangMucMauChecklist, LoaiMauCl, MauChecklist, MucMauChecklist, TanSuatVeSinh } from '../core/types';
+import { parseTanSuat } from '../core/ve-sinh-tuan';
 import type { MauChecklistListItem, ThietBiBaoDuong } from '../core/list-types';
 import type { ChecklistMauFormValues } from '../core/schema';
 
@@ -18,8 +19,9 @@ const MAU_COLUMNS =
   'co_ket_luan_van_hanh,ghi_chu_cuoi,dang_dung,thu_tu,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 const MUC_COLUMNS = 'id,id_mau,ten,thu_tu';
-const HM_COLUMNS = 'id,id_mau,id_muc,doi_tuong,tieu_chuan,phuong_phap,quan_trong,id_thiet_bi,dang_dung,thu_tu';
-const TB_COLUMNS = 'id,ten,ma_ts,so_luong,khu_vuc,dang_dung,thu_tu';
+const HM_COLUMNS = 'id,id_mau,id_muc,doi_tuong,tieu_chuan,phuong_phap,quan_trong,id_thiet_bi,tan_suat,dang_dung,thu_tu';
+const TB_COLUMNS =
+  'id,ten,ma_ts,so_luong,khu_vuc,dang_dung,thu_tu,id_chi_nhanh,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh)';
 
 interface DbMauRow {
   id: number;
@@ -58,6 +60,7 @@ interface DbHangMucRow {
   phuong_phap: string | null;
   quan_trong: boolean;
   id_thiet_bi: number | null;
+  tan_suat?: unknown;
   dang_dung: boolean;
   thu_tu: number;
 }
@@ -70,6 +73,8 @@ interface DbThietBiRow {
   khu_vuc: string | null;
   dang_dung: boolean;
   thu_tu: number;
+  id_chi_nhanh?: number | null;
+  chi_nhanh?: { ten_chi_nhanh: string | null } | { ten_chi_nhanh: string | null }[] | null;
 }
 
 const idStr = (v: number | null | undefined) => (v != null ? String(v) : null);
@@ -123,14 +128,23 @@ function hangMucToModel(row: DbHangMucRow): HangMucMauChecklist {
     phuong_phap: row.phuong_phap,
     quan_trong: row.quan_trong,
     id_thiet_bi: idStr(row.id_thiet_bi),
-    tan_suat: null,
+    tan_suat: parseTanSuat(row.tan_suat),
     dang_dung: row.dang_dung,
     thu_tu: row.thu_tu,
   };
 }
 
-function thietBiToModel(row: DbThietBiRow): ThietBiBaoDuong {
+/** Thiết bị kèm farm (chi nhánh) — để dropdown phân biệt thiết bị cùng tên ở các farm. */
+export type ThietBiBaoDuongCoFarm = ThietBiBaoDuong & {
+  id_chi_nhanh: string | null;
+  ten_chi_nhanh: string | null;
+};
+
+function thietBiToModel(row: DbThietBiRow): ThietBiBaoDuongCoFarm {
+  const cn = Array.isArray(row.chi_nhanh) ? row.chi_nhanh[0] : row.chi_nhanh;
   return {
+    id_chi_nhanh: idStr(row.id_chi_nhanh),
+    ten_chi_nhanh: cn?.ten_chi_nhanh?.trim() || null,
     id: String(row.id),
     ten: row.ten,
     ma_ts: row.ma_ts,
@@ -273,6 +287,7 @@ export interface HangMucInput {
   phuong_phap: string | null;
   quan_trong: boolean;
   id_thiet_bi: string | null;
+  tan_suat: TanSuatVeSinh | null;
   dang_dung: boolean;
 }
 
@@ -284,6 +299,7 @@ function hangMucFields(v: Omit<HangMucInput, 'id_mau'>): Record<string, unknown>
     phuong_phap: blank(v.phuong_phap),
     quan_trong: v.quan_trong,
     id_thiet_bi: v.id_thiet_bi ? toIntId(v.id_thiet_bi) : null,
+    tan_suat: v.tan_suat && v.tan_suat.kieu !== 'hang_ngay' ? v.tan_suat : null,
     dang_dung: v.dang_dung,
   };
 }
@@ -320,7 +336,7 @@ export async function sapXepHangMucDb(ids: string[]): Promise<void> {
 
 // ── Thiết bị (chỉ đọc) ────────────────────────────────────────────────────────
 
-export async function getThietBiDb(): Promise<ThietBiBaoDuong[]> {
+export async function getThietBiDb(): Promise<ThietBiBaoDuongCoFarm[]> {
   const rows = await fetchAllRows<DbThietBiRow>((from, to) =>
     db
       .from(TABLE_TB)

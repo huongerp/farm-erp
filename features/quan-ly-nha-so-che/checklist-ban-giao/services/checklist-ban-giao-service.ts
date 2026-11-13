@@ -24,16 +24,19 @@ export {
   moLaiPhieuDb as moLaiPhieu,
   nhanPhieuDb as nhanPhieu,
   traLaiPhieuDb as traLaiPhieu,
+  tichNgayVeSinhDb as tichNgayVeSinh,
   updateDongKiemTraDb as updateDongKiemTra,
   updateDongThucHienDb as updateDongThucHien,
   updatePhieuKetLuanDb as updatePhieuKetLuan,
   updatePhieuThongTinDb as updatePhieuThongTin,
+  type KetQuaTichNgay,
   type LuuDongKiemTraInput,
   type LuuDongThucHienInput,
   type MauChoChon,
   type PhieuKetLuanInput,
   type PhieuThongTinInput,
   type PhieuTomTatRow,
+  type TichNgayVeSinhInput,
 } from './checklist-ban-giao-db.service';
 
 async function hoTenMap(): Promise<Map<string, string>> {

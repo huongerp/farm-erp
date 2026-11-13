@@ -72,7 +72,8 @@ export function tinhThongKe(list: PhieuBaoTriSuaChua[], opts: TuyChonThongKe): T
   for (const p of list) {
     const soTien = tien(p);
     tongTien += soTien;
-    if (p.trang_thai === 'da_duyet') tienDaDuyet += soTien;
+    // Trích quỹ = đã duyệt và đã chi → vẫn tính vào tiền đã duyệt.
+    if (p.trang_thai === 'da_duyet' || p.trang_thai === 'trich_quy') tienDaDuyet += soTien;
     if (p.trang_thai === 'cho_duyet') soChoDuyet += 1;
 
     cong(hangMuc, p.id_hang_muc, p.ten_hang_muc?.trim() || opts.tenHangMuc(p.id_hang_muc), soTien);

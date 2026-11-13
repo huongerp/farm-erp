@@ -13,6 +13,8 @@ import { tinhTrangHanLabel } from '../Badges';
 interface Props {
   rows: LichBaoDuongRow[];
   subtitle?: string;
+  /** Tên farm — in kèm tiêu đề */
+  tenFarm?: string | null;
 }
 
 interface NhomThietBi {
@@ -31,7 +33,7 @@ const TH = 'border border-gray-400 px-1.5 py-0.5 font-semibold text-center align
 const TD = 'border border-gray-300 px-1.5 py-0.5 align-top';
 const NEN_DAU = { background: '#3B6939', color: '#fff' } as const;
 
-const LichBaoDuongLichIn: React.FC<Props> = ({ rows, subtitle }) => {
+const LichBaoDuongLichIn: React.FC<Props> = ({ rows, subtitle, tenFarm }) => {
   const { t } = useTranslation();
   const homNay = getTodayISO();
 
@@ -78,7 +80,10 @@ const LichBaoDuongLichIn: React.FC<Props> = ({ rows, subtitle }) => {
   }, [rows]);
 
   return (
-    <KhungPhieu title={t('baoDuongThietBi.inLich.title').toUpperCase()} subtitle={subtitle}>
+    <KhungPhieu
+      title={(tenFarm ? `${t('baoDuongThietBi.inLich.title')} — ${tenFarm}` : t('baoDuongThietBi.inLich.title')).toUpperCase()}
+      subtitle={subtitle}
+    >
       <table className="w-full border-collapse">
         <thead>
           <tr>

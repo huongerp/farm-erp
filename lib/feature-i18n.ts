@@ -46,6 +46,8 @@ export type FeatureI18nKey =
   | 'danh-gia-dau-vao'
   | 'dang-ky-nhan-hang'
   | 'dang-ky-tham-quan'
+  | 'nhat-ky-pha-phen'
+  | 'nhat-ky-phun-cui'
   | 'giam-sat-chat-luong'
   | 'checklist-ban-giao'
   | 'checklist-mau'
@@ -90,6 +92,8 @@ const FEATURE_I18N_KEYS = new Set<FeatureI18nKey>([
   'danh-gia-dau-vao',
   'dang-ky-nhan-hang',
   'dang-ky-tham-quan',
+  'nhat-ky-pha-phen',
+  'nhat-ky-phun-cui',
   'giam-sat-chat-luong',
   'checklist-ban-giao',
   'checklist-mau',
@@ -148,6 +152,8 @@ const FEATURE_I18N_LOADERS: Record<FeatureI18nKey, () => Promise<{ default: Reco
   'danh-gia-dau-vao': () => import('../features/quan-ly-nha-so-che/danh-gia-dau-vao/locales/vi.json'),
   'dang-ky-nhan-hang': () => import('../features/quan-ly-nha-so-che/dang-ky-nhan-hang/locales/vi.json'),
   'dang-ky-tham-quan': () => import('../features/quan-ly-nha-so-che/dang-ky-tham-quan/locales/vi.json'),
+  'nhat-ky-pha-phen': () => import('../features/quan-ly-nha-so-che/nhat-ky-pha-phen/locales/vi.json'),
+  'nhat-ky-phun-cui': () => import('../features/quan-ly-nha-so-che/nhat-ky-phun-cui/locales/vi.json'),
   'giam-sat-chat-luong': () => import('../features/quan-ly-nha-so-che/giam-sat-chat-luong/locales/vi.json'),
   'checklist-ban-giao': () => import('../features/quan-ly-nha-so-che/checklist-ban-giao/locales/vi.json'),
   'checklist-mau': () => import('../features/quan-ly-nha-so-che/checklist-mau/locales/vi.json'),
@@ -184,6 +190,7 @@ const FEATURE_I18N_DEPS: Partial<Record<FeatureI18nKey, FeatureI18nKey[]>> = {
   'du-bao-sl-dong-thung': ['bao-cao-so-che', 'danh-gia-dau-vao'],
   'don-dat-hang': ['danh-sach-doi-tac', 'danh-sach-hang-hoa', 'phieu-de-xuat-vat-tu', 'phieu-kho', 'thu-chi-quy'],
   'hang-hoa-phan-thuoc': ['ton-kho-phan-thuoc'],
+  'nhat-ky-phun-cui': ['hang-hoa-phan-thuoc'],
   'khau-hao-tai-san': ['danh-muc-tai-san', 'thiet-lap-tai-san'],
   'kiem-ke-kho': ['danh-muc-hang-hoa', 'danh-sach-hang-hoa', 'phieu-kho', 'ton-kho'],
   'kiem-ke-tai-san': ['danh-muc-tai-san', 'thiet-lap-tai-san'],

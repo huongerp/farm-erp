@@ -10,6 +10,8 @@ import ChecklistBanGiaoPreview from './components/preview/ChecklistBanGiaoPrevie
 
 // Phiếu A4 dọc, nội dung là bảng tích 2 khâu nên lề hẹp để kịp dòng.
 const MAC_DINH = { kho: 'a4', huong: 'doc', leMm: 8 } as const;
+// Phiếu vệ sinh tuần: lưới 7 cột ngày → A4 ngang; lưu cài đặt in riêng (mauKey khác).
+const MAC_DINH_VE_SINH = { kho: 'a4', huong: 'ngang', leMm: 8 } as const;
 
 const ChecklistPreviewPage: React.FC = () => {
   const { t } = useTranslation();
@@ -24,6 +26,7 @@ const ChecklistPreviewPage: React.FC = () => {
   );
 
   const dauChim = useDauChim(data?.trang_thai);
+  const laVeSinh = data?.loai === 've_sinh_tuan';
   const loi = isError
     ? (error?.message ?? t('checklistBanGiao.preview.notFound'))
     : !isLoading && !data
@@ -33,10 +36,10 @@ const ChecklistPreviewPage: React.FC = () => {
   return (
     <PhieuInPage
       title={data ? `${t('checklistBanGiao.preview.title')} - ${data.so_phieu}` : t('checklistBanGiao.preview.title')}
-      mauKey="checklist-ban-giao"
+      mauKey={laVeSinh ? 'checklist-ve-sinh-tuan' : 'checklist-ban-giao'}
       dauChim={dauChim}
       duongDanGoc={id ? `/quan-ly-nha-so-che/checklist-ban-giao/preview/${id}` : null}
-      macDinh={MAC_DINH}
+      macDinh={laVeSinh ? MAC_DINH_VE_SINH : MAC_DINH}
       coChuGocPt={9}
       tenFile={`Phieu-checklist-cong-doan-${data?.so_phieu ?? id ?? ''}`}
       duongDanVe="/quan-ly-nha-so-che/checklist-ban-giao"

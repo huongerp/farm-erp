@@ -6,6 +6,13 @@ import type { ColumnConfig, SortState } from '../../../../store/createGenericSto
 import { cn, formatYmdToDisplay } from '../../../../lib/utils';
 import type { PhieuChecklistListItem } from '../core/list-types';
 import { TrangThaiBadge } from './Badges';
+import { congNgay } from '../../checklist-mau/core/ve-sinh-tuan';
+
+/** Ngày phiếu; phiếu vệ sinh tuần hiện cả tuần dd/mm/yyyy – dd/mm/yyyy. */
+function nhanNgay(item: PhieuChecklistListItem): string {
+  const tu = formatYmdToDisplay(item.ngay);
+  return item.loai === 've_sinh_tuan' ? `${tu} – ${formatYmdToDisplay(congNgay(item.ngay, 6))}` : tu;
+}
 
 interface Props {
   data: PhieuChecklistListItem[];
@@ -82,7 +89,7 @@ const ChecklistBanGiaoList: React.FC<Props> = ({
       case 'so_phieu':
         return one(item.so_phieu, 'font-mono font-medium');
       case 'ngay':
-        return one(formatYmdToDisplay(item.ngay), 'tabular-nums');
+        return one(nhanNgay(item), 'tabular-nums');
       case 'ca':
         return one(item.ca || '—', 'text-muted-foreground');
       case 'khu_vuc':
@@ -159,7 +166,7 @@ const ChecklistBanGiaoList: React.FC<Props> = ({
           <h4 className="text-sm font-semibold truncate">{item.ten_mau}</h4>
           <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">{item.so_phieu}</p>
           <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
-            {formatYmdToDisplay(item.ngay)}
+            {nhanNgay(item)}
             {item.khu_vuc ? ` · ${item.khu_vuc}` : ''}
           </p>
         </div>

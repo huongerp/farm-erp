@@ -14,13 +14,15 @@ interface Props {
   idPhieu: string;
   cot: 'kq_thuc_hien' | 'kq_kiem_tra';
   coTheSua: boolean;
+  /** Phiếu vệ sinh tuần: kết quả dòng do lưới ngày tính → ẩn nút Đạt/K.Đạt, chỉ hiện kết quả + ô ghi chú. */
+  ketQuaTuDong?: boolean;
 }
 
 /**
  * Ô tích một cột (khâu làm / khâu kiểm tra): bấm Đạt / K.Đạt lưu ngay; nút mở ghi chú để
  * điền tình trạng khắc phục / người xử lý / ghi chú rồi Lưu.
  */
-const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
+const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua, ketQuaTuDong = false }) => {
   const { t } = useTranslation();
   const isThucHien = cot === 'kq_thuc_hien';
   const kq = dong[cot];
@@ -46,6 +48,11 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
     setMo(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dong.id]);
+
+  // Lưới ngày vừa làm dòng thành K.Đạt → mở sẵn ô ghi tình trạng khắc phục (bắt buộc trước khi Chuyển).
+  useEffect(() => {
+    if (ketQuaTuDong && coTheSua && kq === 'khong_dat' && !(dong.tinh_trang_khac_phuc ?? '').trim()) setMo(true);
+  }, [ketQuaTuDong, coTheSua, kq, dong.tinh_trang_khac_phuc]);
 
   if (!coTheSua) {
     return (
@@ -115,8 +122,17 @@ const OChonKetQua: React.FC<Props> = ({ dong, idPhieu, cot, coTheSua }) => {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5">
-        {btn('dat', t('checklistBanGiao.ketQua.dat'), 'border-emerald-600 bg-emerald-600 text-white')}
-        {btn('khong_dat', t('checklistBanGiao.ketQua.khongDat'), 'border-rose-600 bg-rose-600 text-white')}
+        {ketQuaTuDong ? (
+          <div className="flex min-h-11 flex-1 min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <span>{t('checklistBanGiao.vs.ketQuaTuan')}:</span>
+            <KetQuaTick value={kq} />
+          </div>
+        ) : (
+          <>
+            {btn('dat', t('checklistBanGiao.ketQua.dat'), 'border-emerald-600 bg-emerald-600 text-white')}
+            {btn('khong_dat', t('checklistBanGiao.ketQua.khongDat'), 'border-rose-600 bg-rose-600 text-white')}
+          </>
+        )}
         <button
           type="button"
           onClick={() => setMo((v) => !v)}

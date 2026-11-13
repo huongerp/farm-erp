@@ -10,10 +10,12 @@ import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
 import Input from '../../../../components/ui/Input';
 import Textarea from '../../../../components/ui/Textarea';
 import Select from '../../../../components/ui/Select';
+import Combobox from '../../../../components/ui/Combobox';
 import ToggleSwitch from '../../../../components/ui/ToggleSwitch';
 import type { ThietBi } from '../core/types';
 import { thietBiFormSchema, type ThietBiFormValues } from '../core/schema';
 import { useCreateThietBi, useTaiSanRef, useUpdateThietBi } from '../hooks/use-bao-duong-thiet-bi';
+import { useBaoDuongFarm } from '../hooks/use-bao-duong-view-scope';
 
 interface Props {
   initialData?: ThietBi | null;
@@ -22,6 +24,7 @@ interface Props {
 
 function toForm(d: ThietBi): ThietBiFormValues {
   return {
+    id_chi_nhanh: d.id_chi_nhanh,
     ten: d.ten,
     ma_ts: d.ma_ts ?? '',
     so_luong: d.so_luong ?? '',
@@ -34,6 +37,7 @@ function toForm(d: ThietBi): ThietBiFormValues {
 }
 
 const DEFAULT: ThietBiFormValues = {
+  id_chi_nhanh: '',
   ten: '',
   ma_ts: '',
   so_luong: '',
@@ -51,8 +55,13 @@ const ThietBiFormDrawer: React.FC<Props> = ({ initialData, onClose }) => {
   const createMutation = useCreateThietBi(() => onClose());
   const updateMutation = useUpdateThietBi(() => onClose());
   const { data: taiSanList = [] } = useTaiSanRef();
+  const { farmId, farms, tenFarm } = useBaoDuongFarm();
 
-  const defaultValues = useMemo<ThietBiFormValues>(() => (initialData ? toForm(initialData) : DEFAULT), [initialData]);
+  // Thêm mới: mặc định farm đang xem.
+  const defaultValues = useMemo<ThietBiFormValues>(
+    () => (initialData ? toForm(initialData) : { ...DEFAULT, id_chi_nhanh: farmId ?? '' }),
+    [initialData, farmId]
+  );
 
   const {
     control,
@@ -76,13 +85,21 @@ const ThietBiFormDrawer: React.FC<Props> = ({ initialData, onClose }) => {
 
   const pending = isSubmitting || createMutation.isPending || updateMutation.isPending;
 
+  // Combobox gõ tìm theo tên hoặc mã tài sản; bỏ liên kết bằng nút X trên ô.
   const taiSanOptions = useMemo(
-    () => [
-      { value: '', label: t('baoDuongThietBi.thietBi.form.khongTaiSan') },
-      ...taiSanList.map((x) => ({ value: x.id, label: `${x.ma_tai_san} — ${x.ten_tai_san}` })),
-    ],
-    [taiSanList, t]
+    () => taiSanList.map((x) => ({ value: x.id, label: x.ten_tai_san, subLabel: x.ma_tai_san })),
+    [taiSanList]
   );
+
+  // Chỉ farm trong phạm vi; sửa thiết bị của farm ngoài phạm vi thì vẫn giữ farm hiện tại để không mất giá trị.
+  const farmOptions = useMemo(() => {
+    const opts = farms.map((b) => ({ value: b.id, label: b.ten_chi_nhanh }));
+    const hienTai = initialData?.id_chi_nhanh;
+    if (hienTai && !opts.some((o) => o.value === hienTai)) {
+      opts.push({ value: hienTai, label: tenFarm.get(hienTai) ?? hienTai });
+    }
+    return opts;
+  }, [farms, tenFarm, initialData?.id_chi_nhanh]);
 
   return (
     <GenericDrawer
@@ -107,6 +124,23 @@ const ThietBiFormDrawer: React.FC<Props> = ({ initialData, onClose }) => {
       <form id="bao-duong-thiet-bi-form" className="space-y-6 pb-4" onSubmit={handleSubmit(onSubmit)}>
         <FormSection title={t('baoDuongThietBi.thietBi.form.thongTin')}>
           <FormGrid cols={2}>
+            <div className="sm:col-span-2">
+              <Controller
+                name="id_chi_nhanh"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    label={t('baoDuongThietBi.farm.label')}
+                    required
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    options={farmOptions}
+                    placeholder={t('baoDuongThietBi.farm.chon')}
+                    error={errors.id_chi_nhanh?.message}
+                  />
+                )}
+              />
+            </div>
             <div className="sm:col-span-2">
               <Controller
                 name="ten"
@@ -174,11 +208,13 @@ const ThietBiFormDrawer: React.FC<Props> = ({ initialData, onClose }) => {
                 name="id_tai_san"
                 control={control}
                 render={({ field }) => (
-                  <Select
+                  <Combobox
                     label={t('baoDuongThietBi.col.taiSan')}
                     value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value)}
+                    onChange={(v) => field.onChange(v ? String(v) : '')}
                     options={taiSanOptions}
+                    placeholder={t('baoDuongThietBi.thietBi.form.khongTaiSan')}
+                    searchPlaceholder={t('baoDuongThietBi.thietBi.form.timTaiSan')}
                     error={errors.id_tai_san?.message}
                   />
                 )}

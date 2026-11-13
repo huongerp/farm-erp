@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
@@ -15,6 +16,7 @@ import {
   getThietBiList,
   getViecDangDung,
   getViecTheoThietBi,
+  saoChepThietBi,
   sapXepViec,
   updateThietBi,
   updateViec,
@@ -40,6 +42,30 @@ export function useThietBiList() {
 
 export function useViecDangDung() {
   return useQuery({ queryKey: [BD_KEY, 'viec'], queryFn: getViecDangDung, staleTime: 30_000 });
+}
+
+const KHONG_CO_THIET_BI: ThietBi[] = [];
+const KHONG_CO_VIEC: ViecBaoDuong[] = [];
+
+/**
+ * Thiết bị + việc đang dùng của một farm — lọc client (dữ liệu ít, dùng chung cache toàn bộ):
+ * thiết bị theo id_chi_nhanh, việc theo id_thiet_bi thuộc farm. farmId null → rỗng.
+ */
+export function useBaoDuongTheoFarm(farmId: string | null) {
+  const thietBiQuery = useThietBiList();
+  const viecQuery = useViecDangDung();
+  const tatCaThietBi = thietBiQuery.data ?? KHONG_CO_THIET_BI;
+  const tatCaViec = viecQuery.data ?? KHONG_CO_VIEC;
+  const thietBi = useMemo(
+    () => (farmId ? tatCaThietBi.filter((tb) => tb.id_chi_nhanh === farmId) : KHONG_CO_THIET_BI),
+    [tatCaThietBi, farmId]
+  );
+  const viec = useMemo(() => {
+    if (!farmId) return KHONG_CO_VIEC;
+    const ids = new Set(thietBi.map((tb) => tb.id));
+    return tatCaViec.filter((v) => ids.has(v.id_thiet_bi));
+  }, [tatCaViec, thietBi, farmId]);
+  return { thietBiQuery, viecQuery, tatCaThietBi, thietBi, viec };
 }
 
 export function useTaiSanRef() {
@@ -105,6 +131,21 @@ export function useDeleteThietBi(onSuccess?: () => void) {
     onSuccess: () => {
       invalidate();
       toast.success(i18n.t('baoDuongThietBi.toast.daXoaThietBi'));
+      onSuccess?.();
+    },
+    onError: onErr,
+  });
+}
+
+/** Sao chép thiết bị + việc từ farm khác sang farm đang xem (RPC) → toast số thiết bị đã tạo. */
+export function useSaoChepThietBi(onSuccess?: () => void) {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({ tu, den }: { tu: string; den: string }) => saoChepThietBi(tu, den),
+    onSuccess: (soThietBi) => {
+      invalidate();
+      if (soThietBi > 0) toast.success(i18n.t('baoDuongThietBi.toast.daSaoChep', { n: soThietBi }));
+      else toast.info(i18n.t('baoDuongThietBi.toast.khongCoGiDeSaoChep'));
       onSuccess?.();
     },
     onError: onErr,

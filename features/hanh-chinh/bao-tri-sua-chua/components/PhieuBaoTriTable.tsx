@@ -42,7 +42,9 @@ const PhieuBaoTriTable: React.FC<Props> = ({ isFetching, totalRecordsOverride, d
         ? 'bg-primary/10 text-primary border-primary/20'
         : trangThai === 'khong_duyet'
           ? 'bg-destructive/10 text-destructive border-destructive/20'
-          : 'bg-muted text-muted-foreground border-border';
+          : trangThai === 'trich_quy'
+            ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20'
+            : 'bg-muted text-muted-foreground border-border';
     return (
       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${style}`}>
         {getTrangThaiLabel(trangThai, t)}

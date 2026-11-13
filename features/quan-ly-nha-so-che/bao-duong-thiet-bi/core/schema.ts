@@ -3,6 +3,7 @@ import i18n from '../../../../lib/i18n';
 
 /** Form thêm/sửa thiết bị — dùng react-hook-form trong ThietBiForm. */
 export const thietBiFormSchema = z.object({
+  id_chi_nhanh: z.string().trim().min(1, { message: i18n.t('baoDuongThietBi.validation.farmRequired') }),
   ten: z.string().trim().min(1, { message: i18n.t('baoDuongThietBi.validation.tenRequired') }).max(300),
   ma_ts: z.string().trim().max(200).optional().or(z.literal('')),
   so_luong: z.string().trim().max(100).optional().or(z.literal('')),

@@ -61,6 +61,8 @@ import {
 import { useChecklistBanGiaoCapCao } from '../hooks/use-checklist-ban-giao-view-scope';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import OChonKetQua from './OChonKetQua';
+import LuoiNgayVeSinh from './LuoiNgayVeSinh';
+import { congNgay, moTaTanSuat, soOChuaTich } from '../../checklist-mau/core/ve-sinh-tuan';
 import LyDoDialog from './LyDoDialog';
 import { KetLuanVanHanhBadge, TrangThaiBadge } from './Badges';
 
@@ -111,6 +113,10 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
   };
 
   const tt = data.trang_thai;
+  const laVeSinh = data.loai === 've_sinh_tuan';
+  const nhanNgayPhieu = laVeSinh
+    ? t('checklistBanGiao.vs.tuan', { tu: formatYmdToDisplay(data.ngay), den: formatYmdToDisplay(congNgay(data.ngay, 6)) })
+    : formatYmdToDisplay(data.ngay);
   const coKhauSauPhieu = coKhauSau(data.chuc_vu_kiem_tra_ids);
   const canSuaThucHien = coTheSuaCotThucHien(tt, vai);
   const canSuaKiemTra = coTheSuaCotKiemTra(tt, vai);
@@ -131,7 +137,13 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
   const moTaChuyen = () => {
     if (loiChuyen.length > 0) {
       const parts = loiChuyen.map((l) => {
-        if (l.loai === 'thieu_tich') return t('checklistBanGiao.loi.thieuTich', { so: l.so });
+        if (l.loai === 'thieu_tich') {
+          if (laVeSinh) {
+            const so = dong.reduce((n, d) => n + soOChuaTich(d.ngay_lich ?? [], d.kq_ngay), 0);
+            return t('checklistBanGiao.loi.thieuTichNgay', { so, dong: l.so });
+          }
+          return t('checklistBanGiao.loi.thieuTich', { so: l.so });
+        }
         if (l.loai === 'thieu_khac_phuc') {
           return l.stt.length > 0
             ? t('checklistBanGiao.loi.thieuKhacPhucStt', { stt: l.stt.join(', ') })
@@ -231,7 +243,7 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
                   <TrangThaiBadge value={tt} />
                   {data.co_ket_luan_van_hanh && <KetLuanVanHanhBadge value={data.ket_luan} />}
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border tabular-nums">
-                    {formatYmdToDisplay(data.ngay)}
+                    {nhanNgayPhieu}
                     {data.ca ? ` · ${data.ca}` : ''}
                   </span>
                   {data.so_lan_tra_lai > 0 && (
@@ -312,6 +324,9 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
                     </span>
                   ))}
                 </div>
+                {laVeSinh && canSuaThucHien && (
+                  <p className="m-0 text-xs text-muted-foreground">{t('checklistBanGiao.vs.goiYTich')}</p>
+                )}
                 {nhom.map((n) => (
                   <div key={`${n.thuTuMuc}-${n.tenMuc ?? 'none'}`} className="overflow-hidden rounded-lg border border-border">
                     {n.tenMuc && (
@@ -343,6 +358,11 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
                                     ` · ${[d.so_luong, d.tan_suat_bao_duong].filter(Boolean).join(' · ')}`}
                                 </div>
                               )}
+                              {laVeSinh && (
+                                <div className="text-xs text-primary/70 mt-0.5">
+                                  {t('checklistBanGiao.vs.tanSuat')}: {moTaTanSuat(d.tan_suat, t)}
+                                </div>
+                              )}
                               {laDongLech(d) && (
                                 <div className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-0.5">
                                   {t('checklistBanGiao.detail.dongLech')}
@@ -350,12 +370,17 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
                               )}
                             </div>
                           </div>
+                          {laVeSinh && (
+                            <div className="sm:pl-8">
+                              <LuoiNgayVeSinh dong={d} idPhieu={data.id} tuan={data.ngay} coTheSua={canSuaThucHien} />
+                            </div>
+                          )}
                           <div className={cn('grid gap-2 sm:pl-8', coKhauSauPhieu && 'sm:grid-cols-2')}>
                             <div className="rounded-md border border-border/60 bg-muted/30 p-2">
                               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                                 {data.ten_ben_thuc_hien || t('checklistBanGiao.detail.benThucHien')}
                               </div>
-                              <OChonKetQua dong={d} idPhieu={data.id} cot="kq_thuc_hien" coTheSua={canSuaThucHien} />
+                              <OChonKetQua dong={d} idPhieu={data.id} cot="kq_thuc_hien" coTheSua={canSuaThucHien} ketQuaTuDong={laVeSinh} />
                             </div>
                             {coKhauSauPhieu && (
                               <div className="rounded-md border border-border/60 bg-muted/30 p-2">
@@ -395,7 +420,7 @@ const ChecklistBanGiaoDetail: React.FC<Props> = ({ data, onClose, onEdit, onDele
               <>
                 <DetailFieldGrid>
                   <DetailField label={t('checklistBanGiao.col.soPhieu')} value={data.so_phieu} icon={<Hash size={12} />} />
-                  <DetailField label={t('checklistBanGiao.col.ngay')} value={formatYmdToDisplay(data.ngay)} icon={<Calendar size={12} />} />
+                  <DetailField label={laVeSinh ? t('checklistBanGiao.form.tuan') : t('checklistBanGiao.col.ngay')} value={nhanNgayPhieu} icon={<Calendar size={12} />} />
                   <DetailField label={t('checklistBanGiao.form.ca')} value={data.ca ?? ''} emptyText="—" icon={<Hash size={12} />} />
                   <DetailField label={t('checklistBanGiao.form.khuVuc')} value={data.khu_vuc ?? ''} emptyText="—" icon={<FileText size={12} />} />
                   <DetailField label={t('checklistBanGiao.form.dayChuyen')} value={data.day_chuyen ?? ''} emptyText="—" icon={<FileText size={12} />} />
@@ -497,7 +522,16 @@ const ThongTinForm: React.FC<ThongTinFormProps> = ({ data, branches, isSaving, o
 
   return (
     <FormGrid cols={2}>
-      <Input type="date" label={t('checklistBanGiao.form.ngay')} value={ngay} onChange={(e) => setNgay(e.target.value)} required />
+      <div className="space-y-1">
+        <Input
+          type="date"
+          label={data.loai === 've_sinh_tuan' ? t('checklistBanGiao.form.tuan') : t('checklistBanGiao.form.ngay')}
+          value={ngay}
+          onChange={(e) => setNgay(e.target.value)}
+          required
+        />
+        {data.loai === 've_sinh_tuan' && <p className="m-0 text-xs text-muted-foreground">{t('checklistBanGiao.vs.khongDoiTuan')}</p>}
+      </div>
       <Input label={t('checklistBanGiao.form.ca')} value={ca} onChange={(e) => setCa(e.target.value)} />
       <Input label={t('checklistBanGiao.form.khuVuc')} value={khuVuc} onChange={(e) => setKhuVuc(e.target.value)} />
       <Input label={t('checklistBanGiao.form.dayChuyen')} value={dayChuyen} onChange={(e) => setDayChuyen(e.target.value)} />

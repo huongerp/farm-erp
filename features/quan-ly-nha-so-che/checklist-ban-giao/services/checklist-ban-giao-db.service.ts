@@ -6,6 +6,8 @@
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
+import type { LoaiMauCl } from '../../checklist-mau/core/types';
+import { parseTanSuat, type KqNgay } from '../../checklist-mau/core/ve-sinh-tuan';
 import type { DongPhieuChecklist, KetLuanVanHanh, KetQuaCl, LichSuPhieuChecklist, TrangThaiCl } from '../core/types';
 import type { PhieuChecklistListItem } from '../core/list-types';
 import type { TaoPhieuFormValues } from '../core/schema';
@@ -18,12 +20,12 @@ const TABLE_MAU = 'fp_farm_cl_mau';
 
 const PHIEU_COLUMNS =
   'id,so_phieu,id_mau,ten_mau,ma_mau,ten_ben_thuc_hien,ten_ben_kiem_tra,chuc_vu_thuc_hien_ids,chuc_vu_kiem_tra_ids,' +
-  'co_ket_luan_van_hanh,ngay,ca,khu_vuc,day_chuyen,id_chi_nhanh,ghi_chu,trang_thai,so_lan_tra_lai,ly_do_tra_lai,' +
+  'co_ket_luan_van_hanh,loai,ngay,ca,khu_vuc,day_chuyen,id_chi_nhanh,ghi_chu,trang_thai,so_lan_tra_lai,ly_do_tra_lai,' +
   'id_nguoi_chuyen,tg_chuyen,id_nguoi_nhan,tg_nhan,ket_luan,y_kien,id_nguoi_tao,tg_tao,tg_cap_nhat';
 
 const DONG_COLUMNS =
   'id,id_phieu,id_hang_muc,ten_muc,thu_tu_muc,stt,doi_tuong,tieu_chuan,phuong_phap,quan_trong,ma_ts,so_luong,' +
-  'tan_suat_bao_duong,kq_thuc_hien,tinh_trang_khac_phuc,nguoi_xu_ly,ghi_chu,kq_kiem_tra,ghi_chu_kiem_tra,qlx_tung_khong_dat,gs_tung_khong_dat';
+  'tan_suat_bao_duong,kq_thuc_hien,tinh_trang_khac_phuc,nguoi_xu_ly,ghi_chu,kq_kiem_tra,ghi_chu_kiem_tra,qlx_tung_khong_dat,gs_tung_khong_dat,tan_suat,ngay_lich,kq_ngay';
 
 const LS_COLUMNS = 'id,id_phieu,hanh_dong,tu_trang_thai,den_trang_thai,ly_do,id_nguoi,ten_nguoi,tg';
 
@@ -38,6 +40,7 @@ interface DbPhieuRow {
   chuc_vu_thuc_hien_ids: unknown;
   chuc_vu_kiem_tra_ids: unknown;
   co_ket_luan_van_hanh: boolean | null;
+  loai: LoaiMauCl | null;
   ngay: string;
   ca: string | null;
   khu_vuc: string | null;
@@ -81,6 +84,9 @@ interface DbDongRow {
   ghi_chu_kiem_tra: string | null;
   qlx_tung_khong_dat: boolean | null;
   gs_tung_khong_dat: boolean | null;
+  tan_suat: unknown;
+  ngay_lich: number[] | null;
+  kq_ngay: unknown;
 }
 
 interface DbLichSuRow {
@@ -124,6 +130,7 @@ function rowToModel(row: DbPhieuRow): PhieuChecklistListItem {
     chuc_vu_thuc_hien_ids: idArr(row.chuc_vu_thuc_hien_ids),
     chuc_vu_kiem_tra_ids: idArr(row.chuc_vu_kiem_tra_ids),
     co_ket_luan_van_hanh: row.co_ket_luan_van_hanh ?? false,
+    loai: row.loai ?? 'ban_giao',
     ngay: row.ngay,
     ca: row.ca,
     khu_vuc: row.khu_vuc,
@@ -151,6 +158,15 @@ function rowToModel(row: DbPhieuRow): PhieuChecklistListItem {
   };
 }
 
+function kqNgayFromDb(raw: unknown): KqNgay {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out: KqNgay = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (v === 'dat' || v === 'khong_dat') out[k] = v;
+  }
+  return out;
+}
+
 function dongToModel(row: DbDongRow): DongPhieuChecklist {
   return {
     id: String(row.id),
@@ -174,6 +190,9 @@ function dongToModel(row: DbDongRow): DongPhieuChecklist {
     ghi_chu_kiem_tra: row.ghi_chu_kiem_tra,
     qlx_tung_khong_dat: row.qlx_tung_khong_dat === true,
     gs_tung_khong_dat: row.gs_tung_khong_dat === true,
+    tan_suat: parseTanSuat(row.tan_suat),
+    ngay_lich: Array.isArray(row.ngay_lich) ? row.ngay_lich.map(Number) : null,
+    kq_ngay: kqNgayFromDb(row.kq_ngay),
   };
 }
 
@@ -385,6 +404,27 @@ export async function updateDongKiemTraDb(v: LuuDongKiemTraInput): Promise<void>
   if (error) throwDbError(error);
 }
 
+export interface TichNgayVeSinhInput {
+  idDong: string;
+  idPhieu: string;
+  thu: number;
+  kq: KetQuaCl | null;
+}
+
+export interface KetQuaTichNgay {
+  kq_ngay: KqNgay;
+  kq_thuc_hien: KetQuaCl | null;
+  qlx_tung_khong_dat: boolean;
+}
+
+/** Phiếu vệ sinh tuần: đặt / xoá kết quả một ngày (RPC INVOKER — trigger khoá dòng vẫn kiểm quyền). */
+export async function tichNgayVeSinhDb(v: TichNgayVeSinhInput): Promise<KetQuaTichNgay> {
+  const { data, error } = await db.rpc('rpc_cl_vs_tich', { p_id_dong: toIntId(v.idDong), p_thu: v.thu, p_kq: v.kq });
+  if (error) throwDbError(error);
+  const r = (data ?? {}) as { kq_ngay?: unknown; kq_thuc_hien?: KetQuaCl | null; qlx_tung_khong_dat?: boolean };
+  return { kq_ngay: kqNgayFromDb(r.kq_ngay), kq_thuc_hien: r.kq_thuc_hien ?? null, qlx_tung_khong_dat: r.qlx_tung_khong_dat === true };
+}
+
 // ── RPC đổi trạng thái ──────────────────────────────────────────────────────────
 
 async function rpcDoiTrangThai(name: string, args: Record<string, unknown>): Promise<void> {
@@ -419,23 +459,24 @@ export interface MauChoChon {
   ma: string | null;
   ten: string;
   co_khau_sau: boolean;
+  loai: LoaiMauCl;
 }
 
-/** Mẫu đang dùng để tạo phiếu (loai ban_giao). */
+/** Mẫu đang dùng để tạo phiếu (cả bàn giao lẫn vệ sinh tuần). */
 export async function getMauChoChonDb(): Promise<MauChoChon[]> {
   const { data, error } = await db
     .from(TABLE_MAU)
-    .select('id,ma,ten,chuc_vu_kiem_tra_ids')
+    .select('id,ma,ten,loai,chuc_vu_kiem_tra_ids')
     .eq('dang_dung', true)
-    .eq('loai', 'ban_giao')
     .order('thu_tu', { ascending: true })
     .order('id', { ascending: true });
   if (error) throwDbError(error);
-  type Row = { id: number; ma: string | null; ten: string; chuc_vu_kiem_tra_ids: unknown };
+  type Row = { id: number; ma: string | null; ten: string; loai: LoaiMauCl | null; chuc_vu_kiem_tra_ids: unknown };
   return ((data as Row[] | null) ?? []).map((r) => ({
     id: String(r.id),
     ma: r.ma,
     ten: r.ten,
     co_khau_sau: idArr(r.chuc_vu_kiem_tra_ids).length > 0,
+    loai: r.loai ?? 'ban_giao',
   }));
 }

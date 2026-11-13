@@ -10,6 +10,7 @@ import {
 import { cn, formatYmdToDisplay } from '../../../../../lib/utils';
 import { demKetQua, kyHieuKetQua, laLoi, nhomTheoMuc } from '../../core/tong-hop';
 import { coKhauSau } from '../../core/trang-thai';
+import { moTaTanSuat, ngayCuaThu, nhanThu, THU_TRONG_TUAN } from '../../../checklist-mau/core/ve-sinh-tuan';
 import type { DongPhieuChecklist } from '../../core/types';
 import type { PhieuChecklistListItem } from '../../core/list-types';
 
@@ -25,9 +26,18 @@ const ChecklistBanGiaoPreview: React.FC<Props> = ({ phieu, dong, tenChiNhanh }) 
   const coKhauSauPhieu = coKhauSau(phieu.chuc_vu_kiem_tra_ids);
   const coGhiChu = dong.some((d) => d.ghi_chu || d.ghi_chu_kiem_tra);
   const coTungLoi = dong.some((d) => d.qlx_tung_khong_dat || d.gs_tung_khong_dat);
-  const soCot = 4 + (coKhauSauPhieu ? 1 : 0) + (coGhiChu ? 1 : 0);
+  const veSinh = phieu.loai === 've_sinh_tuan';
+  const soCot = veSinh
+    ? 3 + THU_TRONG_TUAN.length + (coKhauSauPhieu ? 1 : 0) + (coGhiChu ? 1 : 0)
+    : 4 + (coKhauSauPhieu ? 1 : 0) + (coGhiChu ? 1 : 0);
 
-  const subtitle = [phieu.so_phieu, formatYmdToDisplay(phieu.ngay), t(`checklistBanGiao.trangThai.${phieu.trang_thai}`)].join(' · ');
+  const ngayHienThi = veSinh
+    ? t('checklistBanGiao.vs.tuan', {
+        tu: formatYmdToDisplay(ngayCuaThu(phieu.ngay, 2)).slice(0, 5),
+        den: formatYmdToDisplay(ngayCuaThu(phieu.ngay, 8)),
+      })
+    : formatYmdToDisplay(phieu.ngay);
+  const subtitle = [phieu.so_phieu, ngayHienThi, t(`checklistBanGiao.trangThai.${phieu.trang_thai}`)].join(' · ');
 
   const thongTin: [string, React.ReactNode][] = [
     [t('checklistBanGiao.col.tenMau'), phieu.ten_mau],
@@ -54,7 +64,19 @@ const ChecklistBanGiaoPreview: React.FC<Props> = ({ phieu, dong, tenChiNhanh }) 
           <tr>
             <th className={cn(th, 'w-8 text-center')} style={{ background: '#3B6939', color: '#fff' }}>#</th>
             <th className={cn(th, 'text-left')} style={{ background: '#3B6939', color: '#fff' }}>{t('checklistBanGiao.detail.doiTuong')}</th>
-            <th className={cn(th, 'w-[4.5rem] text-center')} style={{ background: '#3B6939', color: '#fff' }}>{phieu.ten_ben_thuc_hien || t('checklistBanGiao.detail.benThucHien')}</th>
+            {veSinh ? (
+              <>
+                <th className={cn(th, 'w-[12%] text-left')} style={{ background: '#3B6939', color: '#fff' }}>{t('checklistBanGiao.vs.tanSuat')}</th>
+                {THU_TRONG_TUAN.map((thu) => (
+                  <th key={thu} className={cn(th, 'w-9 text-center leading-tight')} style={{ background: '#3B6939', color: '#fff' }}>
+                    {nhanThu(thu)}
+                    <div className="font-normal text-[0.85em]">{formatYmdToDisplay(ngayCuaThu(phieu.ngay, thu)).slice(0, 5)}</div>
+                  </th>
+                ))}
+              </>
+            ) : (
+              <th className={cn(th, 'w-[4.5rem] text-center')} style={{ background: '#3B6939', color: '#fff' }}>{phieu.ten_ben_thuc_hien || t('checklistBanGiao.detail.benThucHien')}</th>
+            )}
             {coKhauSauPhieu && (
               <th className={cn(th, 'w-[4.5rem] text-center')} style={{ background: '#3B6939', color: '#fff' }}>{phieu.ten_ben_kiem_tra || t('checklistBanGiao.detail.benKiemTra')}</th>
             )}
@@ -92,9 +114,28 @@ const ChecklistBanGiaoPreview: React.FC<Props> = ({ phieu, dong, tenChiNhanh }) 
                       </div>
                     )}
                   </td>
-                  <td className={cn(td, 'text-center text-[1.05em] font-semibold whitespace-nowrap', laLoi(d, 'kq_thuc_hien') ? 'text-red-700' : 'text-green-700')}>
-                    {kyHieuKetQua(d, 'kq_thuc_hien')}
-                  </td>
+                  {veSinh ? (
+                    <>
+                      <td className={cn(td, 'text-[0.9em]')}>{moTaTanSuat(d.tan_suat, t)}</td>
+                      {THU_TRONG_TUAN.map((thu) => {
+                        const coLich = d.ngay_lich?.includes(thu) ?? false;
+                        const kq = d.kq_ngay?.[String(thu)];
+                        return (
+                          <td
+                            key={thu}
+                            className={cn(td, 'text-center text-[1.05em] font-semibold', kq === 'khong_dat' ? 'text-red-700' : 'text-green-700')}
+                            style={coLich ? undefined : { background: 'repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 3px,#e5e7eb 3px,#e5e7eb 4px)' }}
+                          >
+                            {coLich ? (kq === 'dat' ? '✓' : kq === 'khong_dat' ? '✗' : '') : ''}
+                          </td>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <td className={cn(td, 'text-center text-[1.05em] font-semibold whitespace-nowrap', laLoi(d, 'kq_thuc_hien') ? 'text-red-700' : 'text-green-700')}>
+                      {kyHieuKetQua(d, 'kq_thuc_hien')}
+                    </td>
+                  )}
                   {coKhauSauPhieu && (
                     <td className={cn(td, 'text-center text-[1.05em] font-semibold whitespace-nowrap', laLoi(d, 'kq_kiem_tra') ? 'text-red-700' : 'text-green-700')}>
                       {kyHieuKetQua(d, 'kq_kiem_tra')}
@@ -145,6 +186,7 @@ const ChecklistBanGiaoPreview: React.FC<Props> = ({ phieu, dong, tenChiNhanh }) 
           ].join('   ·   ');
         })()}
       </p>
+      {veSinh && <p className="text-[0.9em] text-gray-600 m-0">{t('checklistBanGiao.vs.chuThichIn')}</p>}
       {coTungLoi && <p className="text-[0.9em] text-gray-600 m-0">{t('checklistBanGiao.preview.chuThichDaSua')}</p>}
 
       {phieu.co_ket_luan_van_hanh && (

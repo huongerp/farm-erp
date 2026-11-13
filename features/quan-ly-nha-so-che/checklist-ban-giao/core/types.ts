@@ -4,6 +4,9 @@
  * rpc_cl_huy / rpc_cl_mo_lai — trigger DB chặn `.update({ trang_thai })`.
  */
 
+import type { LoaiMauCl, TanSuatVeSinh } from '../../checklist-mau/core/types';
+import type { KqNgay } from '../../checklist-mau/core/ve-sinh-tuan';
+
 export const TRANG_THAI_CL = ['nhap', 'cho_kiem_tra', 'tra_lai', 'hoan_thanh', 'huy'] as const;
 export type TrangThaiCl = (typeof TRANG_THAI_CL)[number];
 
@@ -30,6 +33,8 @@ export interface PhieuChecklist {
   chuc_vu_thuc_hien_ids: string[];
   chuc_vu_kiem_tra_ids: string[];
   co_ket_luan_van_hanh: boolean;
+  /** Ảnh chụp loai của mẫu. ve_sinh_tuan: `ngay` = thứ Hai đầu tuần (migration 080). */
+  loai: LoaiMauCl;
   /** YYYY-MM-DD */
   ngay: string;
   ca: string | null;
@@ -77,6 +82,12 @@ export interface DongPhieuChecklist {
   /** Khâu làm / khâu kiểm tra từng tích Không đạt (trigger DB bật, không tắt — migration 076) */
   qlx_tung_khong_dat: boolean;
   gs_tung_khong_dat: boolean;
+  /** Phiếu vệ sinh tuần (080): tần suất chụp từ mẫu */
+  tan_suat: TanSuatVeSinh | null;
+  /** Phiếu vệ sinh tuần: các thứ có lịch (2..8). null = phiếu bàn giao thường */
+  ngay_lich: number[] | null;
+  /** Phiếu vệ sinh tuần: kết quả từng ngày — kq_thuc_hien do trigger DB tính từ đây */
+  kq_ngay: KqNgay;
 }
 
 export interface LichSuPhieuChecklist {

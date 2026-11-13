@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, ClipboardPen, Settings, BadgeCheck, UserCheck, ListChecks, Wrench } from 'lucide-react';
+import { Sprout, Truck, PackagePlus, Package, BookOpen, Users, Layers, Boxes, BarChart3, ClipboardList, ClipboardCheck, ClipboardPen, Settings, BadgeCheck, UserCheck, ListChecks, Wrench, FlaskConical, SprayCan } from 'lucide-react';
 import type { ModuleItem } from '../components/dashboard/SubModuleCard';
 import type { ModuleGroup } from '../components/dashboard/ModuleDashboardLayout';
 
@@ -26,6 +26,8 @@ export function getQuanLyNhaSoCheModuleTitleKeyBySlug(slug: string): string {
 export const QUAN_LY_NHA_SO_CHE_MODULE_SLUGS: string[] = [
   'dang-ky-nhan-hang',
   'dang-ky-tham-quan',
+  'nhat-ky-pha-phen',
+  'nhat-ky-phun-cui',
   'giam-sat-chat-luong',
   'danh-gia-dau-vao',
   'thu-hoach',
@@ -85,6 +87,20 @@ export function getQuanLyNhaSoCheGroups(
           descKey: 'page.quanLyNhaSoChe.descs.dangKyThamQuan',
           icon: UserCheck,
           color: 'bg-rose-500',
+        }),
+        item({
+          slug: 'nhat-ky-pha-phen',
+          titleKey: 'page.quanLyNhaSoChe.modules.nhatKyPhaPhen',
+          descKey: 'page.quanLyNhaSoChe.descs.nhatKyPhaPhen',
+          icon: FlaskConical,
+          color: 'bg-blue-600',
+        }),
+        item({
+          slug: 'nhat-ky-phun-cui',
+          titleKey: 'page.quanLyNhaSoChe.modules.nhatKyPhunCui',
+          descKey: 'page.quanLyNhaSoChe.descs.nhatKyPhunCui',
+          icon: SprayCan,
+          color: 'bg-amber-600',
         }),
       ],
     },
