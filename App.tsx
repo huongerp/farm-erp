@@ -129,6 +129,10 @@ const GiamSatChatLuongPreviewPage = lazyWithFeatureI18n(
   'giam-sat-chat-luong',
   () => import('./features/quan-ly-nha-so-che/giam-sat-chat-luong/GiamSatChatLuongPreviewPage')
 );
+const NhatKyPhaPhenPreviewPage = lazyWithFeatureI18n(
+  'nhat-ky-pha-phen',
+  () => import('./features/quan-ly-nha-so-che/nhat-ky-pha-phen/NhatKyPhaPhenPreviewPage')
+);
 const ChecklistMauPreviewPage = lazyWithFeatureI18n(
   'checklist-mau',
   () => import('./features/quan-ly-nha-so-che/checklist-mau/ChecklistMauPreviewPage')
@@ -522,6 +526,18 @@ const App = () => {
               <ModulePermissionGuard moduleId="quan-ly-nha-so-che/giam-sat-chat-luong">
                 <Suspense fallback={<PageFallback />}>
                   <GiamSatChatLuongPreviewPage />
+                </Suspense>
+              </ModulePermissionGuard>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quan-ly-nha-so-che/nhat-ky-pha-phen/preview/:id"
+          element={
+            <ProtectedRoute>
+              <ModulePermissionGuard moduleId="quan-ly-nha-so-che/nhat-ky-pha-phen">
+                <Suspense fallback={<PageFallback />}>
+                  <NhatKyPhaPhenPreviewPage />
                 </Suspense>
               </ModulePermissionGuard>
             </ProtectedRoute>

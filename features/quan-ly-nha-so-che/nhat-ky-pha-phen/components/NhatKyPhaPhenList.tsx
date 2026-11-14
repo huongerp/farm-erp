@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit, Printer, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import { cn, formatYmdToDisplay } from '../../../../lib/utils';
@@ -53,10 +54,28 @@ const NhatKyPhaPhenList: React.FC<Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order), [columns]);
 
   const nutSuaXoa = (item: NhatKyPhaPhen, lon: boolean) => (
     <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/quan-ly-nha-so-che/nhat-ky-pha-phen/preview/${item.id}`);
+        }}
+        className={cn(
+          'text-muted-foreground',
+          lon
+            ? 'h-10 w-10 flex items-center justify-center bg-muted/50 hover:bg-muted rounded-lg transition-all active:scale-90'
+            : 'hover:bg-muted p-1.5 rounded-md'
+        )}
+        title={t('nkpp.in.inPhieu')}
+        aria-label={t('nkpp.in.inPhieu')}
+      >
+        <Printer size={lon ? 16 : 14} />
+      </button>
       {onEdit && (
         <button
           type="button"
@@ -164,11 +183,9 @@ const NhatKyPhaPhenList: React.FC<Props> = ({
         {item.ten_nhan_vien_phu_trach && (
           <p className="text-xs text-muted-foreground mt-1.5 truncate">{item.ten_nhan_vien_phu_trach}</p>
         )}
-        {(onEdit || onDelete) && (
-          <div className="flex items-center justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
-            {nutSuaXoa(item, true)}
-          </div>
-        )}
+        <div className="flex items-center justify-end gap-3 mt-2.5 pt-2.5 border-t border-border">
+          {nutSuaXoa(item, true)}
+        </div>
       </div>
     );
   };

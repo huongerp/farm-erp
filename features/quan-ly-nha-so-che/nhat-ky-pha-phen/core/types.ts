@@ -25,6 +25,23 @@ export interface LanPha {
   dinh_muc_kg: number | null;
 }
 
+/** Một lần pha phẳng kèm vài cột của phiếu cha — tab Chi tiết. */
+export interface NhatKyPhaPhenLanRow {
+  id: string;
+  id_nhat_ky: string;
+  ngay: string;
+  id_chi_nhanh: string;
+  ten_chi_nhanh: string | null;
+  ten_nhan_vien_phu_trach: string | null;
+  lan: number;
+  /** HH:mm */
+  gio: string | null;
+  so_kg: number | null;
+  dinh_muc_kg: number | null;
+  /** so_kg − dinh_muc_kg; null khi thiếu một trong hai. */
+  chenh_lech: number | null;
+}
+
 /** Nhật ký pha phèn một ngày của một NSC (fp_farm_pp_nhat_ky + các lần pha). */
 export interface NhatKyPhaPhen {
   id: string;

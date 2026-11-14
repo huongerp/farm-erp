@@ -17,6 +17,8 @@ export {
   getHoDangDungTheoChiNhanhDb as getHoDangDungTheoChiNhanh,
   luuHoDb as luuHo,
   doiTrangThaiHoDb as doiTrangThaiHo,
+  getNkppChiTietPageDb as getNkppChiTietPage,
+  fetchAllNkppChiTietForListQuery,
 } from './nhat-ky-pha-phen-db.service';
 
 /** Điền tên người tạo (id_nguoi_tao có 2 FK tới nhân viên nên không embed). */

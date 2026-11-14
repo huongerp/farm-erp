@@ -2,7 +2,10 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import type { HoFormValues, NhatKyFormValues } from '../core/schema';
-import type { NhatKyPhaPhenListServerQuery } from '../services/nhat-ky-pha-phen-list-query';
+import type {
+  NhatKyPhaPhenListServerQuery,
+  NkppChiTietListServerQuery,
+} from '../services/nhat-ky-pha-phen-list-query';
 import {
   deleteNkpp,
   deleteNkppMany,
@@ -10,6 +13,7 @@ import {
   getHoDangDungTheoChiNhanh,
   getHoList,
   getNkppById,
+  getNkppChiTietPage,
   getNkppPage,
   getNkppTomTat,
   luuHo,
@@ -24,6 +28,17 @@ export function useNhatKyPhaPhenPage(query: NhatKyPhaPhenListServerQuery, enable
   return useQuery({
     queryKey: [...QUERY_KEY_NKPP, 'page', query],
     queryFn: () => getNkppPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60,
+  });
+}
+
+/** Tab Chi tiết: một trang các lần pha (phẳng). */
+export function useNhatKyPhaPhenChiTietPage(query: NkppChiTietListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_NKPP, 'chiTiet', query],
+    queryFn: () => getNkppChiTietPage(query),
     enabled,
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60,

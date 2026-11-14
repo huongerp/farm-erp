@@ -4,6 +4,7 @@ import { Building2, Calendar, CalendarDays, Download, Plus } from 'lucide-react'
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -37,6 +38,7 @@ const NhatKyPhaPhenToolbar: React.FC<Props> = ({
   const filters = useNhatKyPhaPhenStore((s) => s.filters);
   const setFilter = useNhatKyPhaPhenStore((s) => s.setFilter);
   const clearSelection = useNhatKyPhaPhenStore((s) => s.clearSelection);
+  const selectedIds = useNhatKyPhaPhenStore((s) => s.selectedIds);
   const columns = useNhatKyPhaPhenStore((s) => s.columns);
   const toggleColumn = useNhatKyPhaPhenStore((s) => s.toggleColumn);
   const reorderColumns = useNhatKyPhaPhenStore((s) => s.reorderColumns);
@@ -129,6 +131,7 @@ const NhatKyPhaPhenToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      bulkActions={selectedCount > 0 ? <NutInHangLoat mau="nhat-ky-pha-phen" ids={Array.from(selectedIds)} /> : undefined}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}

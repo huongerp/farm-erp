@@ -24,3 +24,15 @@ export const NKPP_SORTABLE_DB_COLUMNS = new Set([
 
 /** Ngày mới nhất lên đầu. */
 export const NKPP_SORT_MAC_DINH = { column: 'ngay', ascending: false } as const;
+
+/** Tab Chi tiết (từng lần pha) — cùng phạm vi xem và bộ lọc kỳ / NSC như tab Nhật ký, không có ô tìm kiếm. */
+export type NkppChiTietListServerQuery = Omit<NhatKyPhaPhenListServerQuery, 'searchTerm'>;
+
+/** Cột bảng → biểu thức `order` của PostgREST (ngày nằm ở phiếu cha `nk`). */
+export const NKPP_CHI_TIET_SORT_DB: Readonly<Record<string, string>> = {
+  ngay: 'nk(ngay)',
+  lan: 'lan',
+  gio: 'gio',
+  so_kg: 'so_kg',
+  dinh_muc_kg: 'dinh_muc_kg',
+};

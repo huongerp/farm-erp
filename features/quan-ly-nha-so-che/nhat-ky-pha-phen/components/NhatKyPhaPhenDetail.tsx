@@ -1,6 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Beaker, Building2, Calendar, FileText, Gauge, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Beaker, Building2, Calendar, FileText, Gauge, Printer, User } from 'lucide-react';
+import Button from '../../../../components/ui/Button';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -21,6 +23,7 @@ interface Props {
 
 const NhatKyPhaPhenDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const mau = data.chenh_lech > 0 ? 'text-rose-600 dark:text-rose-400' : data.chenh_lech < 0 ? 'text-emerald-600 dark:text-emerald-400' : '';
 
   return (
@@ -37,6 +40,15 @@ const NhatKyPhaPhenDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete,
           canDelete={canDelete}
           onEdit={onEdit && canUpdate ? () => onEdit(data) : undefined}
           onDelete={onDelete && canDelete ? () => onDelete(data.id) : undefined}
+          extraActions={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/quan-ly-nha-so-che/nhat-ky-pha-phen/preview/${data.id}`)}
+            >
+              <Printer size={16} className="mr-2" /> {t('nkpp.in.inPhieu')}
+            </Button>
+          }
         />
       }
     >

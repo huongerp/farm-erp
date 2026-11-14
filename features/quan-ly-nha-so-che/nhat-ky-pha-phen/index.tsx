@@ -1,9 +1,10 @@
 /** Quản lý nhà sơ chế > Nhật ký pha phèn. */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { BookOpen, Waves } from 'lucide-react';
+import { BookOpen, FileSpreadsheet, Waves } from 'lucide-react';
 import { useModulePermissionFromContext } from '../../../components/shared/ModulePermissionGuard';
 import ExportDialog from '../../../components/shared/LazyExportDialog';
 import TabGroup from '../../../components/ui/TabGroup';
@@ -33,8 +34,10 @@ import NhatKyPhaPhenList from './components/NhatKyPhaPhenList';
 import NhatKyPhaPhenForm from './components/NhatKyPhaPhenForm';
 import NhatKyPhaPhenDetail from './components/NhatKyPhaPhenDetail';
 import CaiDatHoTab from './components/CaiDatHoTab';
+import ChiTietTab from './components/ChiTietTab';
 
-type TabId = 'nhat-ky' | 'cai-dat-ho';
+const VALID_TABS = ['nhat-ky', 'chi-tiet', 'cai-dat-ho'] as const;
+type TabId = (typeof VALID_TABS)[number];
 
 const NhatKyPhaPhenPage: React.FC = () => {
   const { t } = useTranslation();
@@ -57,7 +60,25 @@ const NhatKyPhaPhenPage: React.FC = () => {
     setSort,
   } = useNhatKyPhaPhenStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState<TabId>('nhat-ky');
+  const tabFromUrl = searchParams.get('tab');
+  // Tham số ?tab= đổi (kể cả lần render đầu) → đồng bộ tab; chỉnh state ngay khi render thay vì effect.
+  const [prevTabFromUrl, setPrevTabFromUrl] = useState<string | null | undefined>(undefined);
+  if (prevTabFromUrl !== tabFromUrl) {
+    setPrevTabFromUrl(tabFromUrl);
+    if (VALID_TABS.includes(tabFromUrl as TabId)) setTab(tabFromUrl as TabId);
+  }
+  const handleTabChange = (id: string) => {
+    if (!VALID_TABS.includes(id as TabId)) return;
+    setTab(id as TabId);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', id);
+      return next;
+    });
+  };
+
   const [showForm, setShowForm] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [editingItem, setEditingItem] = useState<NhatKyPhaPhen | null>(null);
@@ -186,10 +207,10 @@ const NhatKyPhaPhenPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)] relative">
-      {/* Tab Nhật ký là danh sách card trên mobile → khung chỉ hiện từ md (tránh viền kép) */}
+      {/* Tab Nhật ký / Chi tiết là danh sách card trên mobile → khung chỉ hiện từ md (tránh viền kép) */}
       <div
         className={`flex-1 min-h-0 flex flex-col overflow-hidden ${
-          tab === 'nhat-ky'
+          tab !== 'cai-dat-ho'
             ? 'md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm'
             : 'rounded-xl border border-border bg-card shadow-sm'
         }`}
@@ -198,14 +219,24 @@ const NhatKyPhaPhenPage: React.FC = () => {
           <TabGroup
             tabs={[
               { id: 'nhat-ky', label: t('nkpp.tab.nhatKy'), icon: BookOpen },
+              { id: 'chi-tiet', label: t('nkpp.tab.chiTiet'), icon: FileSpreadsheet },
               { id: 'cai-dat-ho', label: t('nkpp.tab.caiDatHo'), icon: Waves },
             ]}
             activeTab={tab}
-            onChange={(id) => setTab(id as TabId)}
+            onChange={handleTabChange}
           />
         </div>
 
-        {tab === 'nhat-ky' ? (
+        {tab === 'chi-tiet' ? (
+          <ChiTietTab
+            viewAll={viewScope.viewAll}
+            allowedBranchIds={viewScope.allowedBranchIds}
+            scopeLoading={viewScope.isLoading}
+            branches={branches}
+            tomTat={tomTatList}
+            onViewNhatKy={setViewingId}
+          />
+        ) : tab === 'nhat-ky' ? (
           <>
             <NhatKyPhaPhenToolbar
               data={tomTatList}
