@@ -234,13 +234,13 @@ const TraCuuTab: React.FC = () => {
       />
 
       {!filter.chiNhanhId && (
-        <p className="px-3 pt-2 text-xs text-muted-foreground inline-flex items-center gap-1.5">
+        <p className="px-1.5 md:px-3 pt-2 text-xs text-muted-foreground inline-flex items-center gap-1.5">
           <Info size={13} />
           {t('thongKeQuy.traCuu.chonChiNhanhHint')}
         </p>
       )}
 
-      <div className="flex-1 min-h-0 overflow-auto px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-auto md:px-2 md:pb-2">
         <GenericTable
           data={rows}
           columns={columns.filter((c) => (filter.chiNhanhId ? true : c.id !== 'ton_quy'))}

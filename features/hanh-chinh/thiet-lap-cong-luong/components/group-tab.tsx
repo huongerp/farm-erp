@@ -170,7 +170,7 @@ const PayrollFormGroupTab: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <PayrollFormGroupToolbar
         items={groups}
         onAdd={canCreate ? () => { setDetailItem(null); setEditingItem(null); setShowForm(true); } : undefined}

@@ -533,7 +533,7 @@ const ChiTietTab: React.FC = () => {
 
   if (pageQuery.isPending && !pageQuery.data) {
     return (
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChiTietTabToolbar
           data={[]}
           khoList={khoList}
@@ -577,7 +577,7 @@ const ChiTietTab: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChiTietTabToolbar
           data={sortedRows}
           khoList={khoList}

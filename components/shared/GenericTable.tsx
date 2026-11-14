@@ -251,7 +251,7 @@ function GenericTable<T>({
   // Skeleton loading: strip icon xoay + chữ primary (Nhân sự, ...) rồi skeleton
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-card overflow-hidden" aria-live="polite" aria-busy="true" aria-label={loadingText}>
+      <div className="flex flex-col h-full md:bg-card overflow-hidden" aria-live="polite" aria-busy="true" aria-label={loadingText}>
         <div className="shrink-0 py-3 px-3 sm:px-4 border-b border-border/50 bg-muted/20">
           <LoadingSpinnerWithText text={loadingText} centered />
         </div>
@@ -292,7 +292,7 @@ function GenericTable<T>({
             </tbody>
           </table>
         </div>
-        <div className="md:hidden flex-1 space-y-3 px-3 pt-1 overflow-hidden">
+        <div className="md:hidden flex-1 space-y-3 px-1.5 pt-1 overflow-hidden">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-card rounded-xl border border-border p-3.5 animate-pulse">
               <div className="flex items-center gap-3 mb-3">
@@ -303,7 +303,7 @@ function GenericTable<T>({
             </div>
           ))}
         </div>
-        <div className="border-t border-border bg-card px-3 py-1.5 flex items-center justify-between shrink-0">
+        <div className="border-t border-border bg-card px-1.5 md:px-3 py-1.5 flex items-center justify-between shrink-0">
           <div className="h-3 w-24 bg-muted rounded animate-pulse" />
           <div className="h-7 w-28 bg-muted rounded animate-pulse" />
         </div>
@@ -312,7 +312,7 @@ function GenericTable<T>({
   }
 
   return (
-    <div className="flex flex-col h-full bg-card overflow-hidden relative">
+    <div className="flex flex-col h-full md:bg-card overflow-hidden relative">
       {isFetching ? (
         <div
           className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
@@ -577,7 +577,8 @@ function GenericTable<T>({
       </div>
 
       {/* 2. MOBILE VIEW */}
-      <div className="md:hidden flex-1 min-h-0 space-y-3 overflow-y-auto pb-3 px-3 pt-1">
+      {/* Mobile: chỉ card có viền; px-1.5 + p-1.5 của Layout = ~12px tới mép màn hình */}
+      <div className="md:hidden flex-1 min-h-0 space-y-3 overflow-y-auto pb-3 px-1.5 pt-1">
         {data.length === 0 ? (
           <div className="py-12"><EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} /></div>
         ) : (
@@ -595,7 +596,7 @@ function GenericTable<T>({
 
       {/* 3. FOOTER */}
       {totalRecords > 0 && (
-        <div className="border-t border-border bg-card md:bg-muted/10 px-3 sm:px-4 py-1.5 flex items-center justify-between gap-2 shrink-0">
+        <div className="border-t border-border bg-card md:bg-muted/10 px-1.5 md:px-4 py-1.5 flex items-center justify-between gap-2 shrink-0">
 
           {/* Left: Record summary + selected count */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">

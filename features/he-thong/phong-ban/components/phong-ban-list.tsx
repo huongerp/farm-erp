@@ -216,7 +216,7 @@ const DepartmentList: React.FC<Props> = ({
   );
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-card overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 md:bg-card overflow-hidden">
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="hidden md:flex flex-1 min-h-0 flex-col overflow-hidden">
           <HierarchyTable<Department>
@@ -235,7 +235,7 @@ const DepartmentList: React.FC<Props> = ({
           />
         </div>
 
-        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-3 pt-1 custom-scrollbar">
+        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-1.5 pt-1 custom-scrollbar">
           <div className="space-y-3">
             {paginatedData.map((dept) => (
               <div key={dept.id} className="transition-all active:scale-[0.98]">

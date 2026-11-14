@@ -97,7 +97,7 @@ const KetNoiGooglePage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)]">
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <KetNoiGoogleToolbar items={ds} />
         <div className="flex-1 min-h-0">
           <KetNoiGoogleTable data={daSap} isLoading={isLoading} isError={isError} onRetry={() => void refetch()} onView={(k) => setDangXemId(k.id)} />

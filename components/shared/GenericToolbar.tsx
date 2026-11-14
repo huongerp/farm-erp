@@ -144,7 +144,7 @@ const GenericToolbar: React.FC<GenericToolbarProps> = ({
     const hasMobileActions = mobileActions && mobileActions.length > 0;
 
     return (
-        <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/40 px-3 sm:px-4 py-2 space-y-2 transition-all shrink-0">
+        <div className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border/40 px-1.5 md:px-4 py-2 space-y-2 transition-all shrink-0">
 
             {/* ======================================================== */}
             {/* MOBILE TOOLBAR (< sm): 1 hàng duy nhất                   */}

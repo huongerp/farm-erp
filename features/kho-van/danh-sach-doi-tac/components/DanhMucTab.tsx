@@ -323,7 +323,7 @@ const DanhMucTab: React.FC = () => {
         />
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <GenericTable<NhomDoiTac>
           data={filteredList}
           columns={columns}

@@ -124,7 +124,7 @@ const TrangThaiDoiTacTab: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <TrangThaiDoiTacToolbar
         items={list}
         onAdd={() => {
@@ -134,7 +134,7 @@ const TrangThaiDoiTacTab: React.FC = () => {
         onDeleteMany={handleDeleteMany}
         onStatusChangeMany={handleStatusChangeMany}
       />
-      <div className="flex-1 min-h-0 overflow-auto px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-auto md:px-2 md:pb-2">
         <TrangThaiDoiTacTable
           data={sortedList}
           isLoading={isLoading}

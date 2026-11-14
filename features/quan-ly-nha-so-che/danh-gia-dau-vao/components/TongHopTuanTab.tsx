@@ -274,7 +274,7 @@ const TongHopTuanTab: React.FC = () => {
   const dongXem = xemKhoa ? tatCaDong.find((r) => r.khoa === xemKhoa) : undefined;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <DashboardToolbar
         hideBack
         filters={<ResponsiveFilterChips items={filterItems} />}
@@ -293,7 +293,7 @@ const TongHopTuanTab: React.FC = () => {
         className="static z-auto border-b border-border"
       />
 
-      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+      <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
         <GenericTable<DgdvTuanKyDong>
           data={dsDong}
           columns={columns}

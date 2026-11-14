@@ -160,7 +160,7 @@ const ChiTietTab: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChiTietTabToolbar data={[]} onBack={handleBack} />
         <ListPageSkeleton />
       </div>
@@ -169,7 +169,7 @@ const ChiTietTab: React.FC = () => {
 
   if (rows.length === 0) {
     return (
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChiTietTabToolbar data={[]} onBack={handleBack} />
         <div className="flex-1 min-h-0 flex items-center justify-center p-4">
           <EmptyState
@@ -183,7 +183,7 @@ const ChiTietTab: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChiTietTabToolbar data={sortedRows} onBack={handleBack} />
         <GenericTable<PhieuChiTietRow>
           data={filteredRows}

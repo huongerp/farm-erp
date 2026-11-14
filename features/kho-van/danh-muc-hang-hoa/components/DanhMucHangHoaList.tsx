@@ -213,7 +213,7 @@ const DanhMucHangHoaList: React.FC<Props> = ({
   const actionsLabel = t('common.actions');
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-card overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 md:bg-card overflow-hidden">
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div className="hidden md:flex flex-1 min-h-0 flex-col overflow-hidden">
           <div
@@ -347,7 +347,7 @@ const DanhMucHangHoaList: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-3 pt-1 custom-scrollbar">
+        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-1.5 pt-1 custom-scrollbar">
           <div className="space-y-3">
             {paginatedData.map((item) => {
               const isParent = !item.id_cha;

@@ -131,9 +131,9 @@ const ChecklistMauPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)]">
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <ChecklistMauToolbar selectedCount={selectedIds.size} onAdd={openAdd} canCreate={canCreate} />
-        <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+        <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
           <ChecklistMauList
             data={pageData}
             columns={columns}

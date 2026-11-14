@@ -156,14 +156,14 @@ const ThietBiTab: React.FC<Props> = ({ farmId, onGhiNhan }) => {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <ThietBiToolbar
         selectedCount={selectedIds.size}
         onAdd={openAdd}
         canUpdate={canUpdate}
         onSaoChep={canCreate && farmId ? () => setSaoChepOpen(true) : undefined}
       />
-      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+      <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
         <ThietBiList
           data={pageData}
           columns={columns}

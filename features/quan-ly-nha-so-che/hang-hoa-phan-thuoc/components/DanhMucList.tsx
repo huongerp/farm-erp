@@ -333,7 +333,7 @@ const DanhMucList: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-3 pt-1 custom-scrollbar">
+        <div className="md:hidden flex-1 min-h-0 overflow-y-auto pb-3 px-1.5 pt-1 custom-scrollbar">
           <div className="space-y-3">
             {paginatedData.map((item) => {
               const isParent = !item.id_cha;

@@ -39,7 +39,7 @@ const ListPageSkeleton: React.FC<ListPageSkeletonProps> = ({
   className,
 }) => (
   <div
-    className={cn('flex flex-col h-full min-h-0 bg-card overflow-hidden', className)}
+    className={cn('flex flex-col h-full min-h-0 md:bg-card overflow-hidden', className)}
     aria-live="polite"
     aria-busy="true"
     aria-label={loadingText ?? 'Đang tải dữ liệu'}
@@ -70,7 +70,7 @@ const ListPageSkeleton: React.FC<ListPageSkeletonProps> = ({
     {/* Mobile: card skeleton */}
     <div
       className={cn(
-        'flex-1 min-h-0 overflow-hidden px-3 pt-1 pb-3',
+        'flex-1 min-h-0 overflow-hidden px-1.5 md:px-3 pt-1 pb-3',
         showCardsOnMobileOnly && 'md:hidden'
       )}
     >
@@ -78,7 +78,7 @@ const ListPageSkeleton: React.FC<ListPageSkeletonProps> = ({
     </div>
 
     {/* Footer skeleton */}
-    <div className="border-t border-border bg-card md:bg-muted/10 px-3 sm:px-4 py-1.5 flex items-center justify-between gap-2 shrink-0">
+    <div className="border-t border-border bg-card md:bg-muted/10 px-1.5 md:px-4 py-1.5 flex items-center justify-between gap-2 shrink-0">
       <div className="h-3 w-24 bg-muted rounded animate-pulse" />
       <div className="h-7 w-28 bg-muted rounded animate-pulse" />
     </div>

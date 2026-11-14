@@ -157,7 +157,7 @@ const CuaToiTab: React.FC = () => {
 
   return (
     <>
-      <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
         <CapPhatThuHoiToolbar
           items={pageList}
           onAdd={handleAdd}

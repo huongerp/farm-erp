@@ -317,7 +317,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
       </div>
 
       {activeTab === 'danhMuc' && (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+        <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
           <DanhMucToolbar
             selectedCount={dmSelectedIds.size}
             onAdd={() => {
@@ -331,7 +331,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
             canCreate={canCreate}
             canDelete={canDelete}
           />
-          <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+          <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
             <DanhMucList
               data={filteredDm}
               columns={dmColumns}
@@ -361,7 +361,7 @@ const HangHoaPhanThuocPage: React.FC = () => {
       )}
 
       {activeTab === 'hangHoa' && (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+        <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
           <HangHoaToolbar
             data={hhList}
             selectedCount={hhSelectedIds.size}

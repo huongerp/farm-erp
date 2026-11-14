@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { Building2, Edit, Trash2, User } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import { cn, formatYmdToDisplay } from '../../../../lib/utils';
@@ -94,6 +94,8 @@ const ChecklistBanGiaoList: React.FC<Props> = ({
         return one(item.ca || '—', 'text-muted-foreground');
       case 'khu_vuc':
         return one(item.khu_vuc || '—', 'text-muted-foreground');
+      case 'ten_chi_nhanh':
+        return one(item.ten_chi_nhanh || '—', 'text-muted-foreground', item.ten_chi_nhanh ?? undefined);
       case 'ten_mau':
         return one(item.ten_mau, undefined, item.ten_mau);
       case 'trang_thai':
@@ -162,16 +164,27 @@ const ChecklistBanGiaoList: React.FC<Props> = ({
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold truncate">{item.ten_mau}</h4>
-          <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">{item.so_phieu}</p>
-          <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
-            {nhanNgay(item)}
-            {item.khu_vuc ? ` · ${item.khu_vuc}` : ''}
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
+        <h4 className="font-semibold text-foreground text-sm truncate min-w-0">{item.ten_mau || '—'}</h4>
+        <div className="shrink-0">
           <TrangThaiBadge value={item.trang_thai} />
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground truncate mt-0.5 tabular-nums">
+        {item.so_phieu} · {nhanNgay(item)}
+        {item.khu_vuc ? ` · ${item.khu_vuc}` : ''}
+      </p>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <div className="min-w-0 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1 min-w-0" title={t('checklistBanGiao.col.chiNhanh')}>
+            <Building2 size={12} className="shrink-0" />
+            <span className="truncate">{item.ten_chi_nhanh || '—'}</span>
+          </span>
+          <span className="inline-flex items-center gap-1 min-w-0" title={t('checklistBanGiao.col.nguoiTao')}>
+            <User size={12} className="shrink-0" />
+            <span className="truncate">{item.ten_nguoi_tao || '—'}</span>
+          </span>
+        </div>
+        <div className="shrink-0">
           <DemKetQua item={item} />
         </div>
       </div>

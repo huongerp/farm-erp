@@ -379,7 +379,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     : false;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <PhieuKhoToolbar
         data={tableRows}
         chipCountsMode="unweighted"
@@ -398,7 +398,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
         canCreate={canCreate}
         canDelete={canDelete}
       />
-      <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+      <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
         <PhieuKhoList
           data={tableRows}
           serverTotalCount={totalCount}

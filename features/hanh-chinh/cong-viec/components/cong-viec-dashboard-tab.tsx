@@ -95,7 +95,7 @@ const CongViecDashboardTab: React.FC = () => {
         </div>
         <TabGroup tabs={tabs} activeTab={activeView} onChange={(id) => setActiveView(id as keyof typeof DASHBOARD_VIEW)} />
       </div>
-      <div className="flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden flex flex-col">
         {!isLoading && displayList.length === 0 ? (
           <div className="flex-1 flex items-center justify-center p-6">
             <EmptyState

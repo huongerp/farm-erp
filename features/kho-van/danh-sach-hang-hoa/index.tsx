@@ -445,7 +445,7 @@ const DanhSachHangHoaPage: React.FC = () => {
       <div className="shrink-0 relative z-0">
         <TabGroup tabs={tabs} activeTab={activeTab} onChange={(id) => setActiveTab(id as 'danhSach' | 'dinhMucTon')} />
       </div>
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
         {activeTab === 'danhSach' && (
           <>
             <DanhSachHangHoaToolbar

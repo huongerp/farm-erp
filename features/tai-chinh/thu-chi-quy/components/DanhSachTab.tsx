@@ -384,7 +384,7 @@ const DanhSachTab: React.FC = () => {
       : '';
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <ThuChiQuyToolbar
         branches={allowedBranches.map((b) => ({ id: String(b.id), ten_chi_nhanh: b.ten_chi_nhanh }))}
         chiNhanhDangXem={chiNhanhDangXem}
@@ -408,13 +408,13 @@ const DanhSachTab: React.FC = () => {
       />
 
       {hasOtherFilter && (
-        <p className="px-3 pt-2 text-xs text-muted-foreground inline-flex items-center gap-1.5">
+        <p className="px-1.5 md:px-3 pt-2 text-xs text-muted-foreground inline-flex items-center gap-1.5">
           <Info size={13} />
           {t('thuChiQuy.summary.filterHint')}
         </p>
       )}
 
-      <div className="flex-1 min-h-0 overflow-auto px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-auto md:px-2 md:pb-2">
         <ThuChiQuyList
           data={rows}
           tonQuyHienTai={tonQuyHienTai}

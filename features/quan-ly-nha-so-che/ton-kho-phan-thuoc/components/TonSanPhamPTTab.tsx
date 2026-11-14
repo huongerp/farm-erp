@@ -427,7 +427,7 @@ const TonSanPhamPTTab: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
         <TonKhoToolbar
           searchTerm={searchInput}
           onSearchChange={setSearchInput}

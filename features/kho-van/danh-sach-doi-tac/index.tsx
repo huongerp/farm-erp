@@ -284,7 +284,7 @@ const DanhSachDoiTacPage: React.FC = () => {
           <TagTab />
         </div>
       ) : (
-        <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+        <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
           <DoiTacToolbar
             data={tomTatTheoTab}
             nhomList={nhomList}
@@ -296,7 +296,7 @@ const DanhSachDoiTacPage: React.FC = () => {
             canDelete={canDelete}
           />
 
-          <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+          <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
             <DoiTacList
             data={pageList}
             totalRecordsOverride={totalCount}

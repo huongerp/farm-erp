@@ -60,6 +60,7 @@ interface DbPhieuRow {
   tg_tao: string;
   tg_cap_nhat: string;
   dong?: { kq_thuc_hien: KetQuaCl | null }[] | null;
+  cn?: { ten_chi_nhanh: string | null } | null;
 }
 
 interface DbDongRow {
@@ -149,6 +150,7 @@ function rowToModel(row: DbPhieuRow): PhieuChecklistListItem {
     id_nguoi_tao: idStr(row.id_nguoi_tao),
     tg_tao: row.tg_tao,
     tg_cap_nhat: row.tg_cap_nhat,
+    ten_chi_nhanh: row.cn?.ten_chi_nhanh ?? null,
     ten_nguoi_tao: null,
     ten_nguoi_nhan: null,
     kqThucHien: {
@@ -236,7 +238,8 @@ function applyListQuery(q: any, query: ChecklistBanGiaoListServerQuery): any {
   return sel.order(sortCol, { ascending, nullsFirst: false }).order('id', { ascending: false });
 }
 
-const LIST_SELECT = `${PHIEU_COLUMNS},dong:${TABLE_DONG}(kq_thuc_hien)`;
+const LIST_SELECT =
+  `${PHIEU_COLUMNS},dong:${TABLE_DONG}(kq_thuc_hien),cn:fp_var_chi_nhanh!id_chi_nhanh(ten_chi_nhanh)`;
 
 export async function getPhieuPageDb(query: ChecklistBanGiaoListServerQuery): Promise<PaginatedTableResult<PhieuChecklistListItem>> {
   const result = await fetchTablePage<DbPhieuRow>(query.page, query.pageSize, async (from, to) => {

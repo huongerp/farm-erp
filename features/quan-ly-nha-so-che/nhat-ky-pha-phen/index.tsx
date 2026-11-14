@@ -186,8 +186,15 @@ const NhatKyPhaPhenPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-7.75rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100dvh-4.5rem)] relative">
-      <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="px-4 pt-3">
+      {/* Tab Nhật ký là danh sách card trên mobile → khung chỉ hiện từ md (tránh viền kép) */}
+      <div
+        className={`flex-1 min-h-0 flex flex-col overflow-hidden ${
+          tab === 'nhat-ky'
+            ? 'md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm'
+            : 'rounded-xl border border-border bg-card shadow-sm'
+        }`}
+      >
+        <div className="px-1.5 md:px-4 pt-3">
           <TabGroup
             tabs={[
               { id: 'nhat-ky', label: t('nkpp.tab.nhatKy'), icon: BookOpen },
@@ -213,7 +220,7 @@ const NhatKyPhaPhenPage: React.FC = () => {
               canCreate={canCreate}
               canDelete={canDelete}
             />
-            <div className="flex-1 min-h-0 flex flex-col px-4 pb-4 pt-1">
+            <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
               <NhatKyPhaPhenList
                 data={pageList}
                 totalRecordsOverride={totalCount}

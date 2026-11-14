@@ -561,7 +561,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 min-h-0 flex flex-col mt-1.5 rounded-xl border border-border bg-card shadow-sm overflow-hidden relative z-0">
+      <div className="flex-1 min-h-0 flex flex-col mt-1.5 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden relative z-0">
         <TonKhoToolbar
           searchTerm={searchInput}
           onSearchChange={setSearchInput}
@@ -590,7 +590,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
           }
         />
 
-        <div className="flex-1 min-h-0 flex flex-col bg-card overflow-hidden relative">
+        <div className="flex-1 min-h-0 flex flex-col md:bg-card overflow-hidden relative">
           {isFetchingOverlay ? (
             <div
               className="absolute inset-0 z-[25] pointer-events-none flex items-start justify-center pt-3 bg-background/30 backdrop-blur-[1px]"
@@ -625,7 +625,7 @@ const TonKhoTonThoiDiemTab: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="md:hidden flex-1 min-h-0 overflow-y-auto px-3 py-2 space-y-2">
+              <div className="md:hidden flex-1 min-h-0 overflow-y-auto px-1.5 py-2 space-y-2">
                 {paginatedData.map((item) => (
                   <TonKyMobileCard
                     key={item.id_hang_hoa}

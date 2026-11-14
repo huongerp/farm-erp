@@ -131,7 +131,7 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 md:rounded-xl md:border md:border-border md:bg-card md:shadow-sm overflow-hidden">
       <TrangThaiThanhToanDoiTacToolbar
         items={list}
         onAdd={() => {
@@ -143,7 +143,7 @@ const TrangThaiThanhToanDoiTacTab: React.FC = () => {
         canCreate={canCreate}
         canDelete={canDelete}
       />
-      <div className="flex-1 min-h-0 overflow-auto px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-auto md:px-2 md:pb-2">
         <TrangThaiThanhToanDoiTacTable
           data={sortedList}
           isLoading={isLoading}
