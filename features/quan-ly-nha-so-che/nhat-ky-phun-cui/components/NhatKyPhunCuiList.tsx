@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Droplets, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Droplets, Edit, Printer, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
 import { cn, formatYmdToDisplay } from '../../../../lib/utils';
@@ -50,10 +51,28 @@ const NhatKyPhunCuiList: React.FC<Props> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible).sort((a, b) => a.order - b.order), [columns]);
 
   const nutSuaXoa = (item: NhatKyPhunCui, lon: boolean) => (
     <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/quan-ly-nha-so-che/nhat-ky-phun-cui/preview/${item.id}`);
+        }}
+        className={cn(
+          'text-muted-foreground',
+          lon
+            ? 'h-10 w-10 flex items-center justify-center bg-muted/50 hover:bg-muted rounded-lg transition-all active:scale-90'
+            : 'hover:bg-muted p-1.5 rounded-md'
+        )}
+        title={t('nkpc.in.inPhieu')}
+        aria-label={t('nkpc.in.inPhieu')}
+      >
+        <Printer size={lon ? 16 : 14} />
+      </button>
       {onEdit && (
         <button
           type="button"

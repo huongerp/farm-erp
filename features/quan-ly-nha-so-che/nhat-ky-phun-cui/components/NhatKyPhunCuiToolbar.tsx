@@ -4,6 +4,7 @@ import { Building2, CalendarDays, Download, Plus } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
+import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -34,6 +35,7 @@ const NhatKyPhunCuiToolbar: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useNhatKyPhunCuiStore);
+  const selectedIds = useNhatKyPhunCuiStore((s) => s.selectedIds);
   const filters = useNhatKyPhunCuiStore((s) => s.filters);
   const setFilter = useNhatKyPhunCuiStore((s) => s.setFilter);
   const clearSelection = useNhatKyPhunCuiStore((s) => s.clearSelection);
@@ -126,6 +128,7 @@ const NhatKyPhunCuiToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      bulkActions={selectedCount > 0 ? <NutInHangLoat mau="nhat-ky-phun-cui" ids={Array.from(selectedIds)} /> : undefined}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}

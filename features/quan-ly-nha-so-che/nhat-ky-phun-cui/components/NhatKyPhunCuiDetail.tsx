@@ -1,6 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Building2, Calendar, Droplets, FileText, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Calendar, Droplets, FileText, Printer, User } from 'lucide-react';
+import Button from '../../../../components/ui/Button';
 import GenericDrawer, { DRAWER_WIDTH_DETAIL } from '../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../components/shared/DetailSection';
 import DetailField from '../../../../components/shared/DetailField';
@@ -24,6 +26,7 @@ interface Props {
 
 const NhatKyPhunCuiDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canUpdate = true, canDelete = true }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const lanColumns: SubTableColumn[] = [
     { id: 'gio', label: t('nkpc.lan.gio'), width: 70, minWidth: 60 },
@@ -71,6 +74,15 @@ const NhatKyPhunCuiDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete,
           canDelete={canDelete}
           onEdit={onEdit && canUpdate ? () => onEdit(data) : undefined}
           onDelete={onDelete && canDelete ? () => onDelete(data.id) : undefined}
+          extraActions={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/quan-ly-nha-so-che/nhat-ky-phun-cui/preview/${data.id}`)}
+            >
+              <Printer size={16} className="mr-2" /> {t('nkpc.in.inPhieu')}
+            </Button>
+          }
         />
       }
     >

@@ -4,13 +4,14 @@ import i18n from '../../../../lib/i18n';
 import { BIEN_THE_SO_CHE } from '../../kho-bien-the/bien-the';
 import { getFarmHangHoaRef } from '../../hang-hoa-phan-thuoc/services/farm-hang-hoa-service';
 import type { DinhMucFormValues, NhatKyFormValues } from '../core/schema';
-import type { NhatKyPhunCuiListServerQuery } from '../services/nhat-ky-phun-cui-list-query';
+import type { NhatKyPhunCuiListServerQuery, NkpcChiTietListServerQuery } from '../services/nhat-ky-phun-cui-list-query';
 import {
   deleteNhatKy,
   deleteNhatKyMany,
   doiDangDungDinhMuc,
   getDinhMuc,
   getNhatKyById,
+  getNkpcChiTietPage,
   getNhatKyPage,
   getNhatKyTomTat,
   luuDinhMuc,
@@ -25,6 +26,17 @@ export function useNhatKyPhunCuiPage(query: NhatKyPhunCuiListServerQuery, enable
   return useQuery({
     queryKey: [...QUERY_KEY_NKPC, 'page', query],
     queryFn: () => getNhatKyPage(query),
+    enabled,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60,
+  });
+}
+
+/** Tab Chi tiết: một trang các lần pha (phẳng). */
+export function useNhatKyPhunCuiChiTietPage(query: NkpcChiTietListServerQuery, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_NKPC, 'chiTiet', query],
+    queryFn: () => getNkpcChiTietPage(query),
     enabled,
     placeholderData: keepPreviousData,
     staleTime: 1000 * 60,

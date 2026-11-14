@@ -64,6 +64,7 @@ export const DANH_MUC_IN_HANG_LOAT: Record<string, () => Promise<BatKy>> = {
   'phieu-bao-tri': napMau('bao-tri-sua-chua', () => import('../../../features/hanh-chinh/bao-tri-sua-chua/in-hang-loat')),
   'cap-phat-thu-hoi': napMau('cap-phat-thu-hoi', () => import('../../../features/hanh-chinh/cap-phat-thu-hoi/in-hang-loat')),
   'nhat-ky-pha-phen': napMau('nhat-ky-pha-phen', () => import('../../../features/quan-ly-nha-so-che/nhat-ky-pha-phen/in-hang-loat')),
+  'nhat-ky-phun-cui': napMau('nhat-ky-phun-cui', () => import('../../../features/quan-ly-nha-so-che/nhat-ky-phun-cui/in-hang-loat')),
 };
 
 /** Đường dẫn trang in hàng loạt. */

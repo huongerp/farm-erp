@@ -9,14 +9,17 @@ import { applyPostgrestSearch, buildPostgrestSearchOr, dieuKienKyTheoNgay } from
 import i18n from '../../../../lib/i18n';
 import { formatYmdToDisplay } from '../../../../lib/utils';
 import { chuanHoaDonVi } from '../core/constants';
+import { dongChiTietTuDb, type DbLanChiTiet } from '../core/chi-tiet';
 import { tinhLuongThuoc } from '../core/luong-thuoc';
 import { laDongTrong, type DinhMucFormValues, type NhatKyFormValues } from '../core/schema';
 import { parseSo } from '../core/so';
-import type { DinhMucThuoc, LanPha, NhatKyPhunCui } from '../core/types';
+import type { DinhMucThuoc, LanPha, NhatKyPhunCui, NhatKyPhunCuiLanRow } from '../core/types';
 import {
+  NKPC_CHI_TIET_SORT_DB,
   NKPC_SORTABLE_DB_COLUMNS,
   NKPC_SORT_MAC_DINH,
   type NhatKyPhunCuiListServerQuery,
+  type NkpcChiTietListServerQuery,
 } from './nhat-ky-phun-cui-list-query';
 
 const TABLE = 'fp_farm_ptc_nhat_ky';
@@ -220,6 +223,58 @@ export async function fetchAllNhatKyForListQuery(query: NhatKyPhunCuiListServerQ
     applyNhatKyListQuery(db.from(TABLE).select(ROW_COLUMNS), query, idTheoThuoc).range(from, to)
   );
   return rows.map(rowToModel);
+}
+
+// ---------- Tab Chi tiết: từng lần pha ----------
+
+const CHI_TIET_COLUMNS =
+  `id,id_nhat_ky,thu_tu,gio,id_hang_hoa,nong_do,don_vi,luong_nuoc_lit,luong_thuoc,ghi_chu,${HH_EMBED},` +
+  `nk:${TABLE}!inner(ngay,id_chi_nhanh,` +
+  'cn:fp_var_chi_nhanh!id_chi_nhanh(ten_chi_nhanh),' +
+  'nv:fp_var_nhan_vien!id_nhan_vien_phu_trach(ho_va_ten))';
+
+/** Lọc theo cột của phiếu cha (`nk`, embed !inner nên lọc luôn dòng con) + sắp xếp. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function applyNkpcChiTietQuery(q: any, query: NkpcChiTietListServerQuery): any {
+  let sel = q;
+  if (!query.viewAll) {
+    const ids = query.allowedBranchIds.map(Number).filter(Number.isFinite);
+    sel = ids.length === 0 ? sel.eq('id', -1) : sel.in('nk.id_chi_nhanh', ids);
+  }
+  if (query.idChiNhanh.length > 0) {
+    sel = sel.in('nk.id_chi_nhanh', query.idChiNhanh.map(Number).filter(Number.isFinite));
+  }
+  const ky = dieuKienKyTheoNgay([], query.thang, 'ngay');
+  if (ky.length) sel = sel.or(ky.join(','), { referencedTable: 'nk' });
+
+  const sortDb = query.sortColumn != null && query.sortDirection ? NKPC_CHI_TIET_SORT_DB[query.sortColumn] : undefined;
+  if (sortDb) sel = sel.order(sortDb, { ascending: query.sortDirection !== 'desc', nullsFirst: false });
+  // Mặc định: ngày mới nhất, cùng phiếu thì lần 1 → n.
+  return sel
+    .order('nk(ngay)', { ascending: false })
+    .order('id_nhat_ky', { ascending: false })
+    .order('thu_tu', { ascending: true });
+}
+
+export async function getNkpcChiTietPageDb(
+  query: NkpcChiTietListServerQuery
+): Promise<PaginatedTableResult<NhatKyPhunCuiLanRow>> {
+  const result = await fetchTablePage<DbLanChiTiet>(query.page, query.pageSize, async (from, to) => {
+    const res = await applyNkpcChiTietQuery(
+      db.from(TABLE_LAN).select(CHI_TIET_COLUMNS, { count: 'exact' }),
+      query
+    ).range(from, to);
+    return { data: (res.data as DbLanChiTiet[] | null) ?? null, error: res.error, count: res.count };
+  });
+  return { ...result, data: result.data.map(dongChiTietTuDb) };
+}
+
+/** Toàn bộ lần pha khớp bộ lọc — chỉ khi Xuất file. */
+export async function fetchAllNkpcChiTietForListQuery(query: NkpcChiTietListServerQuery): Promise<NhatKyPhunCuiLanRow[]> {
+  const rows = await fetchAllRows<DbLanChiTiet>((from, to) =>
+    applyNkpcChiTietQuery(db.from(TABLE_LAN).select(CHI_TIET_COLUMNS), query).range(from, to)
+  );
+  return rows.map(dongChiTietTuDb);
 }
 
 export interface NhatKyTomTatRow {

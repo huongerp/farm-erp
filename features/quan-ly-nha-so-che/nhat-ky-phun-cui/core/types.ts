@@ -48,3 +48,24 @@ export interface DinhMucThuoc {
   ghi_chu: string | null;
   thu_tu: number;
 }
+
+/** Một lần pha phẳng kèm vài cột của phiếu cha — tab Chi tiết. */
+export interface NhatKyPhunCuiLanRow {
+  id: string;
+  id_nhat_ky: string;
+  ngay: string;
+  id_chi_nhanh: string;
+  ten_chi_nhanh: string | null;
+  ten_nhan_vien_phu_trach: string | null;
+  thu_tu: number;
+  /** HH:mm */
+  gio: string | null;
+  id_hang_hoa: string | null;
+  ma_hang_hoa: string | null;
+  ten_hang_hoa: string | null;
+  nong_do: number | null;
+  don_vi: DonViNongDo;
+  luong_nuoc_lit: number | null;
+  luong_thuoc: number | null;
+  ghi_chu: string | null;
+}

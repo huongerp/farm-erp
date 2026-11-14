@@ -16,6 +16,8 @@ export {
   getDinhMucDb as getDinhMuc,
   luuDinhMucDb as luuDinhMuc,
   doiDangDungDinhMucDb as doiDangDungDinhMuc,
+  getNkpcChiTietPageDb as getNkpcChiTietPage,
+  fetchAllNkpcChiTietForListQuery,
 } from './nhat-ky-phun-cui-db.service';
 
 async function hoTenMap(): Promise<Map<string, string>> {
