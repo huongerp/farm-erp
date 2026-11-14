@@ -246,10 +246,16 @@ export async function luuNkppDb(id: string | null, v: NhatKyFormValues): Promise
   const idSo = toIntId(id);
   const { error } = await db.from(TABLE).update(cha).eq('id', idSo);
   if (error) nemLoiLuu(error, v.ngay);
-  const { error: errXoa } = await db.from(TABLE_LAN).delete().eq('id_nhat_ky', idSo);
+  // Upsert theo UNIQUE(id_nhat_ky, lan) rồi mới xoá các lần đã bỏ — lỗi giữa chừng không làm mất lần pha cũ.
+  const dong = dongLan(idSo, v);
+  if (dong.length > 0) {
+    const { error: errCon } = await db.from(TABLE_LAN).upsert(dong, { onConflict: 'id_nhat_ky,lan' });
+    if (errCon) throwDbError(errCon);
+  }
+  let xoaDu = db.from(TABLE_LAN).delete().eq('id_nhat_ky', idSo);
+  if (dong.length > 0) xoaDu = xoaDu.not('lan', 'in', `(${dong.map((d) => d.lan).join(',')})`);
+  const { error: errXoa } = await xoaDu;
   if (errXoa) throwDbError(errXoa);
-  const { error: errCon } = await db.from(TABLE_LAN).insert(dongLan(idSo, v));
-  if (errCon) throwDbError(errCon);
   return id;
 }
 

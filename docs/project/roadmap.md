@@ -21,7 +21,7 @@ React 19 + Vite + TypeScript (PWA) · PostgREST self-host + auth-service (JWT, m
 | Quản lý nhà sơ chế (thu hoạch, sơ chế, nhân công, giám sát chất lượng, đăng ký nhận hàng, đề xuất mua hàng, bộ kho Phân thuốc…) | ✅ |
 | Tài chính (thu chi quỹ, thiết lập, thống kê) | ✅ |
 | Nhóm Checklist & bảo trì, Đánh giá đầu vào, Đăng ký tham quan farm (thêm 10–11/2026) | 🔄 còn được bổ sung theo yêu cầu khách — đã có phiếu vệ sinh tuần (lưới T2–CN, migration 080) |
-| Sơ chế: Nhật ký pha phèn, Nhật ký pha thuốc phun cùi (nhóm Phiếu, 11/2026) | 🔄 xong code, chờ chạy migration 078 |
+| Sơ chế: Nhật ký pha phèn, Nhật ký pha thuốc phun cùi (nhóm Phiếu, 11/2026) | ✅ xong (migration 078 đã chạy 14/11/2026) |
 
 ## Giai đoạn 3 — Năng lực dùng chung ✅
 
