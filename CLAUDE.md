@@ -18,7 +18,7 @@ trong `lib/db.ts` chỉ là thư viện client PostgREST, app **không** dùng d
 | Việc | Lệnh |
 |---|---|
 | Dev (tự spawn PostgREST + auth-service + notify-service) | `npm run dev` |
-| Typecheck (incremental, lần sau ~1,5s) | `npm run typecheck` |
+| Typecheck (incremental, lần sau ~1,5s) | `npm run typecheck` — chỉ frontend; `services/*` là package riêng, kiểm bằng `npm run typecheck` trong thư mục service (Docker build cũng chạy `tsc`) |
 | Test toàn bộ | `npm test` |
 | Test theo file đang sửa | `npm run test:changed -- <path>` |
 | Test 1 file | `npx vitest run <path>` |

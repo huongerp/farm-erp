@@ -30,5 +30,5 @@
     "tsBuildInfoFile": "./.tsbuildinfo"
   },
   "include": ["**/*.ts", "**/*.tsx", "vite-env.d.ts"],
-  "exclude": ["node_modules", "dist", "build"]
+  "exclude": ["node_modules", "dist", "build", "services"]
 }
