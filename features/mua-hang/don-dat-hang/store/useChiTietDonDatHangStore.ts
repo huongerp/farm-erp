@@ -31,6 +31,9 @@ const initialFilters: DonDatHangFilters = {
   danhMucCap1Ids: [],
   danhMucCap2Ids: [],
   phanLoai: [],
+  datePreset: 'all',
+  customDateFrom: '',
+  customDateEnd: '',
 };
 
 export const useChiTietDonDatHangStore = createGenericStore<DonDatHangFilters>(initialFilters, getDefaultColumns(), 'table-don-dat-hang-chi-tiet-don-dat-hang');
