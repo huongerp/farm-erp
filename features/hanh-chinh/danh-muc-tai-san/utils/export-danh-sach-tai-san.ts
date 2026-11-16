@@ -5,6 +5,7 @@
 import type { TaiSan } from '../core/types';
 import { formatDate } from '../../../../lib/utils';
 import i18n from '../../../../lib/i18n';
+import type { ExportColumn } from '../../../../lib/export/dinh-dang-o';
 
 /** Một dòng xuất – đủ trường theo bảng, dạng get dữ liệu để xuất, có thể thêm cột mới. */
 export interface TaiSanExportRow {
@@ -32,8 +33,8 @@ export interface TaiSanExportRow {
 
 const t = i18n.t.bind(i18n);
 
-/** Thứ tự cột khi xuất Excel (key → label). Dễ thêm cột mới bằng cách bổ sung vào đây và vào TaiSanExportRow + taiSanToExportRow. */
-export const TAI_SAN_EXPORT_COLUMNS: { key: keyof TaiSanExportRow; label: string }[] = [
+/** Thứ tự cột cho hộp thoại Xuất (key → label). Hàm (không phải hằng) để nhãn dịch lúc gọi, sau khi locale module đã nạp. Dễ thêm cột mới bằng cách bổ sung vào đây và vào TaiSanExportRow + taiSanToExportRow. */
+export const getTaiSanExportColumns = (): (ExportColumn & { key: keyof TaiSanExportRow })[] => [
   { key: 'ma_tai_san', label: t('danhSachTaiSan.store.maCol') },
   { key: 'ten_tai_san', label: t('danhSachTaiSan.store.tenCol') },
   { key: 'ten_nhom', label: t('danhSachTaiSan.store.nhomCol') },
@@ -49,10 +50,10 @@ export const TAI_SAN_EXPORT_COLUMNS: { key: keyof TaiSanExportRow; label: string
   { key: 'ten_nguoi_tao', label: t('danhSachTaiSan.store.nguoiTaoCol') },
   { key: 'ten_nguoi_dang_giu', label: t('danhSachTaiSan.store.nguoiGiuCol') },
   { key: 'ngay_nhap', label: t('danhSachTaiSan.store.ngayNhapCol') },
-  { key: 'nguyen_gia', label: t('danhSachTaiSan.store.nguyenGiaCol') },
+  { key: 'nguyen_gia', label: t('danhSachTaiSan.store.nguyenGiaCol'), type: 'money' },
   { key: 'ngay_bat_dau_trich_khau_hao', label: t('danhSachTaiSan.detail.ngayBatDauTrichKhauHao') },
-  { key: 'gia_tri_con_lai', label: t('danhSachTaiSan.detail.giaTriConLai') },
-  { key: 'khau_hao_luy_ke', label: t('danhSachTaiSan.detail.khauHaoLuyKe') },
+  { key: 'gia_tri_con_lai', label: t('danhSachTaiSan.detail.giaTriConLai'), type: 'money' },
+  { key: 'khau_hao_luy_ke', label: t('danhSachTaiSan.detail.khauHaoLuyKe'), type: 'money' },
   { key: 'ghi_chu', label: t('danhSachTaiSan.form.ghiChu') },
 ];
 

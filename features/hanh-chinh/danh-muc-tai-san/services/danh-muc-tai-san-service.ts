@@ -5,6 +5,7 @@ import { getAssetStorageLocations } from '../../thiet-lap-tai-san/services/noi-l
 import { getAssetStatuses } from '../../thiet-lap-tai-san/services/trang-thai-service';
 import { getEmployeesRef } from '@/features/he-thong/nhan-vien/services/nhan-vien-service';
 import type { PaginatedTableResult } from '../../../../lib/db';
+import { writeEachImportRow } from '../../../../lib/import-bulk';
 import type { DanhSachTaiSanListServerQuery } from './danh-muc-tai-san-list-query';
 import {
   getTaiSanListDb,
@@ -103,6 +104,10 @@ export const createTaiSan = async (data: TaiSanFormValues): Promise<TaiSan> => {
   const created = await createTaiSanDb(data);
   return (await enrichTaiSan([created]))[0];
 };
+
+/** Ghi các dòng đã validate ở `planTaiSanImport`; lỗi DB (vd trùng mã) gắn lại đúng dòng Excel. */
+export const importTaiSan = (items: { row: number; values: Record<string, unknown>; data: TaiSanFormValues }[]) =>
+  writeEachImportRow(items, (data) => createTaiSanDb(data));
 
 export const updateTaiSan = async (id: string, data: TaiSanFormValues): Promise<TaiSan> => {
   const updated = await updateTaiSanDb(id, data);

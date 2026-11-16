@@ -9,6 +9,7 @@ import {
   getTaiSanPage,
   getTaiSanTomTat,
   createTaiSan,
+  importTaiSan,
   updateTaiSan,
   deleteTaiSan,
   getNextMaTaiSan,
@@ -82,6 +83,22 @@ export const useCreateTaiSan = (onSuccess?: () => void) => {
       if (onSuccess) onSuccess();
     },
     onError: (err: unknown) => toast.error((err as Error).message),
+  });
+};
+
+export const useImportTaiSan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: importTaiSan,
+    onSuccess: (result) => {
+      if (result.created === 0) return;
+      queryClient.invalidateQueries({ queryKey: TAI_SAN_LIST_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctThuongHieu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctModel'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctXuatXu'] });
+      queryClient.invalidateQueries({ queryKey: ['taiSanDistinctNhaCungCap'] });
+      toast.success(i18n.t('danhSachTaiSan.toast.importSuccess', { count: result.created }));
+    },
   });
 };
 

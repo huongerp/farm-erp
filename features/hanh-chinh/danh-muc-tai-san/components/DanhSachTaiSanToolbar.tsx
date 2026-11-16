@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import type { TaiSanTomTat } from '../services/danh-muc-tai-san-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Layers, MapPin, FileSpreadsheet, FileDown, ChevronDown } from 'lucide-react';
+import { Plus, Tag, Layers, MapPin, Download, Upload } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -22,16 +22,16 @@ interface Props {
   items?: TaiSanTomTat[];
   onAdd: () => void;
   onDeleteMany: (ids: string[]) => void;
-  /** Xuất danh sách hiện tại ra Excel */
-  onExportExcel?: () => void;
-  /** Xuất danh sách hiện tại ra PDF */
-  onExportPDF?: () => void;
+  /** Mở hộp thoại Xuất chuẩn (ExportDialog: Excel/CSV/PDF/Google Sheet). */
+  onExport?: () => void;
+  /** Mở hộp thoại Import Excel chuẩn (ImportDialog). */
+  onImport?: () => void;
   canCreate?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
 }
 
-const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExportExcel, onExportPDF, canCreate = true, canDelete = true }) => {
+const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMany, onExport, onImport, canCreate = true, canDelete = true }) => {
   const { t } = useTranslation();
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useDanhSachTaiSanStore);
   const filters = useDanhSachTaiSanStore((s) => s.filters);
@@ -104,62 +104,35 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
     </>
   );
 
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!showExportMenu) return;
-    const close = (e: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) setShowExportMenu(false);
-    };
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
-  }, [showExportMenu]);
+  const iconBtnClass =
+    'inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50';
 
-  const hasExport = Boolean(onExportExcel || onExportPDF);
+  const mobileActions = useMemo(
+    () => [
+      ...(onImport ? [{ key: 'import', label: t('common.import'), icon: Upload, onClick: onImport, description: '' }] : []),
+      ...(onExport ? [{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }] : []),
+    ],
+    [onImport, onExport, t]
+  );
+
   const renderActions = (
     <>
-      {hasExport && (
-        <div className="relative" ref={exportMenuRef}>
-          <Tooltip content={t('danhSachTaiSan.stats.exportReport')} placement="bottom" disabled={showExportMenu}>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 px-2 lg:px-3 border-border"
-              onClick={() => setShowExportMenu((v) => !v)}
-              aria-label={t('danhSachTaiSan.stats.exportReport')}
-            >
-              <FileDown className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">{t('danhSachTaiSan.stats.exportReport')}</span>
-              <ChevronDown className="w-4 h-4 ml-1" />
+      <div className="hidden sm:flex items-center gap-2">
+        {onImport && (
+          <Tooltip content={t('common.import')} placement="bottom">
+            <Button variant="outline" size="sm" onClick={onImport} className={iconBtnClass} aria-label={t('common.import')}>
+              <Upload className="w-4 h-4" />
             </Button>
           </Tooltip>
-          {showExportMenu && (
-            <div className="absolute right-0 top-full mt-1 py-1 min-w-[140px] rounded-lg border border-border bg-card shadow-lg z-50">
-              {onExportExcel && (
-                <button
-                  type="button"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted/60"
-                  onClick={() => { onExportExcel(); setShowExportMenu(false); }}
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  {t('danhSachTaiSan.export.excel')}
-                </button>
-              )}
-              {onExportPDF && (
-                <button
-                  type="button"
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted/60"
-                  onClick={() => { onExportPDF(); setShowExportMenu(false); }}
-                >
-                  <FileDown className="w-4 h-4" />
-                  {t('danhSachTaiSan.export.pdf')}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+        {onExport && (
+          <Tooltip content={t('common.export')} placement="bottom">
+            <Button variant="outline" size="sm" onClick={onExport} className={iconBtnClass} aria-label={t('common.export')}>
+              <Download className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        )}
+      </div>
       {canCreate && (
         <Button
           onClick={onAdd}
@@ -189,6 +162,7 @@ const DanhSachTaiSanToolbar: React.FC<Props> = ({ items = [], onAdd, onDeleteMan
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
+      mobileActions={mobileActions.length > 0 ? mobileActions : undefined}
       filters={renderFilters}
       filterGroups={filterGroups}
       onAdd={canCreate ? onAdd : undefined}

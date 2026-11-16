@@ -6,8 +6,12 @@ import { useModulePermissionFromContext } from '../../../../components/shared/Mo
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { useTaiSanPage, useTaiSanTomTat, useDeleteTaiSan, useUpdateTaiSan } from '../hooks/use-danh-muc-tai-san';
 import { getTaiSanByIdDb } from '../services/danh-muc-tai-san-db.service';
-import { exportToExcel, exportToPDF } from '../../../../lib/utils';
-import { taiSanToExportRow, TAI_SAN_EXPORT_FILENAME } from '../utils/export-danh-sach-tai-san';
+import { toast } from 'sonner';
+import ExportDialog from '../../../../components/shared/LazyExportDialog';
+import ImportDialog from '../../../../components/shared/LazyImportDialog';
+import { useExportData } from '../../../../lib/useExportData';
+import { taiSanToExportRow, getTaiSanExportColumns, TAI_SAN_EXPORT_FILENAME } from '../utils/export-danh-sach-tai-san';
+import { useTaiSanImport } from '../hooks/use-tai-san-import';
 import { CONFIRM_DELETE, CONFIRM_DELETE_ALL } from '../../../../lib/button-labels';
 import DanhSachTaiSanToolbar from './DanhSachTaiSanToolbar';
 import TaiSanTable from './TaiSanTable';
@@ -24,6 +28,8 @@ import { fetchAllTaiSanForListQuery } from '../services/danh-muc-tai-san-service
 import Combobox from '../../../../components/ui/Combobox';
 import SingleImageInput from '../../../../components/ui/SingleImageInput';
 import type { TaiSan } from '../core/types';
+
+const EMPTY_EXPORT_ROWS: TaiSan[] = [];
 
 interface StatusComboboxForConfirmProps {
   initialValue: string;
@@ -116,6 +122,8 @@ const DanhSachTab: React.FC = () => {
   const pagination = useDanhSachTaiSanStore((s) => s.pagination);
   const resetState = useDanhSachTaiSanStore((s) => s.resetState);
   const clearSelection = useDanhSachTaiSanStore((s) => s.clearSelection);
+  const selectedIds = useDanhSachTaiSanStore((s) => s.selectedIds);
+  const columns = useDanhSachTaiSanStore((s) => s.columns);
   const deleteMutation = useDeleteTaiSan();
   const updateMutation = useUpdateTaiSan();
   const { data: assetStatuses = [] } = useAssetStatuses();
@@ -162,6 +170,64 @@ const DanhSachTab: React.FC = () => {
   const isLoading = !pageQuery.data && pageQuery.isPending;
   const isFetching = !!pageQuery.data && pageQuery.isFetching;
   const isError = pageQuery.isError;
+
+  const importer = useTaiSanImport();
+  const [showExport, setShowExport] = useState(false);
+
+  /**
+   * Xuất cần TẤT CẢ bản ghi khớp bộ lọc (không chỉ trang đang xem) — chỉ tải khi mở hộp thoại.
+   * Kết quả gắn với query đã tải: query hiện tại chưa có kết quả ⇒ đang tải; đóng hộp thoại thì bỏ.
+   */
+  const [exportResult, setExportResult] = useState<{ query: DanhSachTaiSanListServerQuery; rows: TaiSan[] } | null>(null);
+  const [prevShowExport, setPrevShowExport] = useState(showExport);
+  if (showExport !== prevShowExport) {
+    setPrevShowExport(showExport);
+    if (!showExport) setExportResult(null);
+  }
+  const exportRows = exportResult?.rows ?? EMPTY_EXPORT_ROWS;
+  const exportLoading = showExport && exportResult?.query !== listServerQuery;
+  useEffect(() => {
+    if (!showExport) return;
+    let cancelled = false;
+    fetchAllTaiSanForListQuery(listServerQuery)
+      .then((rows) => {
+        if (!cancelled) setExportResult({ query: listServerQuery, rows });
+      })
+      .catch(() => {
+        if (!cancelled) setExportResult({ query: listServerQuery, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showExport, listServerQuery]);
+
+  const exportColumns = useMemo(() => getTaiSanExportColumns(), []);
+  const exportMapFn = useCallback((a: TaiSan) => ({ ...taiSanToExportRow(a) }), []);
+  const { exportData, paginatedData: paginatedExportData, selectedData: selectedExportData } = useExportData<TaiSan>({
+    data: exportRows,
+    isOpen: showExport && !exportLoading,
+    mapFn: exportMapFn,
+    pagination,
+    selectedIds,
+    keyExtractor: (a) => a.id,
+  });
+  /** Mặc định tick các cột đang hiện trên bảng (cột bảng trùng key xuất). */
+  const exportVisibleKeys = useMemo(() => {
+    const allowed = new Set<string>(exportColumns.map((c) => c.key));
+    const picked = columns
+      .filter((c) => c.visible)
+      .map((c) => (c.id === 'ten_nhan_vien_dang_giu' ? 'ten_nguoi_dang_giu' : c.id))
+      .filter((k) => allowed.has(k));
+    return picked.length > 0 ? picked : undefined;
+  }, [columns, exportColumns]);
+
+  const handleExport = useCallback(() => {
+    if (totalCount === 0) {
+      toast.warning(t('danhSachTaiSan.noExportData'));
+      return;
+    }
+    setShowExport(true);
+  }, [totalCount, t]);
 
   const deletePhieuMutation = useDeletePhieu();
   const deletePhieuBaoTriMutation = useDeletePhieuBaoTri();
@@ -380,15 +446,8 @@ const DanhSachTab: React.FC = () => {
           items={tomTatList}
           onAdd={handleAdd}
           onDeleteMany={handleDeleteMany}
-          onExportExcel={async () => {
-            // Xuất TẤT CẢ bản ghi khớp bộ lọc, không chỉ trang đang xem.
-            const rows = (await fetchAllTaiSanForListQuery(listServerQuery)).map(taiSanToExportRow);
-            exportToExcel(rows, TAI_SAN_EXPORT_FILENAME);
-          }}
-          onExportPDF={async () => {
-            const rows = (await fetchAllTaiSanForListQuery(listServerQuery)).map(taiSanToExportRow);
-            exportToPDF(rows, TAI_SAN_EXPORT_FILENAME, undefined);
-          }}
+          onExport={handleExport}
+          onImport={canCreate ? importer.openImport : undefined}
           canCreate={canCreate}
           canUpdate={canUpdate}
           canDelete={canDelete}
@@ -458,6 +517,37 @@ const DanhSachTab: React.FC = () => {
             }}
             defaultTaiSanId={phieuFormDefaultTaiSanId ?? undefined}
             initialData={editingPhieuBaoTri ?? undefined}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showExport && (
+          <ExportDialog
+            open={showExport}
+            onClose={() => setShowExport(false)}
+            columns={exportColumns}
+            data={exportData}
+            paginatedData={paginatedExportData}
+            selectedData={selectedExportData}
+            fileName={TAI_SAN_EXPORT_FILENAME}
+            visibleColumnKeys={exportVisibleKeys}
+            sheetName={t('danhSachTaiSan.exportSheetName')}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {importer.showImport && (
+          <ImportDialog
+            open={importer.showImport}
+            onClose={importer.closeImport}
+            columns={importer.importColumns}
+            sampleRows={importer.sampleRows}
+            referenceSheets={importer.referenceSheets}
+            importErrors={importer.importErrors}
+            onImport={importer.handleImport}
+            templateFileName={importer.templateFileName}
           />
         )}
       </AnimatePresence>
