@@ -117,3 +117,28 @@ describe('resolveBcscPresetKpiDerivedFields — Tỷ lệ thu hồi (mục tiêu
     expect(r).toEqual({ thucTeStr: '510', mucTieuStr: null, phanTram: null, danhGia: null, tyLeDat: null });
   });
 });
+
+describe('resolveBcscPresetKpiDerivedFields — Tỷ lệ lỗi (càng thấp càng tốt, % đạt = mục tiêu ÷ thực tế)', () => {
+  const src = (tt: number | null) => ({ thucTeValue: tt, isHigherBetter: false });
+
+  it('mục tiêu 5, thực tế 10,28 → 48,64%, Không đạt', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(10.28), '5');
+    expect(r.phanTram).toBeCloseTo((5 / 10.28) * 100, 6);
+    expect(r.tyLeDat).toBeCloseTo((5 / 10.28) * 100, 6);
+    expect(r.danhGia).toBe('Không đạt');
+  });
+  it('lỗi thấp hơn mục tiêu → % > 100, Đạt', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(4), '5');
+    expect(r.phanTram).toBeCloseTo(125, 6);
+    expect(r.danhGia).toBe('Đạt');
+  });
+  it('không có lỗi (thực tế 0) → 100%, không chia 0', () => {
+    const r = resolveBcscPresetKpiDerivedFields(src(0), '5');
+    expect(r.phanTram).toBe(100);
+    expect(r.tyLeDat).toBe(100);
+  });
+  it('mục tiêu trống/0 → không tính %', () => {
+    expect(resolveBcscPresetKpiDerivedFields(src(3), '').tyLeDat).toBeNull();
+    expect(resolveBcscPresetKpiDerivedFields(src(3), '0').tyLeDat).toBeNull();
+  });
+});

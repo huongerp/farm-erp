@@ -79,6 +79,8 @@ const DangKyThamQuanPage: React.FC = () => {
       trangThai: filters.trang_thai ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
       mucDich: filters.muc_dich ?? [],
+      ngayFrom: filters.tu_ngay,
+      ngayTo: filters.den_ngay,
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),

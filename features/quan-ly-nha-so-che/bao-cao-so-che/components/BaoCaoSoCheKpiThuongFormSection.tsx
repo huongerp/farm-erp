@@ -178,7 +178,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                   : null;
 
                 const danhGiaPreset = isPreset ? presetDerived!.danhGia : null;
-                /* Cột thưởng tự tính theo quy chế → chỉ đọc (CP dòng lỗi + dòng thêm tay vẫn nhập) */
+                /* Cột thưởng tự tính theo quy chế → chỉ đọc (dòng thêm tay vẫn nhập) */
                 const thuongCongThuc = isPreset
                   ? computeBcscThuongTheoCongThuc(index, presetDerived!.tyLeDat)
                   : {};

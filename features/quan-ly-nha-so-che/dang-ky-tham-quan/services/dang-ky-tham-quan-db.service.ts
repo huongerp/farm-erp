@@ -150,6 +150,8 @@ function applyDkTqListQuery(q: any, query: DangKyThamQuanListServerQuery, idTheo
   if (query.mucDich.length > 0) sel = sel.overlaps('muc_dich', query.mucDich);
   const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay_dang_ky');
   if (ky.length) sel = sel.or(ky.join(','));
+  if (query.ngayFrom) sel = sel.gte('ngay_dang_ky', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay_dang_ky', query.ngayTo);
 
   // Khớp cột phiếu HOẶC có khách khớp: ghép `id.in.(…)` vào cùng nhóm or của ô tìm kiếm.
   const dk = buildPostgrestSearchOr(query.searchTerm, DKTQ_SEARCH_SPEC);

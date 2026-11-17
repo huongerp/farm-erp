@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeBcscThuongTheoCongThuc, thuongLoiQl, thuongNguong85 } from './kpi-thuong-cong-thuc';
+import { computeBcscThuongTheoCongThuc, thuongNguong85 } from './kpi-thuong-cong-thuc';
 
 describe('thuongNguong85', () => {
   it('dưới 85% = 0, từ 85% tính theo tỷ lệ, trần 100%', () => {
@@ -15,24 +15,13 @@ describe('thuongNguong85', () => {
   });
 });
 
-describe('thuongLoiQl', () => {
-  it('≤100% nhận đủ mức, >100% ghi âm phần vượt', () => {
-    expect(thuongLoiQl(0, 12143)).toBe(12143);
-    expect(thuongLoiQl(100, 12143)).toBe(12143);
-    expect(thuongLoiQl(125, 12143)).toBe(-3036);
-    expect(thuongLoiQl(171, 12143)).toBe(-8622);
-    expect(thuongLoiQl(null, 12143)).toBe(0);
-  });
-});
-
 describe('computeBcscThuongTheoCongThuc', () => {
-  it('số liệu phiếu mẫu 16/11: NS 77% → 0; lỗi 171%; thu hồi 324/284', () => {
+  it('số liệu phiếu mẫu 16/11: NS 77% → 0; thu hồi 324/284', () => {
     expect(computeBcscThuongTheoCongThuc(0, (2.7 / 3.5) * 100)).toEqual({
       thuong_ql: 0,
       thuong_nhom_tia: 0,
       thuong_nhom_cp: 0,
     });
-    expect(computeBcscThuongTheoCongThuc(1, 171)).toEqual({ thuong_ql: -8622, thuong_nhom_tia: 0 });
     expect(computeBcscThuongTheoCongThuc(2, (324 / 284) * 100)).toEqual({
       thuong_ql: 12143,
       thuong_nhom_tia: 21429,
@@ -46,8 +35,32 @@ describe('computeBcscThuongTheoCongThuc', () => {
       thuong_nhom_cp: 10714,
     });
   });
-  it('CP dòng lỗi giữ nhập tay; dòng ngoài preset không đụng', () => {
-    expect('thuong_nhom_cp' in computeBcscThuongTheoCongThuc(1, 50)).toBe(false);
+  it('dòng lỗi: % đạt (mục tiêu ÷ thực tế) dưới 85% → 0, KHÔNG trừ âm', () => {
+    // mục tiêu 5%, thực tế 10,28% → 48,64%
+    expect(computeBcscThuongTheoCongThuc(1, (5 / 10.28) * 100)).toEqual({
+      thuong_ql: 0,
+      thuong_nhom_tia: 0,
+      thuong_nhom_cp: 0,
+    });
+  });
+  it('dòng lỗi: ≥ 85% tính theo tỷ lệ, trần 100%; QL 12.143đ, CP 21.429đ', () => {
+    expect(computeBcscThuongTheoCongThuc(1, 90)).toEqual({
+      thuong_ql: Math.round(0.9 * 12143),
+      thuong_nhom_tia: 0,
+      thuong_nhom_cp: Math.round(0.9 * 21429),
+    });
+    expect(computeBcscThuongTheoCongThuc(1, 125)).toEqual({
+      thuong_ql: 12143,
+      thuong_nhom_tia: 0,
+      thuong_nhom_cp: 21429,
+    });
+    expect(computeBcscThuongTheoCongThuc(1, null)).toEqual({
+      thuong_ql: 0,
+      thuong_nhom_tia: 0,
+      thuong_nhom_cp: 0,
+    });
+  });
+  it('dòng ngoài preset không đụng', () => {
     expect(computeBcscThuongTheoCongThuc(3, 100)).toEqual({});
   });
 });

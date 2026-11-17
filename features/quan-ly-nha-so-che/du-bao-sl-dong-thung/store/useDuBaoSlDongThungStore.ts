@@ -6,6 +6,9 @@ export interface DuBaoSlDongThungFilters {
   nam: string[];
   thang: string[];
   trang_thai: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn (chip Ngày). */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -67,6 +70,8 @@ const initialFilters: DuBaoSlDongThungFilters = {
   nam: [],
   thang: [],
   trang_thai: [],
+  tu_ngay: '',
+  den_ngay: '',
 };
 
 export const useDuBaoSlDongThungStore = createGenericStore<DuBaoSlDongThungFilters>(initialFilters, DEFAULT_COLUMNS, 'table-du-bao-sl-dong-thung');

@@ -4,7 +4,7 @@ import { Plus, User, Calendar } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
-import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
+import { useKyNgayChip } from '../../../quan-ly-nha-so-che/shared/use-ky-ngay-chip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useKiemKeTaiSanStore } from '../store/useKiemKeTaiSanStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
@@ -32,6 +32,11 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useKiemKeTaiSanStore);
   const filters = useKiemKeTaiSanStore((s) => s.filters);
   const setFilter = useKiemKeTaiSanStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('dateFrom', tu);
+    setFilter('dateTo', den);
+  };
+  const kyNgay = useKyNgayChip(filters.dateFrom ?? '', filters.dateTo ?? '', datKhoang);
   const resetFilters = useKiemKeTaiSanStore((s) => s.resetFilters);
   const columns = useKiemKeTaiSanStore((s) => s.columns);
   const toggleColumn = useKiemKeTaiSanStore((s) => s.toggleColumn);
@@ -66,8 +71,7 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
   const activeFilterCount =
     filters.trang_thai_dot.length +
     filters.id_nguoi_phu_trach.length +
-    (filters.dateFrom ? 1 : 0) +
-    (filters.dateTo ? 1 : 0);
+    (kyNgay.coKy ? 1 : 0);
   const handleClearAllFilters = () => resetFilters();
 
   const filterGroups = useMemo(
@@ -80,68 +84,9 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
 
   const filterItems: FilterChipItem[] = [
     { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[160px]' },
-    {
-      kind: 'custom',
-      key: 'dateFrom',
-      node: (
-        <div className="relative w-full sm:w-[140px]">
-          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => setFilter('dateFrom', e.target.value)}
-            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-            placeholder={t('kiemKeTaiSan.filter.dateFrom')}
-          />
-        </div>
-      ),
-    },
-    {
-      kind: 'custom',
-      key: 'dateTo',
-      node: (
-        <div className="relative w-full sm:w-[140px]">
-          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => setFilter('dateTo', e.target.value)}
-            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-            placeholder={t('kiemKeTaiSan.filter.dateTo')}
-          />
-        </div>
-      ),
-    },
+    kyNgay.chipItem,
     { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[180px]' },
   ];
-
-  // Điện thoại ẩn hàng chip → hai ô Từ ngày / Đến ngày hiện trong bảng lọc mobile.
-  const mobileFilterExtra = (
-    <MobileFilterField
-      label={`${t('kiemKeTaiSan.filter.dateFrom')} – ${t('kiemKeTaiSan.filter.dateTo')}`}
-      icon={Calendar}
-      active={!!(filters.dateFrom || filters.dateTo)}
-    >
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilter('dateFrom', e.target.value)}
-          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
-          placeholder={t('kiemKeTaiSan.filter.dateFrom')}
-          aria-label={t('kiemKeTaiSan.filter.dateFrom')}
-        />
-        <input
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilter('dateTo', e.target.value)}
-          className="w-full h-10 rounded-lg border border-border bg-background px-2 text-sm"
-          placeholder={t('kiemKeTaiSan.filter.dateTo')}
-          aria-label={t('kiemKeTaiSan.filter.dateTo')}
-        />
-      </div>
-    </MobileFilterField>
-  );
 
   const renderActions = (
     <div className="flex items-center gap-2">
@@ -172,8 +117,8 @@ const KiemKeTaiSanToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
-      mobileFilterExtra={mobileFilterExtra}
-      mobileFilterExtraCount={(filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0)}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       onAdd={onAdd}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

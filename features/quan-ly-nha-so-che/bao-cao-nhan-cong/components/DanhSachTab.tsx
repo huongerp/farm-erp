@@ -100,6 +100,8 @@ const DanhSachTab: React.FC = () => {
       thang: filters.thang ?? [],
       trangThai: filters.trang_thai ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
+      ngayFrom: filters.tu_ngay || undefined,
+      ngayTo: filters.den_ngay || undefined,
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),

@@ -12,6 +12,9 @@ export interface DangKyThamQuanListServerQuery {
   trangThai: string[];
   idChiNhanh: string[];
   mucDich: string[];
+  /** Khoảng ngày đăng ký (YYYY-MM-DD) — chip Ngày; rỗng = không giới hạn. */
+  ngayFrom?: string;
+  ngayTo?: string;
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }

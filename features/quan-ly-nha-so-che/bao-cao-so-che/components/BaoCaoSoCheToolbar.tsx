@@ -7,8 +7,12 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import { useBaoCaoSoCheStore, type BaoCaoSoCheFilters } from '../store/useBaoCaoSoCheStore';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
+
+/** 6 chip (thêm «Ngày») vượt 5 chip desktop → ĐVT ít dùng nằm sẵn trong nút Lọc. */
+const LUON_VAO_FILTER = ['don_vi_tinh'] as const;
 
 interface Props {
   /**
@@ -50,6 +54,11 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoCaoSoCheStore);
   const filters = useBaoCaoSoCheStore((s) => s.filters);
   const setFilter = useBaoCaoSoCheStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useBaoCaoSoCheStore((s) => s.clearSelection);
   const columns = useBaoCaoSoCheStore((s) => s.columns);
   const toggleColumn = useBaoCaoSoCheStore((s) => s.toggleColumn);
@@ -124,9 +133,10 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       (f.nam?.length ?? 0) +
       (f.thang?.length ?? 0) +
       (f.trang_thai?.length ?? 0) +
-      (f.don_vi_tinh?.length ?? 0)
+      (f.don_vi_tinh?.length ?? 0) +
+      (kyNgay.coKy ? 1 : 0)
     );
-  }, [searchInput, filters]);
+  }, [searchInput, filters, kyNgay.coKy]);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
@@ -135,6 +145,7 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
     setFilter('thang', []);
     setFilter('trang_thai', []);
     setFilter('don_vi_tinh', []);
+    datKhoang('', '');
   };
 
   const filterGroups = useMemo(
@@ -185,11 +196,14 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
 
   /** Bề rộng chip desktop, cùng thứ tự với filterGroups. */
   const chipWidths = ['sm:w-[120px]', 'sm:w-[140px]', 'sm:w-[150px]', 'sm:w-[140px]', 'sm:w-[200px]'];
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${chipWidths[i]}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({
+      kind: 'group',
+      group: g,
+      className: `w-full ${chipWidths[i]}`,
+    })),
+    kyNgay.chipItem,
+  ];
 
   const mobileActions = useMemo(
     () => [
@@ -240,8 +254,10 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={<ResponsiveFilterChips items={filterItems} />}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

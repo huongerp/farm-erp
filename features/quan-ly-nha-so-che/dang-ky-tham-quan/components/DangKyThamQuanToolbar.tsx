@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { MUC_DICH_THAM_QUAN, TRANG_THAI_DKTQ } from '../core/types';
@@ -39,6 +40,11 @@ const DangKyThamQuanToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDangKyThamQuanStore);
   const filters = useDangKyThamQuanStore((s) => s.filters);
   const setFilter = useDangKyThamQuanStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useDangKyThamQuanStore((s) => s.clearSelection);
   const columns = useDangKyThamQuanStore((s) => s.columns);
   const toggleColumn = useDangKyThamQuanStore((s) => s.toggleColumn);
@@ -90,18 +96,24 @@ const DangKyThamQuanToolbar: React.FC<Props> = ({
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${groups[i].width}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({
+      kind: 'group',
+      group: g,
+      className: `w-full ${groups[i].width}`,
+    })),
+    kyNgay.chipItem,
+  ];
 
   const activeFilterCount =
-    (searchInput.trim() ? 1 : 0) + groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0);
+    (searchInput.trim() ? 1 : 0) +
+    groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0) +
+    (kyNgay.coKy ? 1 : 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
     groups.forEach((g) => setFilter(g.key, []));
+    datKhoang('', '');
   };
 
   const renderActions = (
@@ -149,8 +161,10 @@ const DangKyThamQuanToolbar: React.FC<Props> = ({
       onSearchChange={setSearchInput}
       onClearSelection={clearSelection}
       actions={renderActions}
-      filters={<ResponsiveFilterChips items={filterItems} />}
+      filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={['muc_dich']} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={[
         { key: 'in-trang', label: t('dangKyThamQuan.toolbar.inPhieuTrang'), icon: FileText, onClick: onInPhieuTrang, description: '' },
         { key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' },

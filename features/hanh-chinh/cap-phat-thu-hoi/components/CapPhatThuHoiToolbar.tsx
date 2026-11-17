@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Package, User, Calendar, Upload, Download } from 'lucide-react';
+import { Plus, Package, User, Upload, Download } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
-import { MobileFilterField } from '../../../../components/ui/MobileFilterSheet';
+import { useKyNgayChip } from '../../../quan-ly-nha-so-che/shared/use-ky-ngay-chip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useCapPhatThuHoiStore } from '../store/useCapPhatThuHoiStore';
 import { useEmployeesRefQuery } from '@/lib/hooks/use-ref-queries';
@@ -38,6 +38,11 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput } = useGenericToolbarSearch(useCapPhatThuHoiStore);
   const filters = useCapPhatThuHoiStore((s) => s.filters);
   const setFilter = useCapPhatThuHoiStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('dateFrom', tu);
+    setFilter('dateTo', den);
+  };
+  const kyNgay = useKyNgayChip(filters.dateFrom ?? '', filters.dateTo ?? '', datKhoang);
   const resetFilters = useCapPhatThuHoiStore((s) => s.resetFilters);
   const columns = useCapPhatThuHoiStore((s) => s.columns);
   const toggleColumn = useCapPhatThuHoiStore((s) => s.toggleColumn);
@@ -72,8 +77,7 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
   const activeFilterCount =
     filters.loai_phieu.length +
     filters.id_nguoi_thuc_hien.length +
-    (filters.dateFrom ? 1 : 0) +
-    (filters.dateTo ? 1 : 0);
+    (kyNgay.coKy ? 1 : 0);
   const handleClearAllFilters = () => resetFilters();
 
   const filterGroups = useMemo(
@@ -86,69 +90,9 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
 
   const filterItems: FilterChipItem[] = [
     { kind: 'group', group: filterGroups[0], className: 'w-full sm:w-[160px]' },
-    {
-      kind: 'custom',
-      key: 'dateFrom',
-      node: (
-        <div className="relative w-full sm:w-[140px]">
-          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => setFilter('dateFrom', e.target.value)}
-            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-            placeholder={t('capPhatThuHoi.filter.dateFrom')}
-          />
-        </div>
-      ),
-    },
-    {
-      kind: 'custom',
-      key: 'dateTo',
-      node: (
-        <div className="relative w-full sm:w-[140px]">
-          <Calendar className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => setFilter('dateTo', e.target.value)}
-            className="w-full h-9 pl-8 pr-2 bg-muted/40 border border-border/60 rounded-lg text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40"
-            placeholder={t('capPhatThuHoi.filter.dateTo')}
-          />
-        </div>
-      ),
-    },
+    kyNgay.chipItem,
     { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[180px]' },
   ];
-
-  // Điện thoại ẩn hàng chip → hai ô Từ ngày / Đến ngày hiện trong bảng lọc mobile.
-  const mobileDateClass = 'w-full h-10 rounded-lg border border-border bg-background px-2 text-sm';
-  const mobileFilterExtra = (
-    <MobileFilterField
-      label={t('capPhatThuHoi.store.ngayCol')}
-      icon={Calendar}
-      active={!!(filters.dateFrom || filters.dateTo)}
-    >
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="date"
-          value={filters.dateFrom}
-          onChange={(e) => setFilter('dateFrom', e.target.value)}
-          className={mobileDateClass}
-          placeholder={t('capPhatThuHoi.filter.dateFrom')}
-          aria-label={t('capPhatThuHoi.filter.dateFrom')}
-        />
-        <input
-          type="date"
-          value={filters.dateTo}
-          onChange={(e) => setFilter('dateTo', e.target.value)}
-          className={mobileDateClass}
-          placeholder={t('capPhatThuHoi.filter.dateTo')}
-          aria-label={t('capPhatThuHoi.filter.dateTo')}
-        />
-      </div>
-    </MobileFilterField>
-  );
 
   const renderActions = (
     <div className="flex items-center gap-2">
@@ -217,8 +161,8 @@ const CapPhatThuHoiToolbar: React.FC<Props> = ({
       bulkActions={<NutInHangLoat mau="cap-phat-thu-hoi" ids={Array.from(selectedIds)} />}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
-      mobileFilterExtra={mobileFilterExtra}
-      mobileFilterExtraCount={(filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0)}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       onAdd={onAdd}
       activeFilterCount={activeFilterCount}
       onClearAllFilters={handleClearAllFilters}

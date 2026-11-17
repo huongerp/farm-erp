@@ -6,6 +6,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import { useDuBaoSlDongThungStore, type DuBaoSlDongThungFilters } from '../store/useDuBaoSlDongThungStore';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -50,6 +51,11 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useDuBaoSlDongThungStore);
   const filters = useDuBaoSlDongThungStore((s) => s.filters);
   const setFilter = useDuBaoSlDongThungStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useDuBaoSlDongThungStore((s) => s.clearSelection);
   const columns = useDuBaoSlDongThungStore((s) => s.columns);
   const toggleColumn = useDuBaoSlDongThungStore((s) => s.toggleColumn);
@@ -113,9 +119,10 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
       (f.id_chi_nhanh?.length ?? 0) +
       (f.nam?.length ?? 0) +
       (f.thang?.length ?? 0) +
-      (f.trang_thai?.length ?? 0)
+      (f.trang_thai?.length ?? 0) +
+      (kyNgay.coKy ? 1 : 0)
     );
-  }, [searchInput, filters]);
+  }, [searchInput, filters, kyNgay.coKy]);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
@@ -123,6 +130,7 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
     setFilter('nam', []);
     setFilter('thang', []);
     setFilter('trang_thai', []);
+    datKhoang('', '');
   };
 
   const filterGroups = useMemo(
@@ -165,11 +173,14 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
 
   /** Bề rộng chip desktop, cùng thứ tự với filterGroups. */
   const chipWidths = ['sm:w-[120px]', 'sm:w-[140px]', 'sm:w-[150px]', 'sm:w-[200px]'];
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${chipWidths[i]}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({
+      kind: 'group',
+      group: g,
+      className: `w-full ${chipWidths[i]}`,
+    })),
+    kyNgay.chipItem,
+  ];
 
   const mobileActions = useMemo(
     () => [
@@ -222,6 +233,8 @@ const DuBaoSlDongThungToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

@@ -7,6 +7,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import { useBaoCaoNhanCongStore, type BaoCaoNhanCongFilters } from '../store/useBaoCaoNhanCongStore';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 
@@ -59,6 +60,11 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
   const { searchInput, setSearchInput, commitSearchTerm } = useGenericToolbarSearch(useBaoCaoNhanCongStore);
   const filters = useBaoCaoNhanCongStore((s) => s.filters);
   const setFilter = useBaoCaoNhanCongStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useBaoCaoNhanCongStore((s) => s.clearSelection);
   const columns = useBaoCaoNhanCongStore((s) => s.columns);
   const toggleColumn = useBaoCaoNhanCongStore((s) => s.toggleColumn);
@@ -122,9 +128,10 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       (f.id_chi_nhanh?.length ?? 0) +
       (f.nam?.length ?? 0) +
       (f.thang?.length ?? 0) +
-      (f.trang_thai?.length ?? 0)
+      (f.trang_thai?.length ?? 0) +
+      (kyNgay.coKy ? 1 : 0)
     );
-  }, [searchInput, filters]);
+  }, [searchInput, filters, kyNgay.coKy]);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
@@ -132,6 +139,7 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
     setFilter('nam', []);
     setFilter('thang', []);
     setFilter('trang_thai', []);
+    datKhoang('', '');
   };
 
   const filterGroups = useMemo(
@@ -174,11 +182,14 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
 
   /** Bề rộng chip desktop, cùng thứ tự với filterGroups. */
   const chipWidths = ['sm:w-[120px]', 'sm:w-[140px]', 'sm:w-[150px]', 'sm:w-[200px]'];
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${chipWidths[i]}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({
+      kind: 'group',
+      group: g,
+      className: `w-full ${chipWidths[i]}`,
+    })),
+    kyNgay.chipItem,
+  ];
 
   const mobileActions = useMemo(
     () => [
@@ -276,6 +287,8 @@ const BaoCaoNhanCongToolbar: React.FC<Props> = ({
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

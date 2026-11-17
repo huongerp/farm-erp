@@ -208,9 +208,19 @@ export function resolveBcscPresetKpiDerivedFields(
   if (thucTeStr == null) {
     return { thucTeStr: null, mucTieuStr: null, phanTram: null, danhGia: null, tyLeDat: null };
   }
-  const phanTram = computeKpiPhanTram(mucTieu, thucTeStr);
+  const phanTram = source.isHigherBetter
+    ? computeKpiPhanTram(mucTieu, thucTeStr)
+    : computeKpiPhanTramNguoc(mucTieu, thucTeStr);
   const danhGia = computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
   return { thucTeStr, mucTieuStr: null, phanTram, danhGia, tyLeDat: phanTram };
+}
+
+/** Chỉ tiêu càng thấp càng tốt (tỷ lệ lỗi): % đạt = mục tiêu ÷ thực tế × 100; thực tế 0 = 100%. */
+function computeKpiPhanTramNguoc(mucTieu: string | null | undefined, thucTe: string | null): number | null {
+  const tt = parseFloat(String(thucTe ?? '').replace(',', '.'));
+  const mt = parseFloat(String(mucTieu ?? '').replace(',', '.'));
+  if (!Number.isFinite(tt) || !Number.isFinite(mt) || mt <= EPS) return null;
+  return tt <= 0 ? 100 : (mt / tt) * 100;
 }
 
 function numericKpiString(value: number | null | undefined): string | null {

@@ -8,6 +8,9 @@ export interface BaoCaoNhanCongFilters {
   /** Tháng (yyyy-mm) từ cột ngày */
   thang: string[];
   trang_thai: string[];
+  /** Khoảng ngày (yyyy-mm-dd), '' = không lọc — chip «Ngày». */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -102,6 +105,8 @@ const initialFilters: BaoCaoNhanCongFilters = {
   nam: [],
   thang: [],
   trang_thai: [],
+  tu_ngay: '',
+  den_ngay: '',
 };
 
 export const useBaoCaoNhanCongStore = createGenericStore<BaoCaoNhanCongFilters>(initialFilters, DEFAULT_COLUMNS, 'table-bao-cao-nhan-cong');

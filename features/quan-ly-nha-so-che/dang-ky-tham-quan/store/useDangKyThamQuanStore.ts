@@ -7,6 +7,9 @@ export interface DangKyThamQuanFilters {
   trang_thai: string[];
   id_chi_nhanh: string[];
   muc_dich: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn (chip Ngày). */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 const col = (id: string, key: string, minWidth: number, maxWidth: number, order: number): ColumnConfig => ({
@@ -35,7 +38,15 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ten_nguoi_tao', 'nguoiTao', 120, 190, 13),
 ];
 
-const initialFilters: DangKyThamQuanFilters = { nam: [], thang: [], trang_thai: [], id_chi_nhanh: [], muc_dich: [] };
+const initialFilters: DangKyThamQuanFilters = {
+  nam: [],
+  thang: [],
+  trang_thai: [],
+  id_chi_nhanh: [],
+  muc_dich: [],
+  tu_ngay: '',
+  den_ngay: '',
+};
 
 export const useDangKyThamQuanStore = createGenericStore<DangKyThamQuanFilters>(
   initialFilters,

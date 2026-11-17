@@ -7,6 +7,9 @@ export interface BaoCaoSoCheFilters {
   thang: string[];
   trang_thai: string[];
   don_vi_tinh: string[];
+  /** Khoảng ngày (yyyy-mm-dd), '' = không lọc — chip «Ngày». */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -121,6 +124,8 @@ const initialFilters: BaoCaoSoCheFilters = {
   thang: [],
   trang_thai: [],
   don_vi_tinh: [],
+  tu_ngay: '',
+  den_ngay: '',
 };
 
 export const useBaoCaoSoCheStore = createGenericStore<BaoCaoSoCheFilters>(initialFilters, DEFAULT_COLUMNS, 'table-bao-cao-so-che');

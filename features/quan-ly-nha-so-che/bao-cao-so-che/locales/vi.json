@@ -192,7 +192,7 @@
   "baoCaoSoChe.phamCap.maxRowsHint": "Tối đa {{max}} dòng / phiếu.",
   "baoCaoSoChe.phamCap.detailEmpty": "Chưa có dữ liệu phẩm cấp.",
   "baoCaoSoChe.kpiThuong.sectionTitle": "Đánh giá KPI / thưởng",
-  "baoCaoSoChe.kpiThuong.hint": "Chỉ lưu các dòng có hạng mục. % nhập số 0–100 (85 = 85%). Tiền thưởng có thể âm (trừ). Thưởng QL / nhóm tỉa / nhóm CP của 3 dòng đầu tự tính theo quy chế KPI (riêng Thưởng nhóm CP dòng tỷ lệ lỗi nhập tay).",
+  "baoCaoSoChe.kpiThuong.hint": "Chỉ lưu các dòng có hạng mục. % nhập số 0–100 (85 = 85%). Tiền thưởng có thể âm (trừ). Thưởng QL / nhóm tỉa / nhóm CP của 3 dòng đầu tự tính theo quy chế KPI. Dòng tỷ lệ lỗi: % đạt = mục tiêu ÷ thực tế, dưới 85% không thưởng, không trừ.",
   "baoCaoSoChe.kpiThuong.addRow": "Thêm dòng",
   "baoCaoSoChe.kpiThuong.empty": "Chưa có dòng KPI — bấm \"Thêm dòng\" để nhập.",
   "baoCaoSoChe.kpiThuong.emptyDetail": "Không có dòng KPI trên phiếu này.",

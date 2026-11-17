@@ -136,11 +136,11 @@
   "checklistBanGiao.vs.chonNgayTrongTuan": "Chọn một ngày bất kỳ trong tuần — phiếu tính từ thứ Hai đến Chủ nhật.",
   "checklistBanGiao.vs.khongDoiTuan": "Phiếu vệ sinh tuần chỉ đổi ngày trong cùng tuần; sang tuần khác thì huỷ phiếu và tạo phiếu mới.",
   "checklistBanGiao.vs.khongLich": "Không có lịch",
-  "checklistBanGiao.vs.goiYTich": "Bấm ô ngày để tích: trống → Đạt → Không đạt → trống. Ô gạch là ngày không có lịch.",
+  "checklistBanGiao.vs.goiYTich": "Bấm ô ngày để tích: bấm 1 lần = Đạt, 2 lần = Không đạt, 3 lần = bỏ trống. Ô sọc chéo mờ là ngày không có lịch theo tần suất — không cần tích, không bấm được.",
   "checklistBanGiao.vs.ketQuaTuan": "Kết quả cả tuần",
   "checklistBanGiao.vs.tanSuat": "Tần suất",
   "checklistBanGiao.vs.conONgay": "còn {{so}} ô",
-  "checklistBanGiao.vs.chuThichIn": "✓ Đạt · ✗ Không đạt · ô gạch: không có lịch",
+  "checklistBanGiao.vs.chuThichIn": "✓ Đạt · ✗ Không đạt · ô sọc chéo: không có lịch",
   "checklistBanGiao.loi.thieuTichNgay": "Còn {{so}} ô ngày chưa tích ở {{dong}} hạng mục",
   "checklistBanGiao.form.tuan": "Tuần"
 }
