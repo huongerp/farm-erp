@@ -1,10 +1,10 @@
 /**
- * Chọn nội dung in từ chi tiết phiếu: bảng chuyền, danh sách nhân viên, hoặc cả hai.
- * Phiếu chưa nhập tên → hai lựa chọn có danh sách bị khoá.
+ * Chọn nội dung in từ chi tiết phiếu: bảng chuyền, danh sách nhân viên, cả hai, hoặc danh sách theo nhóm.
+ * Phiếu chưa nhập tên → các lựa chọn có danh sách bị khoá.
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Factory, Layers, Printer, Users } from 'lucide-react';
+import { Factory, Layers, Printer, Users, UsersRound } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import { BTN_CLOSE } from '../../../../lib/button-labels';
@@ -57,6 +57,13 @@ const ChonKieuInDialog: React.FC<Props> = ({ coDanhSachTen, onChon, onClose }) =
           tieuDe={t('baoCaoNhanCong.inKieu.caHai')}
           moTa={moTaNv('baoCaoNhanCong.inKieu.caHaiMoTa')}
           onClick={() => onChon('ca-hai')}
+          disabled={!coDanhSachTen}
+        />
+        <LuaChonThe
+          icon={<UsersRound size={20} />}
+          tieuDe={t('baoCaoNhanCong.inKieu.theoNhom')}
+          moTa={moTaNv('baoCaoNhanCong.inKieu.theoNhomMoTa')}
+          onClick={() => onChon('theo-nhom')}
           disabled={!coDanhSachTen}
         />
       </div>

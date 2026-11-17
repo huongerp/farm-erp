@@ -29,6 +29,8 @@ export interface DongChiTietNv {
   loaiChuyen: LoaiChuyen;
   hoTen: string;
   viTri: string | null;
+  /** Nhóm trong chuyền ngày đó; null = chưa chia nhóm. */
+  soNhom: number | null;
   chamCong: ChamCong;
   gioCong: number;
   gioTc: number;
@@ -129,6 +131,7 @@ export function dungDongChiTietNv(dsPhieu: readonly FarmBaoCaoNhanCong[]): DongC
           thuTuChuyen,
           ...coSo,
           hoTen: nv.ho_ten.trim(),
+          soNhom: nv.so_nhom ?? null,
           chamCong: nv.cham_cong,
           gioCong: num(nv.so_gio_cong),
           gioTc: num(nv.so_gio_tc),

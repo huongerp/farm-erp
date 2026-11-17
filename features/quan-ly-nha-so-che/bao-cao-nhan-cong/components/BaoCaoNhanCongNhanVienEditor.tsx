@@ -12,6 +12,7 @@ import type { BaoCaoNhanCongFormValues, NhanVienRowFormValues } from '../core/sc
 import { NGOAI_LE_CODE, type LoaiChuyen, type VarNhanVienSoChe, type VarViTriSoChe } from '../core/types';
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
+import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
@@ -57,8 +58,8 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
   const gridCols = ngoaiLe
-    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_minmax(0,1.5fr)_auto]'
-    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_auto_5.5rem_5.5rem_minmax(0,1.5fr)_auto]';
+    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_6rem_auto_minmax(0,1.5fr)_auto]'
+    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_6rem_auto_5.5rem_5.5rem_minmax(0,1.5fr)_auto]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
 
@@ -75,6 +76,14 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         label: v,
       })),
     [viTriDanhMuc, danhMuc, ds]
+  );
+  /** «—» (0 = chưa chia nhóm) rồi Nhóm 1…9. */
+  const nhomOptions = useMemo(
+    () => [
+      { value: 0, label: t('baoCaoNhanCong.nv.nhomTrong') },
+      ...Array.from({ length: SO_NHOM_TOI_DA }, (_, i) => ({ value: i + 1, label: t('baoCaoNhanCong.nv.nhomSo', { n: i + 1 }) })),
+    ],
+    [t]
   );
   const dsTenDanhMuc = useMemo(() => danhMuc.map((nv) => nv.ho_ten), [danhMuc]);
 
@@ -105,10 +114,14 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
 
   const chonTen = (idx: number, raw: unknown) => {
     const ten = raw ? String(raw).trim() : '';
-    // Gõ trùng tên có sẵn (khác hoa thường) → dùng đúng tên trong danh mục + vị trí mặc định.
+    // Gõ trùng tên có sẵn (khác hoa thường) → dùng đúng tên trong danh mục + vị trí, nhóm mặc định.
     const nv = nvTheoTen.get(khoaTen(ten));
     const row = current()[idx];
-    patchRow(idx, { ho_ten: nv?.ho_ten ?? ten, vi_tri: row?.vi_tri || nv?.vi_tri || null });
+    patchRow(idx, {
+      ho_ten: nv?.ho_ten ?? ten,
+      vi_tri: row?.vi_tri || nv?.vi_tri || null,
+      so_nhom: row?.so_nhom ?? nv?.so_nhom ?? null,
+    });
   };
 
   const bamBuoi = (idx: number, buoi: 'sang' | 'chieu') => {
@@ -158,6 +171,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         <div className={`hidden sm:grid ${gridCols} gap-2 px-2 text-caption text-muted-foreground`}>
           <span>{t('baoCaoNhanCong.nv.hoTen')}</span>
           <span>{t('baoCaoNhanCong.nv.viTri')}</span>
+          <span>{t('baoCaoNhanCong.nv.nhom')}</span>
           <span />
           {!ngoaiLe && (<>
             <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
@@ -203,6 +217,19 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 creatable={canThemViTri}
                 creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
                 dropdownInPortal
+              />
+            </div>
+            {/* Nhóm chỉ đổi dòng trên phiếu, không đổi nhóm mặc định trong danh mục. */}
+            <div className="col-span-2 sm:col-span-1 min-w-0">
+              <Combobox
+                options={nhomOptions}
+                value={row.so_nhom ?? 0}
+                onChange={(x) => patchRow(idx, { so_nhom: Number(x) || null })}
+                label={isMobile ? t('baoCaoNhanCong.nv.nhom') : undefined}
+                placeholder={t('baoCaoNhanCong.nv.nhomTrong')}
+                searchable={false}
+                dropdownInPortal
+                error={err?.so_nhom?.message as string | undefined}
               />
             </div>
             <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 self-start">

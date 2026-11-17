@@ -47,6 +47,7 @@ Quy tắc đã thể hiện trong code/git log (chưa có tài liệu nghiệp v
 
 - Luồng duyệt: phiếu kho Sơ chế/Phân thuốc khoá sau khi duyệt, sửa qua luồng «Xin sửa»; phiếu quỹ duyệt / không duyệt (trigger `fn_tc_quy_khoa_duyet`); giám sát chất lượng: nộp phiếu → đã nộp → đã xuất.
 - Công thức tính: dự báo SL đóng thùng (dòng 10 cộng tồn đầu, trừ tồn cuối ngày); kết luận giám sát chất lượng theo số tiêu chí; kiểm kê tính SL sổ theo ngày bắt đầu đợt; công thức lương/công/khấu hao cụ thể `(chưa rõ — hỏi khách)`.
+- Chia nhóm chạy năng suất (yêu cầu chị Hương, NSC fp3, 17/11/2026): báo cáo nhân công có cột Nhóm 1–9 cho từng người (mặc định ở danh mục NV, đổi theo ngày trên phiếu), in «Danh sách theo nhóm» có tổng người/công mỗi nhóm. Sản lượng của từng nhóm đo bằng gì, thưởng nhóm chia thế nào `(chưa rõ — hỏi khách)`.
 - Phạm vi xem: đơn đặt hàng — người không có quyền admin chỉ thấy đơn của farm mình; «cấp cao» (`cap_bac = 1` hoặc quyền admin/all) xem toàn phạm vi.
 - Mẫu in bắt buộc: phiếu in dùng khung chung (khổ giấy, liên, dấu chìm, QR; có ảnh/logo HTX ở đầu phiếu); bản mẫu giấy của khách (có `Phiếu in đề xuất.docx`, `bản in phiếu kho.docx` ở gốc repo) — danh sách mẫu bắt buộc `(chưa rõ — hỏi khách)`.
 

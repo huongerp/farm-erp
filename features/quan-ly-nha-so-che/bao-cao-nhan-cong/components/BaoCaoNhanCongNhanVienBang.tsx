@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
+import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong, type FarmBaoCaoNhanCongNv } from '../core/types';
 import { buoiCuaChamCong, nhomNhanVienTheoChuyen, tongHopNgoaiLe } from '../core/danh-sach-nv';
 import { formatNumberVN } from '../../../../lib/utils';
 
@@ -13,7 +13,7 @@ interface Props {
   variant?: 'screen' | 'print';
 }
 
-const LOP = {
+export const LOP_BANG_NV = {
   screen: {
     wrap: 'overflow-x-auto rounded-lg border border-border',
     table: 'w-full text-sm border-collapse',
@@ -32,13 +32,63 @@ const LOP = {
   },
 } as const;
 
+export type LopBangNv = (typeof LOP_BANG_NV)[keyof typeof LOP_BANG_NV];
+
+/** Số cột của bảng tên — cho colSpan dòng chuyền / dòng tổng. */
+export const SO_COT_BANG_NV = 10;
+
+/** Hàng tiêu đề MỘT dòng, không gộp ô — trang in ẩn / kéo cột được. */
+export const TieuDeCotNv: React.FC<{ c: LopBangNv }> = ({ c }) => {
+  const { t } = useTranslation();
+  return (
+    <tr>
+      <th className={`${c.th} w-10 text-center`}>{t('baoCaoNhanCong.nv.stt')}</th>
+      <th className={c.th}>{t('baoCaoNhanCong.nv.hoTen')}</th>
+      <th className={c.th}>{t('baoCaoNhanCong.nv.viTri')}</th>
+      <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nvBang.nhom')}</th>
+      <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.sang')}</th>
+      <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.chieu')}</th>
+      <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.nghi')}</th>
+      <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
+      <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioTc')}</th>
+      <th className={c.th}>{t('baoCaoNhanCong.form.colGhiChu')}</th>
+    </tr>
+  );
+};
+
+/** Một người. Ngoại lệ không quy đổi giờ → cột giờ hiện «—». */
+export const DongNv: React.FC<{ c: LopBangNv; nv: FarmBaoCaoNhanCongNv; stt: number; ngoaiLe: boolean }> = ({ c, nv, stt, ngoaiLe }) => {
+  const num = `${c.td} text-right tabular-nums`;
+  return (
+    <tr>
+      <td className={`${c.td} text-center tabular-nums`}>{stt}</td>
+      <td className={c.td}>{nv.ho_ten}</td>
+      <td className={c.td}>{nv.vi_tri ?? '—'}</td>
+      <td className={`${c.td} text-center tabular-nums`}>{nv.so_nhom ?? '—'}</td>
+      {nv.cham_cong === 'NUA_NGAY' ? (
+        <td colSpan={2} className={`${c.td} text-center`}>
+          ½
+        </td>
+      ) : (
+        <>
+          <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).sang ? '✓' : ''}</td>
+          <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).chieu ? '✓' : ''}</td>
+        </>
+      )}
+      <td className={`${c.td} text-center`}>{nv.cham_cong === 'NGHI' ? '✓' : ''}</td>
+      <td className={num}>{ngoaiLe ? '—' : formatNumberVN(nv.so_gio_cong)}</td>
+      <td className={num}>{!ngoaiLe && nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
+      <td className={c.td}>{nv.ghi_chu ?? ''}</td>
+    </tr>
+  );
+};
+
 const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' }) => {
   const { t } = useTranslation();
   const nhom = nhomNhanVienTheoChuyen(data);
   if (nhom.length === 0) return null;
 
-  const c = LOP[variant];
-  const num = `${c.td} text-right tabular-nums`;
+  const c = LOP_BANG_NV[variant];
   const tong = nhom.filter(({ ct }) => ct.loai_chuyen !== NGOAI_LE_CODE).reduce((s, { nhanVien }) => s + nhanVien.length, 0);
   const ngoaiLe = tongHopNgoaiLe(nhom.find(({ ct }) => ct.loai_chuyen === NGOAI_LE_CODE)?.nhanVien ?? []);
 
@@ -46,55 +96,25 @@ const BaoCaoNhanCongNhanVienBang: React.FC<Props> = ({ data, variant = 'screen' 
     <div className={c.wrap}>
       <table className={c.table}>
         <thead>
-          <tr>
-            <th className={`${c.th} w-10 text-center`}>{t('baoCaoNhanCong.nv.stt')}</th>
-            <th className={c.th}>{t('baoCaoNhanCong.nv.hoTen')}</th>
-            <th className={c.th}>{t('baoCaoNhanCong.nv.viTri')}</th>
-            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.sang')}</th>
-            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.chieu')}</th>
-            <th className={`${c.th} text-center`}>{t('baoCaoNhanCong.nv.nghi')}</th>
-            <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
-            <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioTc')}</th>
-            <th className={c.th}>{t('baoCaoNhanCong.form.colGhiChu')}</th>
-          </tr>
+          <TieuDeCotNv c={c} />
         </thead>
         <tbody>
           {nhom.map(({ ct, tt, nhanVien }, nhomIdx) => (
             <React.Fragment key={ct.loai_chuyen}>
               <tr>
-                <td colSpan={9} className={c.group}>
+                <td colSpan={SO_COT_BANG_NV} className={c.group}>
                   {tt}. {t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)} — {t('baoCaoNhanCong.nv.soNguoi', { n: nhanVien.length })}
                   {ct.loai_chuyen === NGOAI_LE_CODE && <p className="m-0 mt-1 font-normal">{t('baoCaoNhanCong.ngoaiLe.hint')}</p>}
                 </td>
               </tr>
               {nhanVien.map((nv, nvIdx) => {
                 const stt = nhom.slice(0, nhomIdx).reduce((s, g) => s + g.nhanVien.length, 0) + nvIdx + 1;
-                return (
-                  <tr key={nv.id}>
-                    <td className={`${c.td} text-center tabular-nums`}>{stt}</td>
-                    <td className={c.td}>{nv.ho_ten}</td>
-                    <td className={c.td}>{nv.vi_tri ?? '—'}</td>
-                    {nv.cham_cong === 'NUA_NGAY' ? (
-                      <td colSpan={2} className={`${c.td} text-center`}>
-                        ½
-                      </td>
-                    ) : (
-                      <>
-                        <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).sang ? '✓' : ''}</td>
-                        <td className={`${c.td} text-center`}>{buoiCuaChamCong(nv.cham_cong).chieu ? '✓' : ''}</td>
-                      </>
-                    )}
-                    <td className={`${c.td} text-center`}>{nv.cham_cong === 'NGHI' ? '✓' : ''}</td>
-                    <td className={num}>{ct.loai_chuyen === NGOAI_LE_CODE ? '—' : formatNumberVN(nv.so_gio_cong)}</td>
-                    <td className={num}>{ct.loai_chuyen !== NGOAI_LE_CODE && nv.so_gio_tc > 0 ? formatNumberVN(nv.so_gio_tc) : '—'}</td>
-                    <td className={c.td}>{nv.ghi_chu ?? ''}</td>
-                  </tr>
-                );
+                return <DongNv key={nv.id} c={c} nv={nv} stt={stt} ngoaiLe={ct.loai_chuyen === NGOAI_LE_CODE} />;
               })}
             </React.Fragment>
           ))}
           <tr>
-            <td colSpan={9} className={c.total}>
+            <td colSpan={SO_COT_BANG_NV} className={c.total}>
               {t('baoCaoNhanCong.ngoaiLe.tongNsc', { n: tong })}
               {ngoaiLe.soNguoi > 0 && <p className="m-0 mt-1">{t('baoCaoNhanCong.ngoaiLe.tong', { n: ngoaiLe.soNguoi, sang: ngoaiLe.sang, chieu: ngoaiLe.chieu, cong: formatNumberVN(ngoaiLe.cong) })}</p>}
             </td>

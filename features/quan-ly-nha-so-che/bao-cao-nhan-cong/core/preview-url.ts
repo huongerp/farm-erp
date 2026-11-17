@@ -1,9 +1,9 @@
-/** Nội dung trang in: chỉ bảng chuyền, chỉ danh sách tên, hoặc cả hai. */
-export type NoiDungIn = 'chuyen' | 'nhan-vien' | 'ca-hai';
+/** Nội dung trang in: chỉ bảng chuyền, chỉ danh sách tên, cả hai, hoặc danh sách tên chia theo nhóm. */
+export type NoiDungIn = 'chuyen' | 'nhan-vien' | 'ca-hai' | 'theo-nhom';
 
 export const NOI_DUNG_IN_PARAM = 'noi-dung';
 
-const NOI_DUNG_IN_HOP_LE: readonly NoiDungIn[] = ['chuyen', 'nhan-vien', 'ca-hai'];
+const NOI_DUNG_IN_HOP_LE: readonly NoiDungIn[] = ['chuyen', 'nhan-vien', 'ca-hai', 'theo-nhom'];
 
 /** URL trang in báo cáo nhân công (tab mới từ detail). */
 export function getBaoCaoNhanCongPreviewUrl(id: string, noiDung: NoiDungIn = 'ca-hai'): string {

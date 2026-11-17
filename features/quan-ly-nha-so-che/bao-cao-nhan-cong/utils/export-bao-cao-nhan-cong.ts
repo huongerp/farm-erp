@@ -12,6 +12,7 @@ import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-previ
 import { tenFileAnToan } from '../../../../lib/phieu-in/ten-file';
 import type { NoiDungIn } from '../core/preview-url';
 import { buoiCuaChamCong, nhomNhanVienTheoChuyen, tongHopNgoaiLe } from '../core/danh-sach-nv';
+import { tongHopTheoNhom } from '../core/tong-hop-nhom';
 
 type XlsxModule = typeof import('xlsx');
 type Aoa = (string | number)[][];
@@ -214,6 +215,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
       t('baoCaoNhanCong.form.colChuyen'),
       t('baoCaoNhanCong.nv.hoTen'),
       t('baoCaoNhanCong.nv.viTri'),
+      t('baoCaoNhanCong.nvBang.nhom'),
       t('baoCaoNhanCong.nv.sang'),
       t('baoCaoNhanCong.nv.chieu'),
       t('baoCaoNhanCong.nv.nghi'),
@@ -234,6 +236,7 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
         t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`),
         nv.ho_ten,
         nv.vi_tri ?? '',
+        nv.so_nhom ?? '',
         nuaCu ? '½' : buoi.sang ? '✓' : '',
         buoi.chieu ? '✓' : '',
         nv.cham_cong === 'NGHI' ? '✓' : '',
@@ -253,7 +256,40 @@ function sheetNhanVien(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
   rows.push(getBcncPreviewSignLabels(t));
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
+  ws['!cols'] = [{ wch: 5 }, { wch: 5 }, { wch: 30 }, { wch: 26 }, { wch: 22 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 9 }, { wch: 24 }];
+  return ws;
+}
+
+/** Mỗi chuyền × nhóm một dòng — giống bảng «Tổng hợp theo nhóm» của bản in theo nhóm. */
+function sheetTongHopNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
+  const t = i18n.t.bind(i18n);
+  const rows: Aoa = [
+    ...dongDauPhieu(data, t('baoCaoNhanCong.preview.tongHopTheoNhom')),
+    [
+      t('baoCaoNhanCong.preview.colChuyen'),
+      t('baoCaoNhanCong.nvBang.nhom'),
+      t('baoCaoNhanCong.preview.colNguoiDiLam'),
+      t('baoCaoNhanCong.preview.colCongQuyDoi'),
+      t('baoCaoNhanCong.nv.gioCong'),
+      t('baoCaoNhanCong.nv.gioTc'),
+    ],
+  ];
+  for (const { ct, tt, nhanVien } of nhomNhanVienTheoChuyen(data)) {
+    // Ngoại lệ không quy đổi giờ → giờ để «—» như bản in.
+    const ngoaiLe = ct.loai_chuyen === NGOAI_LE_CODE;
+    for (const g of tongHopTheoNhom(nhanVien)) {
+      rows.push([
+        `${tt}. ${t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)}`,
+        g.soNhom == null ? t('baoCaoNhanCong.preview.chuaChiaNhom') : t('baoCaoNhanCong.preview.nhomN', { n: g.soNhom }),
+        g.soNguoiDiLam,
+        g.cong,
+        ngoaiLe ? EMPTY : g.gioCong,
+        ngoaiLe ? EMPTY : g.gioTc,
+      ]);
+    }
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 34 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
   return ws;
 }
 
@@ -261,11 +297,14 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong, noiDu
   const XLSX = await import('xlsx');
   const coTen = nhomNhanVienTheoChuyen(data).length > 0;
   const wb = XLSX.utils.book_new();
-  if (noiDung !== 'nhan-vien') XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
+  // «Theo nhóm» giống «Danh sách NV»: tổng quan nằm ở đầu sheet danh sách, không kèm bảng chuyền.
+  const chiDanhSach = noiDung === 'nhan-vien' || noiDung === 'theo-nhom';
+  if (!chiDanhSach) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
   if (noiDung === 'chuyen' && data.chi_tiet.some((ct) => ct.loai_chuyen === NGOAI_LE_CODE && ct.nhan_vien?.length)) {
     XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, { ...data, chi_tiet: data.chi_tiet.filter((ct) => ct.loai_chuyen === NGOAI_LE_CODE) }), 'Ngoai_le');
   }
   if (noiDung !== 'chuyen' && coTen) XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, data), 'Danh_sach_NV');
+  if (noiDung === 'theo-nhom' && coTen) XLSX.utils.book_append_sheet(wb, sheetTongHopNhom(XLSX, data), 'Tong_hop_nhom');
   if (wb.SheetNames.length === 0) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

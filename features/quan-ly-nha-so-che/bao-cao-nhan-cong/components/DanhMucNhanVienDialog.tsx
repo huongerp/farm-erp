@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Users } from 'lucide-react';
+import { Edit, Info, Users } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
@@ -13,26 +13,34 @@ import { LOAI_CHUYEN_CODES, type LoaiChuyen, type VarNhanVienSoChe } from '../co
 import { useNhanVienSoChe, useUpdateNhanVienSoChe, useThemViTriNeuMoi, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
 import { gonTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
+import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 
-type Patch = Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>;
+type Patch = Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>;
 
 const SuaNguoi: React.FC<{
   nv: VarNhanVienSoChe;
   viTriOptions: { value: string; label: string }[];
+  nhomOptions: { value: number; label: string }[];
   chuyenOptions: { value: string; label: string }[];
   onDone: () => void;
-}> = ({ nv, viTriOptions, chuyenOptions, onDone }) => {
+}> = ({ nv, viTriOptions, nhomOptions, chuyenOptions, onDone }) => {
   const { t } = useTranslation();
   const luu = useUpdateNhanVienSoChe();
   const themViTriNeuMoi = useThemViTriNeuMoi();
   const { canThemViTri } = useBaoCaoNhanCongPermissions();
-  const [v, setV] = useState<Patch>({ ho_ten: nv.ho_ten, vi_tri: nv.vi_tri, loai_chuyen: nv.loai_chuyen, dang_dung: nv.dang_dung });
+  const [v, setV] = useState<Patch>({
+    ho_ten: nv.ho_ten,
+    vi_tri: nv.vi_tri,
+    so_nhom: nv.so_nhom,
+    loai_chuyen: nv.loai_chuyen,
+    dang_dung: nv.dang_dung,
+  });
   const tenTrong = !gonTen(v.ho_ten);
 
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_minmax(0,1fr)] gap-3">
         <Input
           label={t('baoCaoNhanCong.nv.hoTen')}
           required
@@ -51,6 +59,20 @@ const SuaNguoi: React.FC<{
           }}
           creatable={canThemViTri}
           creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
+          dropdownInPortal
+        />
+        <Combobox
+          label={t('baoCaoNhanCong.dmNv.nhomMacDinh')}
+          labelEnd={
+            <span className="text-muted-foreground cursor-help" title={t('baoCaoNhanCong.dmNv.nhomMacDinhHint')}>
+              <Info size={13} />
+            </span>
+          }
+          options={nhomOptions}
+          value={v.so_nhom ?? 0}
+          onChange={(x) => setV({ ...v, so_nhom: Number(x) || null })}
+          placeholder={t('baoCaoNhanCong.nv.nhomTrong')}
+          searchable={false}
           dropdownInPortal
         />
         <Combobox
@@ -120,6 +142,14 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
     () => gopViTriOptions(viTriDanhMuc, ds.map((nv) => nv.vi_tri)).map((x) => ({ value: x, label: x })),
     [viTriDanhMuc, ds]
   );
+  /** «—» (0 = chưa chia nhóm) rồi Nhóm 1…9. */
+  const nhomOptions = useMemo(
+    () => [
+      { value: 0, label: t('baoCaoNhanCong.nv.nhomTrong') },
+      ...Array.from({ length: SO_NHOM_TOI_DA }, (_, i) => ({ value: i + 1, label: t('baoCaoNhanCong.nv.nhomSo', { n: i + 1 }) })),
+    ],
+    [t]
+  );
 
   return (
     <GenericDrawer
@@ -161,7 +191,7 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
             {ds.map((nv) =>
               dangSua === nv.id ? (
                 <li key={nv.id} className="p-2">
-                  <SuaNguoi nv={nv} viTriOptions={viTriOptions} chuyenOptions={chuyenOptions} onDone={() => setDangSua(null)} />
+                  <SuaNguoi nv={nv} viTriOptions={viTriOptions} nhomOptions={nhomOptions} chuyenOptions={chuyenOptions} onDone={() => setDangSua(null)} />
                 </li>
               ) : (
                 <li key={nv.id} className={cn('flex items-center gap-3 px-3 py-2', !nv.dang_dung && 'opacity-50')}>
@@ -170,6 +200,7 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
                     <div className="text-xs text-muted-foreground truncate">
                       {[
                         nv.vi_tri,
+                        nv.so_nhom ? t('baoCaoNhanCong.nv.nhomSo', { n: nv.so_nhom }) : null,
                         nv.loai_chuyen ? t(`baoCaoNhanCong.chuyen.${nv.loai_chuyen}`) : null,
                         nv.dang_dung ? null : t('baoCaoNhanCong.dmNv.daNghi'),
                       ]

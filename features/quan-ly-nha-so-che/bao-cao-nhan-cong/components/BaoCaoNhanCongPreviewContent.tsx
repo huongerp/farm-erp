@@ -1,6 +1,6 @@
 /**
  * Nội dung in báo cáo nhân công — khung chuẩn hệ thống (PhieuInParts): tổng quan + bảng chuyền
- * và/hoặc danh sách tên (theo `noiDung`) + ô ký.
+ * và/hoặc danh sách tên (theo `noiDung`; `theo-nhom` chia tên theo Nhóm trong từng chuyền) + ô ký.
  * Bảng nhiều cột → mặc định A4 ngang để chữ trong bảng đủ cỡ đọc được.
  */
 import React from 'react';
@@ -13,6 +13,7 @@ import { HangKyTen, KhungPhieu } from '../../../../components/shared/phieu-in/Ph
 import BaoCaoNhanCongPreviewOverview from './BaoCaoNhanCongPreviewOverview';
 import BaoCaoNhanCongPreviewTable from './BaoCaoNhanCongPreviewTable';
 import BaoCaoNhanCongNhanVienBang from './BaoCaoNhanCongNhanVienBang';
+import BaoCaoNhanCongNhanVienTheoNhom from './BaoCaoNhanCongNhanVienTheoNhom';
 
 interface Props {
   data: FarmBaoCaoNhanCong;
@@ -21,14 +22,19 @@ interface Props {
 
 const BaoCaoNhanCongPreviewContent: React.FC<Props> = ({ data, noiDung }) => {
   const { t } = useTranslation();
-  const inChuyen = noiDung !== 'nhan-vien';
+  const theoNhom = noiDung === 'theo-nhom';
+  const inChuyen = noiDung === 'chuyen' || noiDung === 'ca-hai';
   const ngoaiLe = data.chi_tiet.filter((ct) => ct.loai_chuyen === NGOAI_LE_CODE);
   const inNgoaiLe = noiDung === 'chuyen' && ngoaiLe.some((ct) => (ct.nhan_vien?.length ?? 0) > 0);
   const inNv = noiDung !== 'chuyen' && (data.chi_tiet ?? []).some((ct) => (ct.nhan_vien?.length ?? 0) > 0);
+  const tieuDe = theoNhom
+    ? 'baoCaoNhanCong.preview.tieuDeTheoNhom'
+    : noiDung === 'nhan-vien'
+      ? 'baoCaoNhanCong.preview.tieuDeDanhSachNv'
+      : 'baoCaoNhanCong.preview.tieuDePhieu';
 
   return (
-    <KhungPhieu
-      title={t(noiDung === 'nhan-vien' ? 'baoCaoNhanCong.preview.tieuDeDanhSachNv' : 'baoCaoNhanCong.preview.tieuDePhieu')} ngay={formatYmdToDisplay(data.ngay?.slice(0, 10))}>
+    <KhungPhieu title={t(tieuDe)} ngay={formatYmdToDisplay(data.ngay?.slice(0, 10))}>
       <BaoCaoNhanCongPreviewOverview data={data} />
 
       {inChuyen && (
@@ -41,7 +47,7 @@ const BaoCaoNhanCongPreviewContent: React.FC<Props> = ({ data, noiDung }) => {
       {inNv && (
         <>
           <h2 className={`text-[9pt] font-bold uppercase ${inChuyen ? 'mt-3' : ''} mb-1.5 text-gray-900`}>{t('baoCaoNhanCong.nv.sectionDetail')}</h2>
-          <BaoCaoNhanCongNhanVienBang data={data} variant="print" />
+          {theoNhom ? <BaoCaoNhanCongNhanVienTheoNhom data={data} /> : <BaoCaoNhanCongNhanVienBang data={data} variant="print" />}
         </>
       )}
 

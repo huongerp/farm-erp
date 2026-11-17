@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { dungDongChiTietNv, dungMaTranViTri } from './theo-doi-vi-tri';
 import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongNv, LoaiChuyen } from './types';
 
-type Nguoi = { ten: string; viTri?: string | null; id?: string | null };
+type Nguoi = { ten: string; viTri?: string | null; id?: string | null; nhom?: number | null };
 let seq = 0;
 
-const nv = ({ ten, viTri = null, id }: Nguoi, thu_tu: number): FarmBaoCaoNhanCongNv => ({
+const nv = ({ ten, viTri = null, id, nhom = null }: Nguoi, thu_tu: number): FarmBaoCaoNhanCongNv => ({
   id: String(++seq),
   id_bcnc_ct: '',
   id_nhan_vien: id === undefined ? `nv-${ten}` : id,
   ho_ten: ten,
   vi_tri: viTri,
-  so_nhom: null,
+  so_nhom: nhom,
   cham_cong: 'CA_NGAY',
   so_gio_cong: 7.5,
   so_gio_tc: 0,
@@ -102,6 +102,18 @@ describe('dungDongChiTietNv', () => {
       phieu('2026-10-29', { TIA_DANH_GIA: [{ ten: 'Hồng', viTri: 'Tỉa' }] }),
     ]);
     expect(cuaNguoi(ds, 'Hồng').map((d) => d.thayDoi)).toEqual([null, null, null]);
+  });
+
+  it('mang theo số nhóm của từng dòng (chưa chia nhóm → null)', () => {
+    const ds = dungDongChiTietNv([
+      phieu('2026-10-28', { TIA_DANH_GIA: [{ ten: 'Lan', nhom: 2 }, { ten: 'Huệ' }] }),
+      phieu('2026-10-29', { TIA_DANH_GIA: [{ ten: 'Lan', nhom: 1 }] }),
+    ]);
+    expect(ds.map((d) => [d.hoTen, d.soNhom])).toEqual([
+      ['Lan', 2],
+      ['Huệ', null],
+      ['Lan', 1],
+    ]);
   });
 
   it('phiếu không có tên → không có dòng', () => {
