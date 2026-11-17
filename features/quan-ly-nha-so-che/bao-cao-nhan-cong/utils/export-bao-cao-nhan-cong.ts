@@ -5,7 +5,9 @@ import type { FarmBaoCaoNhanCong, FarmBaoCaoNhanCongCt } from '../core/types';
 import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { NGOAI_LE_CODE, chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
 import { combinedRowGhiChuAtIndex, displayLoaiTotalsOnCt, formatGioTbVN, hasSubLinesOnCt, isSubFormRowEmpty, subAlignedRowCount, subByLoaiForCtDisplay, sumDisplayLoaiTotalsOnRows, sumTongGioQuyDoiRowIVFromRows, tongGioCongNgayVaNua } from '../core/ct-sub';
-import { formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
+import { formatNumberVN, formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
+import { BCSC_MUC_THUONG_NGAY } from '../../bao-cao-so-che/core/kpi-thuong-cong-thuc';
+import { dsThuongNhom, mucTieuNsNhom, nangSuatNhomCuaPhieu, type DongThuongNhom } from '../core/nang-suat-nhom';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
 import { bcncTrangThaiLabel, getBcncPreviewSignLabels } from '../core/bcnc-preview-layout';
@@ -272,12 +274,22 @@ function sheetTongHopNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
       t('baoCaoNhanCong.preview.colCongQuyDoi'),
       t('baoCaoNhanCong.nv.gioCong'),
       t('baoCaoNhanCong.nv.gioTc'),
+      t('baoCaoNhanCong.nsNhom.soThung'),
+      t('baoCaoNhanCong.nsNhom.nsDonVi'),
+      t('baoCaoNhanCong.nsNhom.tyLeDat'),
+      t('baoCaoNhanCong.nsNhom.thuongNguoi'),
+      t('baoCaoNhanCong.nsNhom.tongThuongNhom'),
     ],
   ];
+  const nsTheoTt = new Map(nangSuatNhomCuaPhieu(data).map((c) => [`${c.tt}|${c.loai_chuyen}`, c.theoNhom]));
   for (const { ct, tt, nhanVien } of nhomNhanVienTheoChuyen(data)) {
     // Ngoại lệ không quy đổi giờ → giờ để «—» như bản in.
     const ngoaiLe = ct.loai_chuyen === NGOAI_LE_CODE;
+    const theoNhom = nsTheoTt.get(`${tt}|${ct.loai_chuyen}`);
     for (const g of tongHopTheoNhom(nhanVien)) {
+      // Nhóm null / chưa nhập số thùng → các ô năng suất, thưởng để trống.
+      const ns = g.soNhom == null ? undefined : theoNhom?.get(g.soNhom);
+      const coThung = ns != null && ns.soThung != null;
       rows.push([
         `${tt}. ${t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)}`,
         g.soNhom == null ? t('baoCaoNhanCong.preview.chuaChiaNhom') : t('baoCaoNhanCong.preview.nhomN', { n: g.soNhom }),
@@ -285,11 +297,44 @@ function sheetTongHopNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong) {
         g.cong,
         ngoaiLe ? EMPTY : g.gioCong,
         ngoaiLe ? EMPTY : g.gioTc,
+        ns?.soThung ?? '',
+        ns?.ns == null ? '' : Math.round(ns.ns * 100) / 100,
+        ns?.tyLe == null ? '' : Math.round(ns.tyLe * 10) / 10,
+        coThung ? ns.thuongCaNgay : '',
+        coThung ? ns.tongThuong : '',
       ]);
     }
   }
+  rows.push([]);
+  rows.push([t('baoCaoNhanCong.nsNhom.ghiChuMucTieu', { mucTieu: mucTieuNsNhom(data.muc_tieu_ns_nhom), muc: formatNumberVN(BCSC_MUC_THUONG_NGAY.tia.nangSuat) })]);
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 34 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }];
+  ws['!cols'] = [{ wch: 34 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
+  return ws;
+}
+
+/** Người được thưởng năng suất nhóm (thưởng > 0) — mỗi người một dòng, có dòng Tổng. */
+function sheetThuongNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong, ds: readonly DongThuongNhom[]) {
+  const t = i18n.t.bind(i18n);
+  const rows: Aoa = [
+    ...dongDauPhieu(data, t('baoCaoNhanCong.nsNhom.thuongTheoNhom')),
+    [
+      t('baoCaoNhanCong.nsNhom.colHoTen'),
+      t('baoCaoNhanCong.nsNhom.colChuyen'),
+      t('baoCaoNhanCong.nsNhom.colNhom'),
+      t('baoCaoNhanCong.nsNhom.colCong'),
+      t('baoCaoNhanCong.nsNhom.colThuong'),
+    ],
+    ...ds.map((p) => [
+      p.ho_ten,
+      `${p.tt}. ${t(`baoCaoNhanCong.chuyen.${p.loai_chuyen}`)}`,
+      t('baoCaoNhanCong.preview.nhomN', { n: p.soNhom }),
+      p.cong,
+      p.thuong,
+    ]),
+    [t('baoCaoNhanCong.nsNhom.tong'), '', '', ds.reduce((s, p) => s + p.cong, 0), ds.reduce((s, p) => s + p.thuong, 0)],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 26 }, { wch: 34 }, { wch: 12 }, { wch: 8 }, { wch: 14 }];
   return ws;
 }
 
@@ -305,6 +350,10 @@ export async function exportBaoCaoNhanCongToXLSX(data: FarmBaoCaoNhanCong, noiDu
   }
   if (noiDung !== 'chuyen' && coTen) XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, data), 'Danh_sach_NV');
   if (noiDung === 'theo-nhom' && coTen) XLSX.utils.book_append_sheet(wb, sheetTongHopNhom(XLSX, data), 'Tong_hop_nhom');
+  if (noiDung === 'theo-nhom') {
+    const dsThuong = dsThuongNhom(nangSuatNhomCuaPhieu(data));
+    if (dsThuong.length > 0) XLSX.utils.book_append_sheet(wb, sheetThuongNhom(XLSX, data, dsThuong), 'Thuong_nhom');
+  }
   if (wb.SheetNames.length === 0) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');
   await ghiXlsxCoBangHinh(XLSX, wb, `${fileName(data)}.xlsx`);
 }

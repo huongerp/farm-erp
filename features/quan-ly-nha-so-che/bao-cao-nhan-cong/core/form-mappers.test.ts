@@ -4,6 +4,7 @@ import vi from '../locales/vi.json';
 import { applySubTotalsToChiTietForm, defaultFormValues, farmBaoCaoNhanCongToFormNextDay } from './form-mappers';
 import { nvFormRowMoi, tongHopNgoaiLe, nhomNhanVienTheoChuyen } from './danh-sach-nv';
 import { baoCaoNhanCongFormSchema } from './schema';
+import { ganSoThungNhom } from './nang-suat-nhom';
 import type { FarmBaoCaoNhanCong } from './types';
 
 i18n.addResourceBundle('vi', 'translation', vi, true, true);
@@ -44,5 +45,40 @@ describe('Ngoại lệ trong báo cáo nhân công', () => {
     };
     expect(nhomNhanVienTheoChuyen(phieu)).toMatchObject([{ tt: 'VI', ct: { loai_chuyen: 'NGOAI_LE' }, nhanVien: [{ ho_ten: 'An' }] }]);
     expect(farmBaoCaoNhanCongToFormNextDay(phieu).chi_tiet[6].nhan_vien[0]).toMatchObject({ ho_ten: 'An', vi_tri: 'Tỉa lá tại farm', so_gio_cong: 0, so_gio_tc: 0 });
+  });
+});
+
+describe('Số thùng theo nhóm + mục tiêu NS nhóm trên form', () => {
+  it('ô trống / chữ = chưa nhập (bỏ khoá), không thành 0; «0» vẫn là 0 thùng', () => {
+    expect(ganSoThungNhom({ '1': 50 }, 1, '')).toEqual({});
+    expect(ganSoThungNhom({ '1': 50 }, 2, ' 12,5 ')).toEqual({ '1': 50, '2': 12.5 });
+    expect(ganSoThungNhom({}, 3, 'abc')).toEqual({});
+    expect(ganSoThungNhom({}, 3, '0')).toEqual({ '3': 0 });
+  });
+
+  it('lưu chỉ giữ số thùng của nhóm còn người; copy ngày sau giữ mục tiêu, xoá số thùng', () => {
+    const v = values();
+    v.muc_tieu_ns_nhom = 3.5;
+    v.chi_tiet[1].nhan_vien = [{ ...nguoi(), so_nhom: 1 }];
+    v.chi_tiet[1].so_thung_nhom = { '1': 60, '2': 40 };
+    expect(applySubTotalsToChiTietForm(v.chi_tiet)[1].so_thung_nhom).toEqual({ '1': 60 });
+
+    const phieu: FarmBaoCaoNhanCong = {
+      id: '1', ngay: v.ngay, id_chi_nhanh: '1', ten_chi_nhanh: 'FP1', ghi_chu: null, hinh_anh_urls: [],
+      id_nguoi_tao: null, ten_nguoi_tao: null, trang_thai: 'mo', tg_tao: '', tg_cap_nhat: '', muc_tieu_ns_nhom: 3.5,
+      chi_tiet: v.chi_tiet.map((ct, i) => ({ ...ct, ghi_chu: ct.ghi_chu ?? null, id: String(i), id_bao_cao: '1', thu_tu: i + 1,
+        nhan_vien: ct.nhan_vien.map((nv) => ({ ...nv, id: 'nv1', id_bcnc_ct: String(i), id_nhan_vien: null, thu_tu: 1 })),
+      })),
+    };
+    const ke = farmBaoCaoNhanCongToFormNextDay(phieu);
+    expect(ke.muc_tieu_ns_nhom).toBe(3.5);
+    expect(ke.chi_tiet[1].so_thung_nhom).toEqual({});
+  });
+
+  it('mục tiêu xoá trắng hoặc ≤ 0 → lỗi; không truyền (import) vẫn hợp lệ', () => {
+    expect(baoCaoNhanCongFormSchema.safeParse({ ...values(), muc_tieu_ns_nhom: '' }).success).toBe(false);
+    expect(baoCaoNhanCongFormSchema.safeParse({ ...values(), muc_tieu_ns_nhom: 0 }).success).toBe(false);
+    expect(baoCaoNhanCongFormSchema.safeParse({ ...values(), muc_tieu_ns_nhom: '2,5' }).data?.muc_tieu_ns_nhom).toBe(2.5);
+    expect(baoCaoNhanCongFormSchema.safeParse({ ...values(), muc_tieu_ns_nhom: undefined }).success).toBe(true);
   });
 });

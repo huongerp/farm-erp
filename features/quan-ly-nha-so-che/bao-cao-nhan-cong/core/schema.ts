@@ -39,6 +39,8 @@ const chiTietRowSchema = z.object({
   ghi_chu: z.string().max(8000).optional().nullable(),
   sub: chiTietSubSchema,
   nhan_vien: z.array(nhanVienRowSchema).max(200).default([]),
+  /** Số thùng theo nhóm: khoá "1".."9"; ô trống đã bị bỏ khoá ở `ganSoThungNhom` (không thành 0). */
+  so_thung_nhom: z.record(z.string().regex(/^[1-9]$/), z.number().min(0).max(1_000_000)).default({}),
 });
 
 export const baoCaoNhanCongFormSchema = z
@@ -51,6 +53,16 @@ export const baoCaoNhanCongFormSchema = z
     ten_chi_nhanh: z.string().optional().nullable(),
     ghi_chu: z.string().max(8000).optional().nullable(),
     hinh_anh_urls: hinhAnhUrlsSchema,
+    /**
+     * Mục tiêu NS nhóm. Không truyền (import Excel) → service dùng mặc định 3; ô xoá trắng → NaN (không
+     * phải 0 như `Number('')`) để báo lỗi. `.max()` đặt TRONG pipe, trước `.optional()` (bẫy zod v4).
+     */
+    muc_tieu_ns_nhom: z
+      .preprocess(
+        (v) => (typeof v === 'string' ? (v.trim() === '' ? NaN : Number(v.replace(',', '.'))) : v),
+        z.number({ error: reqMsg('baoCaoNhanCong.nsNhom.mucTieuLoi') }).gt(0, reqMsg('baoCaoNhanCong.nsNhom.mucTieuLoi')).max(9999)
+      )
+      .optional(),
     chi_tiet: z.array(chiTietRowSchema).length(LOAI_CHUYEN_CODES.length),
   })
   .superRefine((data, ctx) => {

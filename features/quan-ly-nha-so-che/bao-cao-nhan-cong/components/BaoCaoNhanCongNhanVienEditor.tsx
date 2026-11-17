@@ -13,7 +13,9 @@ import { NGOAI_LE_CODE, type LoaiChuyen, type VarNhanVienSoChe, type VarViTriSoC
 import { syncChiTietTotalsFromSub } from '../core/ct-sub';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
-import { buoiCuaChamCong, chamChieuCaChuyen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
+import { buoiCuaChamCong, chamChieuCaChuyen, nvCoTen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
+import { mucTieuNsNhom, type SoThungNhom } from '../core/nang-suat-nhom';
+import BaoCaoNhanCongSanLuongNhom from './BaoCaoNhanCongSanLuongNhom';
 import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
@@ -62,6 +64,11 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_6rem_auto_5.5rem_5.5rem_minmax(0,1.5fr)_auto]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
+  const soThungNhom = useWatch({ control, name: `chi_tiet.${chiTietIndex}.so_thung_nhom` }) as SoThungNhom | undefined;
+  const mucTieuRaw = useWatch({ control, name: 'muc_tieu_ns_nhom' });
+  const mucTieu = mucTieuNsNhom(mucTieuRaw);
+  /** Khối sản lượng nhóm chỉ hiện khi có người có tên đã chia nhóm; Ngoại lệ không tính giờ nên bỏ. */
+  const coNguoiCoNhom = !ngoaiLe && nvCoTen(ds).some((r) => r.so_nhom != null);
 
   const dangDung = useMemo(() => danhMuc.filter((nv) => nv.dang_dung), [danhMuc]);
   const nvTheoTen = useMemo(() => new Map(danhMuc.map((nv) => [khoaTen(nv.ho_ten), nv])), [danhMuc]);
@@ -351,6 +358,16 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         )}
         {chuaChonChiNhanh && <span className="text-caption text-muted-foreground self-center">{t('baoCaoNhanCong.nv.chonChiNhanhTruoc')}</span>}
       </div>
+
+      {coNguoiCoNhom && (
+        <BaoCaoNhanCongSanLuongNhom
+          loaiChuyen={loaiChuyen}
+          nhanVien={ds}
+          soThungNhom={soThungNhom}
+          mucTieu={mucTieu}
+          onChange={(next) => setValue(`chi_tiet.${chiTietIndex}.so_thung_nhom`, next, { shouldDirty: true })}
+        />
+      )}
     </div>
   );
 };

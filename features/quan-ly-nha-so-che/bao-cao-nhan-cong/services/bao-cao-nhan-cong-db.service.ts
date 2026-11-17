@@ -26,6 +26,7 @@ import type { BaoCaoNhanCongFormValues } from '../core/schema';
 import type { FarmBaoCaoNhanCongCtSub, LoaiChiTieu } from '../core/ct-sub';
 import { LOAI_CHI_TIEU_CODES, groupSubModelsByLoai } from '../core/ct-sub';
 import { applySubTotalsToChiTietForm } from '../core/form-mappers';
+import { chuanHoaSoThungNhom, mucTieuNsNhom } from '../core/nang-suat-nhom';
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
@@ -37,14 +38,14 @@ const TABLE_DM_VT = 'fp_var_vi_tri_so_che';
 
 /** List — bỏ hinh_anh_urls (~1.8MB/dòng base64). Ảnh chỉ load khi mở chi tiết (ROW_CHA_DETAIL). */
 const ROW_CHA_LIST =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,muc_tieu_ns_nhom,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 /** Chi tiết / insert / update */
 const ROW_CHA_DETAIL =
-  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,hinh_anh_urls,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
+  'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,muc_tieu_ns_nhom,hinh_anh_urls,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT =
-  'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu';
+  'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu,so_thung_nhom';
 
 const ROW_CT_SUB =
   'id,id_bcnc_ct,loai_chi_tieu,thu_tu,sl_cong,so_gio,ghi_chu';
@@ -96,6 +97,8 @@ interface DbRowCha {
   id_chi_nhanh: number | null;
   ten_chi_nhanh: string | null;
   ghi_chu: string | null;
+  /** numeric → PostgREST trả chuỗi */
+  muc_tieu_ns_nhom?: string | number | null;
   hinh_anh_urls?: unknown;
   id_nguoi_tao: number | null;
   trang_thai: string | null;
@@ -113,6 +116,7 @@ interface DbRowCt {
   so_gio_tc: string | number | null;
   ghi_chu: string | null;
   thu_tu: number | null;
+  so_thung_nhom?: unknown;
 }
 
 interface DbRowCtSub {
@@ -219,6 +223,7 @@ function ctRowToModel(row: DbRowCt, subs: FarmBaoCaoNhanCongCtSub[]): FarmBaoCao
     ghi_chu: row.ghi_chu ?? null,
     thu_tu: row.thu_tu ?? 0,
     sub_by_loai: groupSubModelsByLoai(subs),
+    so_thung_nhom: chuanHoaSoThungNhom(row.so_thung_nhom),
   };
 }
 
@@ -240,6 +245,7 @@ function chaRowToModel(row: DbRowCha, chi: FarmBaoCaoNhanCongCt[], includeHinhAn
     tg_tao: row.tg_tao ?? new Date().toISOString(),
     tg_cap_nhat: row.tg_cap_nhat ?? new Date().toISOString(),
     chi_tiet: chi.sort((a, b) => a.thu_tu - b.thu_tu),
+    muc_tieu_ns_nhom: mucTieuNsNhom(row.muc_tieu_ns_nhom),
   };
 }
 
@@ -337,6 +343,7 @@ async function insertCtAndSub(
         so_gio_tc: r.so_gio_tc ?? 0,
         ghi_chu: r.ghi_chu ?? null,
         thu_tu: i + 1,
+        so_thung_nhom: chuanHoaSoThungNhom(r.so_thung_nhom),
       })
       .select('id')
       .single();
@@ -679,6 +686,7 @@ function chaPayloadCreate(values: BaoCaoNhanCongFormValues, idNguoiTao: string |
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
     ghi_chu: values.ghi_chu?.trim() || null,
     hinh_anh_urls: values.hinh_anh_urls ?? [],
+    muc_tieu_ns_nhom: mucTieuNsNhom(values.muc_tieu_ns_nhom),
     id_nguoi_tao: parseIdToInt8(idNguoiTao),
     trang_thai: TRANG_THAI_BAO_CAO_NHAN_CONG.MO,
     tg_cap_nhat: new Date().toISOString(),
@@ -692,6 +700,7 @@ function chaPayloadUpdate(values: BaoCaoNhanCongFormValues) {
     ten_chi_nhanh: values.ten_chi_nhanh?.trim() || null,
     ghi_chu: values.ghi_chu?.trim() || null,
     hinh_anh_urls: values.hinh_anh_urls ?? [],
+    muc_tieu_ns_nhom: mucTieuNsNhom(values.muc_tieu_ns_nhom),
     tg_cap_nhat: new Date().toISOString(),
   };
 }

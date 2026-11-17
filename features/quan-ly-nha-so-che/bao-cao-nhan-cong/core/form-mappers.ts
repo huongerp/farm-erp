@@ -16,6 +16,7 @@ import {
   type ChiTietSubFormByLoai,
 } from './ct-sub';
 import { nvChoNgayKe, nvCoTen, nvModelsToForm, nvKhongTinhGio, subTuDanhSachNv } from './danh-sach-nv';
+import { chuanHoaSoThungNhom, MUC_TIEU_NS_NHOM_MAC_DINH, mucTieuNsNhom } from './nang-suat-nhom';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
@@ -27,6 +28,7 @@ export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
       ghi_chu: null,
       sub,
       nhan_vien: [],
+      so_thung_nhom: {},
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 }
@@ -39,6 +41,7 @@ export function defaultFormValues(): BaoCaoNhanCongFormValues {
     ten_chi_nhanh: null,
     ghi_chu: null,
     hinh_anh_urls: [],
+    muc_tieu_ns_nhom: MUC_TIEU_NS_NHOM_MAC_DINH,
     chi_tiet: defaultChiTietRows(),
   };
 }
@@ -65,6 +68,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
       ghi_chu: c?.ghi_chu ?? null,
       sub,
       nhan_vien: nvModelsToForm(c?.nhan_vien),
+      so_thung_nhom: chuanHoaSoThungNhom(c?.so_thung_nhom),
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 
@@ -74,6 +78,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
     ten_chi_nhanh: row.ten_chi_nhanh,
     ghi_chu: row.ghi_chu,
     hinh_anh_urls: Array.isArray(row.hinh_anh_urls) ? [...row.hinh_anh_urls] : [],
+    muc_tieu_ns_nhom: mucTieuNsNhom(row.muc_tieu_ns_nhom),
     chi_tiet,
   };
 }
@@ -88,12 +93,15 @@ export function applySubTotalsToChiTietForm(
   return chi_tiet.map((row) => {
     const nhan_vien = nvCoTen(row.nhan_vien);
     if (row.loai_chuyen === NGOAI_LE_CODE) {
-      return { ...row, nhan_vien: nvKhongTinhGio(nhan_vien), sub: emptySubFormByLoai(), sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0, so_gio_tc: 0 };
+      return { ...row, nhan_vien: nvKhongTinhGio(nhan_vien), sub: emptySubFormByLoai(), so_thung_nhom: {}, sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0, so_gio_tc: 0 };
     }
     const nguon = nhan_vien.length > 0 ? subTuDanhSachNv(nhan_vien) : row.sub;
     const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(nguon)));
     const totals = syncChiTietTotalsFromSub(sub);
-    return { ...row, sub, nhan_vien, ...totals };
+    // Chỉ giữ số thùng của nhóm còn người — đổi / xoá nhóm thì số cũ không lưu sót.
+    const nhomCon = new Set(nhan_vien.flatMap((r) => (r.so_nhom != null ? [String(r.so_nhom)] : [])));
+    const so_thung_nhom = Object.fromEntries(Object.entries(chuanHoaSoThungNhom(row.so_thung_nhom)).filter(([k]) => nhomCon.has(k)));
+    return { ...row, sub, nhan_vien, so_thung_nhom, ...totals };
   });
 }
 
@@ -122,6 +130,7 @@ function clearSubGhiChu(sub: ChiTietSubFormByLoai): ChiTietSubFormByLoai {
 /**
  * Copy sang ngày kế: giữ số liệu chuyền/sub, không copy ghi chú phiếu / chuyền / ảnh.
  * Chuyền có danh sách tên: chép người (bỏ tăng ca) rồi đếm lại sub từ danh sách.
+ * Giữ mục tiêu NS nhóm; số thùng theo nhóm là sản lượng riêng của hôm đó → xoá.
  */
 export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCaoNhanCongFormValues {
   const base = farmBaoCaoNhanCongToForm(row);
@@ -136,6 +145,7 @@ export function farmBaoCaoNhanCongToFormNextDay(row: FarmBaoCaoNhanCong): BaoCao
         ghi_chu: null,
         sub: normalizeChiTietSubFormByLoai(clearSubGhiChu(normalizeChiTietSubFormByLoai(ct.sub))),
         nhan_vien: nvChoNgayKe(ct.nhan_vien),
+        so_thung_nhom: {},
       }))
     ),
   };

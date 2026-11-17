@@ -40,6 +40,11 @@ export interface FarmBaoCaoNhanCongCt {
   sub_by_loai?: ChiTietSubByLoai;
   /** Tên từng người của chuyền — fp_farm_bao_cao_nhan_cong_nv (chỉ tải ở chi tiết phiếu) */
   nhan_vien?: FarmBaoCaoNhanCongNv[];
+  /**
+   * Số thùng theo nhóm: khoá "1".."9" → số ≥ 0; thiếu khoá = chưa nhập. Service luôn điền ({} nếu trống);
+   * optional để fixture/test cũ của module khác không phải sửa.
+   */
+  so_thung_nhom?: Record<string, number>;
 }
 
 /** Chấm công của một người trong phiếu: Sáng, Chiều, Cả ngày (= sáng + chiều), Nghỉ cả ngày (0 công); NUA_NGAY là mã cũ (không biết buổi nào) */
@@ -167,6 +172,8 @@ export interface FarmBaoCaoNhanCong {
   tg_tao: string;
   tg_cap_nhat: string;
   chi_tiet: FarmBaoCaoNhanCongCt[];
+  /** Mục tiêu năng suất nhóm (thùng / giờ-người), mặc định 3. Service luôn điền; optional như `so_thung_nhom`. */
+  muc_tieu_ns_nhom?: number;
 }
 
 export function sumSlCongNgay(item: FarmBaoCaoNhanCong): number {
