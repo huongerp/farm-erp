@@ -156,7 +156,7 @@ export async function getNhanVienSoChe(idChiNhanh: string): Promise<VarNhanVienS
 
 export async function updateNhanVienSoChe(
   id: string,
-  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>>
+  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>>
 ): Promise<void> {
   await updateNhanVienSoCheDb(id, patch);
 }

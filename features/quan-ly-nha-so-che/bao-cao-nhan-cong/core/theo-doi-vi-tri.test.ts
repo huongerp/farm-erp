@@ -11,6 +11,7 @@ const nv = ({ ten, viTri = null, id }: Nguoi, thu_tu: number): FarmBaoCaoNhanCon
   id_nhan_vien: id === undefined ? `nv-${ten}` : id,
   ho_ten: ten,
   vi_tri: viTri,
+  so_nhom: null,
   cham_cong: 'CA_NGAY',
   so_gio_cong: 7.5,
   so_gio_tc: 0,

@@ -309,6 +309,7 @@
   "baoCaoNhanCong.import.col.loai_chuyen": "Chuyền",
   "baoCaoNhanCong.import.col.ho_ten": "Họ tên",
   "baoCaoNhanCong.import.col.vi_tri": "Vị trí",
+  "baoCaoNhanCong.import.col.so_nhom": "Nhóm",
   "baoCaoNhanCong.import.col.cham_cong": "Chấm công",
   "baoCaoNhanCong.import.col.so_luong": "Số lượng",
   "baoCaoNhanCong.import.col.so_gio_cong": "Giờ công",
@@ -320,6 +321,7 @@
   "baoCaoNhanCong.import.hint.loai_chuyen": "Mã hoặc tên chuyền; xem sheet Chuyền.",
   "baoCaoNhanCong.import.hint.ho_ten": "Một người mỗi dòng. Để trống khi nhập số lượng tổng hợp. Tối đa 200 ký tự.",
   "baoCaoNhanCong.import.hint.vi_tri": "Bắt buộc với Ngoại lệ để biết khâu làm việc; chuyền khác tùy chọn. Tối đa 200 ký tự.",
+  "baoCaoNhanCong.import.hint.so_nhom": "Tùy chọn. Số nhóm 1–9 (vd 1 hoặc Nhóm 1); để trống = chưa chia nhóm.",
   "baoCaoNhanCong.import.hint.cham_cong": "Mã hoặc tên chấm công; xem sheet Chấm công.",
   "baoCaoNhanCong.import.hint.so_luong": "Có họ tên: để trống hoặc 1. Không có họ tên: số nguyên dương bắt buộc.",
   "baoCaoNhanCong.import.hint.so_gio_cong": "Ngoại lệ: để trống hoặc 0. Chuyền khác: giờ mỗi người (0–24). Trống: cả ngày 7,5; sáng/chiều 3,75; nửa ngày 4; nghỉ 0.",
@@ -349,6 +351,7 @@
   "baoCaoNhanCong.import.loiNghi": "Người nghỉ phải có giờ công và giờ tăng ca bằng 0.",
   "baoCaoNhanCong.import.loiNghiNhom": "Dòng nghỉ phải có họ tên, không nhập theo số lượng tổng hợp.",
   "baoCaoNhanCong.import.loiViTri": "Chỉ nhập vị trí khi có họ tên.",
+  "baoCaoNhanCong.import.loiSoNhom": "Nhóm phải là số nguyên 1–9 (vd 1 hoặc Nhóm 1) và chỉ nhập khi có họ tên.",
   "baoCaoNhanCong.import.loiGhiChuPhieu": "Ghi chú phiếu không thống nhất giữa các dòng cùng ngày và chi nhánh.",
   "baoCaoNhanCong.import.loiTron": "Không trộn danh sách họ tên và số lượng tổng hợp trong cùng chuyền của một phiếu.",
   "baoCaoNhanCong.import.loiLuu": "Không lưu được phiếu. Vui lòng kiểm tra lại dữ liệu."

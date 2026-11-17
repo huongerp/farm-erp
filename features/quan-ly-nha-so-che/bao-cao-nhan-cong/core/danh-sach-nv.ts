@@ -17,6 +17,8 @@ export const CONG_THEO_CHAM_CONG: Record<ChamCong, number> = { CA_NGAY: 1, SANG:
 export interface NvFormRow {
   ho_ten: string;
   vi_tri: string | null;
+  /** Nhóm trong chuyền (1–9); null = chưa chia nhóm. */
+  so_nhom: number | null;
   cham_cong: ChamCong;
   so_gio_cong: number;
   so_gio_tc: number;
@@ -76,11 +78,12 @@ export function chamChieuCaChuyen(ds: readonly NvFormRow[]): NvFormRow[] {
   return ds.map((r) => (r.cham_cong === 'SANG' ? doiChamCong(r, 'CA_NGAY') : r));
 }
 
-export function nvFormRowMoi(nv?: Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri'>, now: Date = new Date()): NvFormRow {
+export function nvFormRowMoi(nv?: Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri'> & Partial<Pick<VarNhanVienSoChe, 'so_nhom'>>, now: Date = new Date()): NvFormRow {
   const cham_cong = chamCongMacDinh(now);
   return {
     ho_ten: nv?.ho_ten ?? '',
     vi_tri: nv?.vi_tri ?? null,
+    so_nhom: nv?.so_nhom ?? null,
     cham_cong,
     so_gio_cong: GIO_CONG_MAC_DINH[cham_cong],
     so_gio_tc: 0,
@@ -178,6 +181,7 @@ export function nvModelsToForm(rows: readonly FarmBaoCaoNhanCongNv[] | undefined
     .map((r) => ({
       ho_ten: r.ho_ten,
       vi_tri: r.vi_tri,
+      so_nhom: r.so_nhom ?? null,
       cham_cong: r.cham_cong,
       so_gio_cong: num(r.so_gio_cong),
       so_gio_tc: num(r.so_gio_tc),
@@ -185,7 +189,7 @@ export function nvModelsToForm(rows: readonly FarmBaoCaoNhanCongNv[] | undefined
     }));
 }
 
-/** Copy sang ngày kế: giữ người + vị trí, chấm công đặt lại mặc định theo giờ (không kế thừa «cả ngày»); tăng ca và ghi chú là của riêng hôm đó. */
+/** Copy sang ngày kế: giữ người + vị trí + nhóm, chấm công đặt lại mặc định theo giờ (không kế thừa «cả ngày»); tăng ca và ghi chú là của riêng hôm đó. */
 export function nvChoNgayKe(ds: readonly NvFormRow[] | undefined, now: Date = new Date()): NvFormRow[] {
   const cham_cong = chamCongMacDinh(now);
   return nvCoTen(ds).map((r) => ({ ...r, cham_cong, so_gio_cong: GIO_CONG_MAC_DINH[cham_cong], so_gio_tc: 0, ghi_chu: null }));

@@ -5,9 +5,10 @@ import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core
 import { defaultChiTietRows, applySubTotalsToChiTietForm, findBaoCaoDuplicateByBranchAndDate, type PhieuTomTatTrung } from '../core/form-mappers';
 import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, NGOAI_LE_CODE } from '../core/types';
 import { GIO_CONG_MAC_DINH } from '../core/danh-sach-nv';
+import { docSoNhom } from '../core/tong-hop-nhom';
 import { emptySubFormByLoai } from '../core/ct-sub';
 
-export const COT_IMPORT_BCNC = ['ngay', 'chi_nhanh', 'loai_chuyen', 'ho_ten', 'vi_tri', 'cham_cong', 'so_luong', 'so_gio_cong', 'so_gio_tc', 'ghi_chu', 'ghi_chu_phieu'] as const;
+export const COT_IMPORT_BCNC = ['ngay', 'chi_nhanh', 'loai_chuyen', 'ho_ten', 'vi_tri', 'so_nhom', 'cham_cong', 'so_luong', 'so_gio_cong', 'so_gio_tc', 'ghi_chu', 'ghi_chu_phieu'] as const;
 export type CotImportBcnc = typeof COT_IMPORT_BCNC[number];
 export interface ChiNhanhImportBcnc { id: string; ma: string; ten: string }
 export interface PhieuImportBcnc {
@@ -58,6 +59,8 @@ export function planBaoCaoNhanCongImport(
     if (ngoaiLe && (!ten || !normalizeText(r.vi_tri) || soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNgoaiLe'));
     if (cc === 'NGHI' && (soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNghi'));
     if (!ten && normalizeText(r.vi_tri)) msgs.push(tr('loiViTri'));
+    const soNhom = docSoNhom(r.so_nhom);
+    if (soNhom === undefined || (!ten && soNhom != null)) msgs.push(tr('loiSoNhom'));
     if (ngay && cn && findBaoCaoDuplicateByBranchAndDate(existing, ngay, cn.id)) msgs.push(i18n.t('baoCaoNhanCong.validation.duplicateNgayChiNhanh'));
     if (msgs.length || !ngay || !cn || !loai || !cc || !sl.ok) {
       addError(r, index, msgs.join('; '));
@@ -77,7 +80,7 @@ export function planBaoCaoNhanCongImport(
     const ghi_chu = normalizeText(r.ghi_chu) || null;
     if (ten) {
       if (Object.values(ct.sub).some((s) => s.length > 0)) addError(r, index, tr('loiTron'));
-      ct.nhan_vien.push({ ho_ten: ten, vi_tri: normalizeText(r.vi_tri) || null, cham_cong: cc, so_gio_cong: soGio, so_gio_tc: soTc, ghi_chu });
+      ct.nhan_vien.push({ ho_ten: ten, vi_tri: normalizeText(r.vi_tri) || null, so_nhom: soNhom ?? null, cham_cong: cc, so_gio_cong: soGio, so_gio_tc: soTc, ghi_chu });
     } else {
       if (ct.nhan_vien.length > 0) addError(r, index, tr('loiTron'));
       if (cc === 'NGHI') addError(r, index, tr('loiNghiNhom'));

@@ -178,6 +178,7 @@ describe('nhomCuaChuyenChuaCo', () => {
     id_chi_nhanh: '1',
     ho_ten,
     vi_tri: null,
+    so_nhom: null,
     loai_chuyen: 'XAN_NAI',
     dang_dung: true,
     thu_tu: 0,

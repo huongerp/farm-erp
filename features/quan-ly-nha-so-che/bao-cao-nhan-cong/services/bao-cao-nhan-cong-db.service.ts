@@ -49,9 +49,9 @@ const ROW_CT =
 const ROW_CT_SUB =
   'id,id_bcnc_ct,loai_chi_tieu,thu_tu,sl_cong,so_gio,ghi_chu';
 
-const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,cham_cong,so_gio_cong,so_gio_tc,ghi_chu,thu_tu';
+const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,so_nhom,cham_cong,so_gio_cong,so_gio_tc,ghi_chu,thu_tu';
 
-const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,loai_chuyen,dang_dung,thu_tu';
+const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,so_nhom,loai_chuyen,dang_dung,thu_tu';
 
 const ROW_DM_VT = 'id,ten,dang_dung,thu_tu';
 
@@ -131,6 +131,7 @@ interface DbRowNv {
   id_nhan_vien: number | null;
   ho_ten: string;
   vi_tri: string | null;
+  so_nhom: number | null;
   cham_cong: string;
   so_gio_cong: string | number | null;
   so_gio_tc: string | number | null;
@@ -143,6 +144,7 @@ interface DbRowDmNv {
   id_chi_nhanh: number;
   ho_ten: string;
   vi_tri: string | null;
+  so_nhom: number | null;
   loai_chuyen: string | null;
   dang_dung: boolean;
   thu_tu: number | null;
@@ -162,6 +164,7 @@ function nvRowToModel(row: DbRowNv): FarmBaoCaoNhanCongNv {
     id_nhan_vien: row.id_nhan_vien != null ? String(row.id_nhan_vien) : null,
     ho_ten: row.ho_ten,
     vi_tri: row.vi_tri ?? null,
+    so_nhom: row.so_nhom ?? null,
     cham_cong: row.cham_cong as ChamCong,
     so_gio_cong: num(row.so_gio_cong),
     so_gio_tc: num(row.so_gio_tc),
@@ -176,6 +179,7 @@ function dmNvRowToModel(row: DbRowDmNv): VarNhanVienSoChe {
     id_chi_nhanh: String(row.id_chi_nhanh),
     ho_ten: row.ho_ten,
     vi_tri: row.vi_tri ?? null,
+    so_nhom: row.so_nhom ?? null,
     loai_chuyen: (row.loai_chuyen as LoaiChuyen | null) ?? null,
     dang_dung: !!row.dang_dung,
     thu_tu: row.thu_tu ?? 0,
@@ -349,6 +353,7 @@ async function insertCtAndSub(
         id_nhan_vien: idNvTheoTen.get(khoaTen(nv.ho_ten)) ?? null,
         ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten,
         vi_tri: gonTen(nv.vi_tri),
+        so_nhom: nv.so_nhom ?? null,
         cham_cong: nv.cham_cong,
         so_gio_cong: num(nv.so_gio_cong),
         so_gio_tc: num(nv.so_gio_tc),
@@ -623,7 +628,7 @@ export async function themViTriNeuChuaCoDb(ten: string): Promise<void> {
 
 export async function updateNhanVienSoCheDb(
   id: string,
-  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>>
+  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>>
 ): Promise<void> {
   const body: Record<string, unknown> = { ...patch };
   if (patch.ho_ten !== undefined) body.ho_ten = gonTen(patch.ho_ten) ?? '';
@@ -650,11 +655,11 @@ async function ganIdNhanVien(idChiNhanh: number | null, chiTiet: NvTheoChuyen[])
   };
   await docDanhMuc();
 
-  const thieu = new Map<string, { id_chi_nhanh: number; ho_ten: string; vi_tri: string | null; loai_chuyen: string }>();
+  const thieu = new Map<string, { id_chi_nhanh: number; ho_ten: string; vi_tri: string | null; so_nhom: number | null; loai_chuyen: string }>();
   for (const { nv, loai } of ds) {
     const k = khoaTen(nv.ho_ten);
     if (k && !idTheoTen.has(k) && !thieu.has(k)) {
-      thieu.set(k, { id_chi_nhanh: idChiNhanh, ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten, vi_tri: gonTen(nv.vi_tri), loai_chuyen: loai });
+      thieu.set(k, { id_chi_nhanh: idChiNhanh, ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten, vi_tri: gonTen(nv.vi_tri), so_nhom: nv.so_nhom ?? null, loai_chuyen: loai });
     }
   }
   if (thieu.size > 0) {

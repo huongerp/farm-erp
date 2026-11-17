@@ -229,7 +229,7 @@ export function useNhanVienSoChe(idChiNhanh: string | null | undefined) {
 export function useUpdateNhanVienSoChe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'loai_chuyen' | 'dang_dung'>> }) =>
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>> }) =>
       updateNhanVienSoChe(id, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'nhanVienSoChe'] });

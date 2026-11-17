@@ -35,9 +35,9 @@ export function useBaoCaoNhanCongImport() {
     const ngay = formatYmdToDisplay(getTodayISO());
     const cn = chiNhanh[0]?.ma ?? '';
     return [
-      [ngay, cn, 'XAN_NAI', tr('tenMau1'), tr('viTriMau'), 'CA_NGAY', '', 7.5, 2, '', ''],
-      [ngay, cn, 'XAN_NAI', tr('tenMau2'), '', 'SANG', '', 3.75, '', '', ''],
-      [ngay, cn, 'TIA_DANH_GIA', '', '', 'CA_NGAY', 10, 7.5, 1.5, '', ''],
+      [ngay, cn, 'XAN_NAI', tr('tenMau1'), tr('viTriMau'), 1, 'CA_NGAY', '', 7.5, 2, '', ''],
+      [ngay, cn, 'XAN_NAI', tr('tenMau2'), '', 2, 'SANG', '', 3.75, '', '', ''],
+      [ngay, cn, 'TIA_DANH_GIA', '', '', '', 'CA_NGAY', 10, 7.5, 1.5, '', ''],
     ];
   }, [chiNhanh, tr]);
   const referenceSheets = useMemo<ImportReferenceSheet[]>(() => [

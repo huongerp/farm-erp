@@ -23,6 +23,7 @@ const chiTietSubSchema = z.object({
 const nhanVienRowSchema = z.object({
   ho_ten: z.string().max(200).default(''),
   vi_tri: z.string().max(200).nullable().default(null),
+  so_nhom: z.number().int().min(1).max(9).nullable().default(null),
   cham_cong: z.enum(CHAM_CONG_CODES as unknown as [ChamCong, ...ChamCong[]]),
   so_gio_cong: z.coerce.number().min(0).max(24).default(0),
   so_gio_tc: z.coerce.number().min(0).max(24).default(0),

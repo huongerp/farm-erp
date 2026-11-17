@@ -62,6 +62,15 @@ describe('planBaoCaoNhanCongImport', () => {
     expect(plan([{ ...row, ghi_chu_phieu: 'A' }, { ...row, ho_ten: 'B', ghi_chu_phieu: 'B' }]).errors[0].msg).toContain('không thống nhất');
   });
 
+  it('cột Nhóm tùy chọn: đọc «Nhóm 2» / số, trống = chưa chia nhóm; chặn ngoài 1–9 hoặc nhóm cho dòng tổng hợp', () => {
+    const result = plan([{ ...row, so_nhom: 'Nhóm 2' }, { ...row, ho_ten: 'Trần Bình', cham_cong: 'SANG' }]);
+    expect(result.errors).toEqual([]);
+    expect(result.phieu[0].values.chi_tiet[0].nhan_vien.map((n) => n.so_nhom)).toEqual([2, null]);
+    for (const bad of [{ so_nhom: 10 }, { so_nhom: 'abc' }, { ho_ten: '', so_luong: 2, so_nhom: 1 }]) {
+      expect(plan([{ ...row, ...bad }]).errors[0].msg).toContain('Nhóm phải là');
+    }
+  });
+
   it('người nghỉ không sinh công hoặc tăng ca; chặn giờ nghỉ khác 0', () => {
     const nghi = { ...row, cham_cong: 'NGHI' };
     expect(plan([nghi]).phieu[0].values.chi_tiet[0]).toMatchObject({ sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0 });

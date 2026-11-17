@@ -52,6 +52,8 @@ export interface FarmBaoCaoNhanCongNv {
   id_nhan_vien: string | null;
   ho_ten: string;
   vi_tri: string | null;
+  /** Nhóm trong chuyền ngày hôm đó (1–9); null = chưa chia nhóm. */
+  so_nhom: number | null;
   cham_cong: ChamCong;
   so_gio_cong: number;
   so_gio_tc: number;
@@ -65,6 +67,8 @@ export interface VarNhanVienSoChe {
   id_chi_nhanh: string;
   ho_ten: string;
   vi_tri: string | null;
+  /** Nhóm mặc định (1–9) — chép vào phiếu khi chọn tên; null = chưa chia nhóm. */
+  so_nhom: number | null;
   loai_chuyen: LoaiChuyen | null;
   dang_dung: boolean;
   thu_tu: number;
