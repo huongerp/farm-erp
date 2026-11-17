@@ -150,7 +150,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
   );
 
   // % nải lỗi QC khoá theo Giám sát chất lượng của ngày + chi nhánh.
-  const { data: tiLeGscl, isError: gsclLoi } = useGsclTiLeLoiNgay(ngay, idChiNhanh);
+  const { data: qcGscl, isError: gsclLoi } = useGsclTiLeLoiNgay(ngay, idChiNhanh);
 
   const bcnc = useMemo(
     () => findBaoCaoNhanCongByBranchAndDate(bcncList, ngay ?? '', idChiNhanh ?? ''),
@@ -171,10 +171,15 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     () =>
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
-        Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null,
+        // Ưu tiên số sống từ GSCL (null = chưa đạt kiểm tra); chưa tải được thì dùng số đã lưu.
+        qcGscl !== undefined
+          ? qcGscl.ti_le
+          : Number.isFinite(Number(danhGiaLoiQcPct))
+            ? Number(danhGiaLoiQcPct)
+            : null,
         dbsdtRecord
       ),
-    [kpis, danhGiaLoiQcPct, dbsdtRecord]
+    [kpis, qcGscl, danhGiaLoiQcPct, dbsdtRecord]
   );
 
   useEffect(() => {
@@ -195,7 +200,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
 
   const onSubmit: SubmitHandler<BaoCaoSoCheFormValues> = (raw) => {
     // Gửi đúng số đang hiện ở các ô khoá (DB trigger vẫn ghi đè theo nguồn dù gửi gì).
-    const data = apTiLeLoiGsclVaoBcscForm(apTongDgdvVaoBcscForm(raw, tongDgdv), tiLeGscl);
+    const data = apTiLeLoiGsclVaoBcscForm(apTongDgdvVaoBcscForm(raw, tongDgdv), qcGscl?.ti_le);
     const dup = findBaoCaoSoCheDuplicateByBranchAndDate(
       existingList,
       data.ngay,
@@ -302,7 +307,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
               sttOffset={BCSC_SO_LIEU_STT_OFFSET}
               giaTriTuDgdv={giaTriTuDgdv}
               dgdvLoi={dgdvLoi}
-              giaTriTuGscl={tiLeGscl ?? null}
+              qcGscl={qcGscl}
               gsclLoi={gsclLoi}
             />
           </div>

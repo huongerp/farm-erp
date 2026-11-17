@@ -293,6 +293,8 @@ function applyTtdtListQuery(
   }
   if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
   if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
+  if (query.tuNgayXuLy) sel = sel.gte('ngay_xu_ly', query.tuNgayXuLy);
+  if (query.denNgayXuLy) sel = sel.lte('ngay_xu_ly', query.denNgayXuLy);
 
   sel = applyTtdtViewScope(sel, query);
 

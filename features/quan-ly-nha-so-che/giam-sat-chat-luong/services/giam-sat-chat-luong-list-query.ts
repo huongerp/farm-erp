@@ -6,12 +6,13 @@ export interface GiamSatChatLuongListServerQuery {
   searchTerm: string;
   viewAll: boolean;
   allowedBranchIds: string[];
-  /** yyyy */
-  nam: string[];
-  /** yyyy-mm */
-  thang: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn */
+  ngayFrom: string;
+  ngayTo: string;
   trangThai: string[];
   ketLuan: string[];
+  /** 'co_loi' | 'khong_loi' */
+  coLoi: string[];
   idChiNhanh: string[];
   idHangHoa: string[];
   sortColumn: string | null;
@@ -26,6 +27,8 @@ export const GSCL_SORTABLE_DB_COLUMNS = new Set([
   'so_thung_mau',
   'trang_thai',
   'ket_luan',
+  'so_loi',
+  'ti_le_loi',
   'tg_tao',
   'tg_cap_nhat',
 ]);

@@ -28,7 +28,8 @@ import {
   laSoLieuRowTuGscl,
   type SoLieuRowKeyTuDgdv,
 } from '../core/so-lieu-row-meta';
-import { formatNumberVN } from '../../../../lib/utils';
+import { cn, formatNumberVN } from '../../../../lib/utils';
+import type { QcNgay } from '../../giam-sat-chat-luong/core/qc-ngay';
 import { DGDV_BANG_DANH_GIA_URL } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 
 interface Props {
@@ -40,8 +41,8 @@ interface Props {
   giaTriTuDgdv: Record<SoLieuRowKeyTuDgdv, number | null>;
   /** RPC tổng ngày lỗi → hiện dòng báo dưới ghi chú nguồn. */
   dgdvLoi?: boolean;
-  /** % nải lỗi QC lấy từ Giám sát chất lượng (ngày + chi nhánh đang chọn); null → «—». */
-  giaTriTuGscl: number | null;
+  /** Tình hình QC từ Giám sát chất lượng (ngày + chi nhánh đang chọn); undefined (chưa chọn / đang tải) → «—». */
+  qcGscl?: QcNgay;
   /** RPC tỉ lệ lỗi lỗi → hiện dòng báo dưới ghi chú nguồn. */
   gsclLoi?: boolean;
 }
@@ -52,7 +53,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   sttOffset,
   giaTriTuDgdv,
   dgdvLoi = false,
-  giaTriTuGscl,
+  qcGscl,
   gsclLoi = false,
 }) => {
   const { t } = useTranslation();
@@ -135,6 +136,16 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                         >
                           {t('baoCaoSoChe.form.layTuGscl')}
                         </span>
+                        {qcGscl && qcGscl.ap_dung && (
+                          <span
+                            className={cn(
+                              'mt-0.5 block text-[11px] tabular-nums',
+                              qcGscl.ti_le == null ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                            )}
+                          >
+                            {t('baoCaoSoChe.form.daKiemThung', { da: qcGscl.so_thung, toiThieu: qcGscl.toi_thieu })}
+                          </span>
+                        )}
                         {gsclLoi && (
                           <span className="mt-0.5 block text-[11px] text-destructive">
                             {t('baoCaoSoChe.form.gsclLoi')}
@@ -151,9 +162,15 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                       </span>
                     ) : laSoLieuRowTuGscl(def.key) ? (
                       // Ô khoá: số do DB ghi đè theo Giám sát chất lượng, không cho nhập tay.
-                      <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
-                        {formatNumberVN(giaTriTuGscl)}
-                      </span>
+                      qcGscl && qcGscl.ti_le == null ? (
+                        <span className="block w-full rounded-md bg-amber-50 px-2 py-1.5 text-right text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                          {t('baoCaoSoChe.form.chuaDatKiemTra')}
+                        </span>
+                      ) : (
+                        <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
+                          {formatNumberVN(qcGscl?.ti_le ?? null)}
+                        </span>
+                      )
                     ) : (
                       <Controller
                         name={def.key}

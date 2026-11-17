@@ -96,6 +96,8 @@ const NhatKyPhaPhenPage: React.FC = () => {
       nam: filters.nam ?? [],
       thang: filters.thang ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
+      tuNgay: filters.tu_ngay ?? '',
+      denNgay: filters.den_ngay ?? '',
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),

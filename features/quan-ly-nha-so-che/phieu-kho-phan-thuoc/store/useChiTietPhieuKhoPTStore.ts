@@ -25,6 +25,8 @@ export interface ChiTietPhieuKhoPTFilters {
   nguoiTaoIds: string[];
   nguoiDuyetIds: string[];
   hangMuc: string[];
+  /** Danh mục hàng hoá cấp 2 (id) — lọc dòng theo `danh_muc_id` của hàng. */
+  danhMucIds: string[];
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -58,6 +60,7 @@ const initialFilters: ChiTietPhieuKhoPTFilters = {
   nguoiTaoIds: [],
   nguoiDuyetIds: [],
   hangMuc: [],
+  danhMucIds: [],
 };
 
 export const useChiTietPhieuKhoPTStore = storeTheoBienThe((bt) =>

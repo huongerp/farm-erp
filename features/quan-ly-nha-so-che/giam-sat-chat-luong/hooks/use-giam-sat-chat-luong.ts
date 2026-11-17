@@ -213,7 +213,7 @@ export function useCaiDatGscl() {
 export function useLuuCaiDatGscl() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (v: CaiDatGscl) => updateCaiDatGscl(v),
+    mutationFn: (v: Partial<CaiDatGscl>) => updateCaiDatGscl(v),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_CAI_DAT });
       toast.success(i18n.t('giamSatChatLuong.toast.caiDatSaved'));

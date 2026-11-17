@@ -153,6 +153,8 @@ export const useUpdateDonDatHang = (onSuccess?: () => void) => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY, 'chiTietPaged'] });
       qc.invalidateQueries({ queryKey: BY_PHIEU_DE_XUAT_QUERY_KEY });
       qc.invalidateQueries({ queryKey: PHAN_LOAI_CHI_TIET_QUERY_KEY });
+      // Trigger DB (migration 083) đồng bộ giá PO sang phiếu nhập chưa duyệt → nạp lại phiếu kho.
+      qc.invalidateQueries({ queryKey: ['phieuKho'] });
       toast.success(i18n.t('donDatHang.toast.updateSuccess'));
       onSuccess?.();
     },

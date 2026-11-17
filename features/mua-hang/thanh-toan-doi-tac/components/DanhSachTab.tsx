@@ -43,6 +43,18 @@ function toYyyyMmDd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Preset DateRangePicker → khoảng yyyy-mm-dd ('all'/rỗng = không giới hạn). */
+function khoangNgayTuPreset(preset: string | undefined, from?: string, end?: string): { start: string; end: string } {
+  const p = preset || 'all';
+  if (p === 'all') return { start: '', end: '' };
+  const range = getDateRangeFromPreset(
+    p as DateRangePresetId,
+    from ? new Date(from) : undefined,
+    end ? new Date(end) : undefined
+  );
+  return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
+}
+
 
 function thanhToanToFormValues(item: ThanhToanDoiTac, override?: Partial<ThanhToanDoiTacFormValues>): ThanhToanDoiTacFormValues {
   return {
@@ -94,17 +106,15 @@ const DanhSachTab: React.FC = () => {
 
   const nguoiTaoList = useMemo(() => employees.map((e) => ({ id: String(e.id), ho_ten: e.ho_ten })), [employees]);
 
-  /** Khoảng ngày lập từ preset của toolbar ('all' = không giới hạn). */
-  const dateRange = useMemo(() => {
-    const preset = filters.datePreset || 'all';
-    if (preset === 'all') return { start: '', end: '' };
-    const range = getDateRangeFromPreset(
-      preset as DateRangePresetId,
-      filters.customDateFrom ? new Date(filters.customDateFrom) : undefined,
-      filters.customDateEnd ? new Date(filters.customDateEnd) : undefined
-    );
-    return { start: toYyyyMmDd(range.start), end: toYyyyMmDd(range.end) };
-  }, [filters.datePreset, filters.customDateFrom, filters.customDateEnd]);
+  /** Khoảng ngày lập / ngày xử lý từ preset của toolbar ('all' = không giới hạn). */
+  const dateRange = useMemo(
+    () => khoangNgayTuPreset(filters.datePreset, filters.customDateFrom, filters.customDateEnd),
+    [filters.datePreset, filters.customDateFrom, filters.customDateEnd]
+  );
+  const xuLyRange = useMemo(
+    () => khoangNgayTuPreset(filters.xuLyPreset, filters.xuLyFrom, filters.xuLyEnd),
+    [filters.xuLyPreset, filters.xuLyFrom, filters.xuLyEnd]
+  );
 
   /** Phạm vi xem dùng chung cho trang + tóm tắt chip (không đếm phiếu ngoài phạm vi). */
   const scopeQuery = useMemo(
@@ -130,11 +140,13 @@ const DanhSachTab: React.FC = () => {
       nguoiTaoIds: filters.nguoiTaoIds ?? [],
       tuNgay: dateRange.start,
       denNgay: dateRange.end,
+      tuNgayXuLy: xuLyRange.start,
+      denNgayXuLy: xuLyRange.end,
       ...scopeQuery,
       sortColumn: sort.column,
       sortDirection: sort.direction,
     }),
-    [pagination.page, pagination.pageSize, searchTerm, filters, dateRange, sort, scopeQuery]
+    [pagination.page, pagination.pageSize, searchTerm, filters, dateRange, xuLyRange, sort, scopeQuery]
   );
 
   /** Tóm tắt phiếu trong phạm vi xem cho chip lọc (đếm theo trạng thái / nhóm / đối tác / đơn vị / người tạo). */

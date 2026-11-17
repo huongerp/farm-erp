@@ -6,6 +6,7 @@ import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import NutInHangLoat from '../../../../components/shared/phieu-in/NutInHangLoat';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import { useGenericToolbarSearch } from '../../../../lib/hooks/use-generic-toolbar-search';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { NhatKyTomTat } from '../services/nhat-ky-phun-cui-service';
@@ -38,6 +39,11 @@ const NhatKyPhunCuiToolbar: React.FC<Props> = ({
   const selectedIds = useNhatKyPhunCuiStore((s) => s.selectedIds);
   const filters = useNhatKyPhunCuiStore((s) => s.filters);
   const setFilter = useNhatKyPhunCuiStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useNhatKyPhunCuiStore((s) => s.clearSelection);
   const columns = useNhatKyPhunCuiStore((s) => s.columns);
   const toggleColumn = useNhatKyPhunCuiStore((s) => s.toggleColumn);
@@ -80,17 +86,17 @@ const NhatKyPhunCuiToolbar: React.FC<Props> = ({
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${groups[i].width}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({ kind: 'group', group: g, className: `w-full ${groups[i].width}` })),
+    kyNgay.chipItem,
+  ];
 
-  const activeFilterCount = (searchInput.trim() ? 1 : 0) + groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0);
+  const activeFilterCount = (searchInput.trim() ? 1 : 0) + groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0) + (kyNgay.coKy ? 1 : 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
     groups.forEach((g) => setFilter(g.key, []));
+    datKhoang('', '');
   };
 
   const renderActions = (
@@ -131,6 +137,8 @@ const NhatKyPhunCuiToolbar: React.FC<Props> = ({
       bulkActions={selectedCount > 0 ? <NutInHangLoat mau="nhat-ky-phun-cui" ids={Array.from(selectedIds)} /> : undefined}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}
       onAdd={canCreate ? onAdd : undefined}
       showBack

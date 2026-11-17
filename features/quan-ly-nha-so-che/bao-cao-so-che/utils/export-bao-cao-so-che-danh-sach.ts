@@ -50,7 +50,8 @@ export function mapFarmBaoCaoSoCheListRow(
     tong_buong_khong_so_che: formatNumberVN(item.tong_buong_khong_so_che),
     tong_buong_so_che: formatNumberVN(item.tong_buong_so_che),
     sl_buong_ton_cuoi_ngay: formatNumberVN(item.sl_buong_ton_cuoi_ngay),
-    danh_gia_loi_qc_pct: formatNumberVN(item.danh_gia_loi_qc_pct),
+    danh_gia_loi_qc_pct:
+      item.danh_gia_loi_qc_pct == null ? t('baoCaoSoChe.qc.chuaDatKiemTra') : formatNumberVN(item.danh_gia_loi_qc_pct),
     tong_thung_pc: formatNumberVN(phamCap.so_thung),
     tong_kg_pc: formatNumberVN(phamCap.tong_kg),
     tong_thuong_kpi: formatNumberVN(tongThuong),

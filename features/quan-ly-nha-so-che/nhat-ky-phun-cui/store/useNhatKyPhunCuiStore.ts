@@ -4,6 +4,9 @@ import i18n from '../../../../lib/i18n';
 export interface NhatKyPhunCuiFilters {
   thang: string[];
   id_chi_nhanh: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn (chip Ngày). */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 const col = (id: string, key: string, minWidth: number, maxWidth: number, order: number, visible = true): ColumnConfig => ({
@@ -26,7 +29,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ten_nguoi_tao', 'nguoiTao', 120, 190, 7, false),
 ];
 
-const initialFilters: NhatKyPhunCuiFilters = { thang: [], id_chi_nhanh: [] };
+const initialFilters: NhatKyPhunCuiFilters = { thang: [], id_chi_nhanh: [], tu_ngay: '', den_ngay: '' };
 
 export const useNhatKyPhunCuiStore = createGenericStore<NhatKyPhunCuiFilters>(
   initialFilters,

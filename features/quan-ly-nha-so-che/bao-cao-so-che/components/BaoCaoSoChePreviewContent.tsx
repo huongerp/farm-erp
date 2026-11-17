@@ -113,7 +113,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
     () =>
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
-        Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+        data.danh_gia_loi_qc_pct,
         dbsdtRecord
       ),
     [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord]
@@ -142,14 +142,14 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
 
   // ---- Rows số liệu buồng ----
   const soLieuRows = SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-    const val = (data as unknown as Record<string, unknown>)[def.key] as number;
+    const val = (data as unknown as Record<string, unknown>)[def.key] as number | null;
     const meta = data.so_lieu_row_meta?.[def.key];
     const dvt = meta?.don_vi_tinh_phu?.trim() || (def.key === 'danh_gia_loi_qc_pct' ? '%' : slipU);
     return {
       stt: BCSC_SO_LIEU_STT_OFFSET + idx + 1,
       chiSo: t(def.labelKey),
       dvt,
-      giaTri: fmtNum(val),
+      giaTri: val == null ? t('baoCaoSoChe.qc.chuaDatKiemTra') : fmtNum(val),
       ghiChu: meta?.ghi_chu?.trim() || '—',
     };
   });

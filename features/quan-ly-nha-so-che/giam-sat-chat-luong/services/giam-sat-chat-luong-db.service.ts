@@ -4,7 +4,7 @@
  * fp_farm_gscl_tieu_chi (danh mục tiêu chí).
  */
 import { db, fetchAllRows, fetchTablePage, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
-import { applyPostgrestSearch, dieuKienKyTheoNgay } from '../../../../lib/postgrest-search';
+import { applyPostgrestSearch } from '../../../../lib/postgrest-search';
 import i18n from '../../../../lib/i18n';
 import type {
   GiamSatChatLuong,
@@ -22,6 +22,8 @@ import type { GiamSatChatLuongFormValues, TieuChiFormValues } from '../core/sche
 import { ketLuanPhieu, SO_TIEU_CHI_KHONG_DAT_MAC_DINH } from '../core/ket-luan';
 import { coKetLuan, trangThaiTheoSoThung } from '../core/trang-thai';
 import { anhChupTieuChi, taoMaTieuChi } from '../core/tieu-chi';
+import { docQcNgay, type QcNgay } from '../core/qc-ngay';
+import { tomTatLoiPhieu } from '../core/ti-le';
 import {
   GSCL_SORTABLE_DB_COLUMNS,
   GSCL_SORT_MAC_DINH,
@@ -35,8 +37,9 @@ const TABLE_CAI_DAT = 'fp_farm_gscl_cai_dat';
 
 const ROW_COLUMNS =
   'id,so_phieu,ngay,id_chi_nhanh,id_hang_hoa,ma_cay_hang,so_thung_cay,so_thung_mau,tieu_chi,trang_thai,ket_luan,' +
-  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,tg_xuat,id_nguoi_xuat,chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
-  'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem)';
+  'ghi_chu,id_nguoi_tao,tg_tao,tg_cap_nhat,tg_nop,id_nguoi_nop,tg_xuat,id_nguoi_xuat,so_loi,tong_nhanh_kiem,ti_le_loi,' +
+  'chi_nhanh:fp_var_chi_nhanh(ten_chi_nhanh),' +
+  'hang_hoa:fp_farm_danh_sach_hang_hoa(ma_hang_hoa,ten_hang_hoa),thung:fp_farm_giam_sat_chat_luong_ct(da_kiem,ket_qua,tong_nhanh)';
 
 const CT_COLUMNS = 'id,id_phieu,stt_thung,ma_tem,ket_qua,tong_nhanh,da_kiem,tg_kiem,id_nguoi_kiem,ghi_chu,hinh_anh_urls';
 const TC_COLUMNS = 'id,ma,ten,loai,don_vi,nguong_min,nguong_max,thu_tu,dang_dung';
@@ -61,9 +64,12 @@ interface DbRow {
   id_nguoi_nop: number | null;
   tg_xuat: string | null;
   id_nguoi_xuat: number | null;
+  so_loi: number | null;
+  tong_nhanh_kiem: number | null;
+  ti_le_loi: string | number | null;
   chi_nhanh?: { ten_chi_nhanh: string | null } | null;
   hang_hoa?: { ma_hang_hoa: string | null; ten_hang_hoa: string | null } | null;
-  thung?: { da_kiem: boolean }[] | null;
+  thung?: { da_kiem: boolean; ket_qua: KetQuaThung | null; tong_nhanh: number | null }[] | null;
 }
 
 interface DbCtRow {
@@ -121,6 +127,7 @@ function docTieuChi(raw: unknown): TieuChi[] {
 }
 
 function rowToModel(row: DbRow): GiamSatChatLuong {
+  const tieuChi = docTieuChi(row.tieu_chi);
   return {
     id: String(row.id),
     so_phieu: row.so_phieu ?? `#${row.id}`,
@@ -133,7 +140,7 @@ function rowToModel(row: DbRow): GiamSatChatLuong {
     ma_cay_hang: row.ma_cay_hang,
     so_thung_cay: row.so_thung_cay,
     so_thung_mau: row.so_thung_mau,
-    tieu_chi: docTieuChi(row.tieu_chi),
+    tieu_chi: tieuChi,
     trang_thai: row.trang_thai,
     ket_luan: row.ket_luan,
     ghi_chu: row.ghi_chu,
@@ -148,6 +155,10 @@ function rowToModel(row: DbRow): GiamSatChatLuong {
     id_nguoi_xuat: idStr(row.id_nguoi_xuat),
     ten_nguoi_xuat: null,
     so_thung_da_kiem: (row.thung ?? []).filter((t) => t.da_kiem).length,
+    so_loi: Number(row.so_loi) || 0,
+    tong_nhanh_kiem: Number(row.tong_nhanh_kiem) || 0,
+    ti_le_loi: soHoacNull(row.ti_le_loi),
+    loi_theo_tieu_chi: tomTatLoiPhieu(tieuChi, row.thung ?? []),
   };
 }
 
@@ -223,8 +234,14 @@ function applyGsclListQuery(q: any, query: GiamSatChatLuongListServerQuery): any
   if (query.idHangHoa.length > 0) sel = sel.in('id_hang_hoa', nums(query.idHangHoa));
   if (query.trangThai.length > 0) sel = sel.in('trang_thai', query.trangThai);
   if (query.ketLuan.length > 0) sel = sel.in('ket_luan', query.ketLuan);
-  const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay');
-  if (ky.length) sel = sel.or(ky.join(','));
+  if (query.ngayFrom) sel = sel.gte('ngay', query.ngayFrom);
+  if (query.ngayTo) sel = sel.lte('ngay', query.ngayTo);
+  // Lỗi (migration 081): «Không lỗi» = đã kiểm ít nhất một thùng mà 0 nải lỗi; phiếu chưa kiểm không thuộc nhóm nào.
+  const coLoi = query.coLoi.includes('co_loi');
+  const khongLoi = query.coLoi.includes('khong_loi');
+  if (coLoi && khongLoi) sel = sel.gt('tong_nhanh_kiem', 0);
+  else if (coLoi) sel = sel.gt('so_loi', 0);
+  else if (khongLoi) sel = sel.eq('so_loi', 0).gt('tong_nhanh_kiem', 0);
 
   sel = applyPostgrestSearch(sel, query.searchTerm, GSCL_SEARCH_SPEC);
 
@@ -253,13 +270,15 @@ export interface GsclTomTatRow {
   trang_thai: TrangThaiGscl;
   ket_luan: KetLuanGscl | null;
   id_nguoi_tao: number | null;
+  so_loi: number | null;
+  tong_nhanh_kiem: number | null;
 }
 
 /** Vài cột của toàn bộ phiếu — chip lọc (đếm trên toàn bộ) + farm gần nhất của tôi. */
 export async function getGsclTomTatDb(viewAll: boolean, allowedBranchIds: string[]): Promise<GsclTomTatRow[]> {
   return fetchAllRows<GsclTomTatRow>((from, to) =>
     applyPhamVi(
-      db.from(TABLE).select('id,ngay,id_chi_nhanh,id_hang_hoa,trang_thai,ket_luan,id_nguoi_tao'),
+      db.from(TABLE).select('id,ngay,id_chi_nhanh,id_hang_hoa,trang_thai,ket_luan,id_nguoi_tao,so_loi,tong_nhanh_kiem'),
       viewAll,
       allowedBranchIds
     )
@@ -509,21 +528,35 @@ export async function capNhatAnhThungDb(idThung: string, idPhieu: string, urls: 
 export interface CaiDatGscl {
   /** Cây hàng KHÔNG ĐẠT khi có từ chừng này tiêu chí không đạt trở lên. */
   so_tieu_chi_khong_dat: number;
+  /** Farm kiểm dưới chừng này thùng / ngày → % lỗi QC «Chưa đạt kiểm tra» (migration 081). */
+  so_thung_toi_thieu_ngay: number;
+  /** YYYY-MM-DD — áp số thùng tối thiểu từ ngày này. */
+  ngay_ap_dung_toi_thieu: string;
 }
 
-/** Chưa có dòng cài đặt → dùng mặc định. */
+const SO_THUNG_TOI_THIEU_MAC_DINH = 50;
+const NGAY_AP_DUNG_TOI_THIEU_MAC_DINH = '2026-11-17';
+
+/** Chưa có dòng cài đặt / cột (trước migration 081) → dùng mặc định. `select('*')` để không vỡ khi thiếu cột. */
 export async function getCaiDatGsclDb(): Promise<CaiDatGscl> {
-  const { data, error } = await db.from(TABLE_CAI_DAT).select('so_tieu_chi_khong_dat').eq('id', 1).maybeSingle();
+  const { data, error } = await db.from(TABLE_CAI_DAT).select('*').eq('id', 1).maybeSingle();
   if (error) throwDbError(error);
-  const n = Number((data as { so_tieu_chi_khong_dat: number } | null)?.so_tieu_chi_khong_dat);
-  return { so_tieu_chi_khong_dat: Number.isInteger(n) && n >= 1 ? n : SO_TIEU_CHI_KHONG_DAT_MAC_DINH };
+  const row = (data ?? {}) as Record<string, unknown>;
+  const n = Number(row.so_tieu_chi_khong_dat);
+  const toiThieu = Number(row.so_thung_toi_thieu_ngay);
+  const ngay = typeof row.ngay_ap_dung_toi_thieu === 'string' ? row.ngay_ap_dung_toi_thieu.slice(0, 10) : '';
+  return {
+    so_tieu_chi_khong_dat: Number.isInteger(n) && n >= 1 ? n : SO_TIEU_CHI_KHONG_DAT_MAC_DINH,
+    so_thung_toi_thieu_ngay: Number.isInteger(toiThieu) && toiThieu >= 1 ? toiThieu : SO_THUNG_TOI_THIEU_MAC_DINH,
+    ngay_ap_dung_toi_thieu: /^\d{4}-\d{2}-\d{2}$/.test(ngay) ? ngay : NGAY_AP_DUNG_TOI_THIEU_MAC_DINH,
+  };
 }
 
-/** Chỉ cấp cao — RLS chặn người khác (migration 030). */
-export async function updateCaiDatGsclDb(v: CaiDatGscl): Promise<void> {
+/** Chỉ cấp cao — RLS chặn người khác (migration 030). Chỉ gửi trường được truyền. */
+export async function updateCaiDatGsclDb(v: Partial<CaiDatGscl>): Promise<void> {
   const { data, error } = await db
     .from(TABLE_CAI_DAT)
-    .update({ so_tieu_chi_khong_dat: v.so_tieu_chi_khong_dat })
+    .update(v)
     .eq('id', 1)
     .select('id');
   if (error) throwDbError(error);
@@ -654,18 +687,16 @@ export async function dsPhieuQcXepXeDb(idChiNhanh: string, soNgay = 60): Promise
 // ── Số liệu dẫn xuất cho module khác ─────────────────────────────────────────
 
 /**
- * % nải lỗi QC của một ngày + chi nhánh: Σ số lỗi / Σ tổng nhánh của các thùng đã kiểm
- * thuộc mọi phiếu chưa huỷ (RPC `fn_gscl_ti_le_loi_ngay`, migration 072 — cộng dồn cả ngày).
- * Không có thùng nào thoả → 0.
+ * Tình hình QC một ngày + chi nhánh (RPC `fn_gscl_qc_ngay`, migration 081): số thùng đã kiểm,
+ * số thùng tối thiểu, % nải lỗi cộng dồn cả ngày — `ti_le` null khi chưa đủ thùng tối thiểu.
  */
-export async function getTiLeLoiNgayDb(ngay: string, idChiNhanh: number): Promise<number> {
-  const { data, error } = await db.rpc('fn_gscl_ti_le_loi_ngay', {
+export async function getQcNgayDb(ngay: string, idChiNhanh: number): Promise<QcNgay> {
+  const { data, error } = await db.rpc('fn_gscl_qc_ngay', {
     p_ngay: ngay,
     p_id_chi_nhanh: idChiNhanh,
   });
   if (error) throwDbError(error);
-  const n = Number(data);
-  return Number.isFinite(n) ? n : 0;
+  return docQcNgay(data);
 }
 
 /** Các xe (phiếu Đăng ký nhận hàng) đã xếp những cây hàng này — map id phiếu QC → danh sách xe. */

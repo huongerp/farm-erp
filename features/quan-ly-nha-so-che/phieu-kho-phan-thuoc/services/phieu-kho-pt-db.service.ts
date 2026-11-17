@@ -42,6 +42,7 @@ import {
 } from '../utils/ton-kho-check';
 import { getTonKhoPTMatrixByKhoIds } from '../../ton-kho-phan-thuoc/services/farm-ton-kho-pt';
 import type { KhoBienThe } from '../../kho-bien-the/bien-the';
+import { chuanHoaGiaTriXuatChuyen, type GiaTriXuatChuyen, type GiaTriXuatChuyenRaw } from '../core/tong-hop-hang-muc';
 
 const PHIEU_PT_CHI_TIET_ROW_SELECT =
   'id, id_phieu_kho, id_hang_hoa, ten_hang_hoa, don_vi_tinh, pham_cap, hang_muc, so_luong, don_gia, thanh_tien, so_lot, ghi_chu, nguoi_tao_id, ten_nguoi_tao, tg_tao, tg_cap_nhat';
@@ -1084,9 +1085,19 @@ function applyPhieuKhoPTListQueryToSummarySelect(q: any, query: PhieuKhoPTListSe
   return b;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function applyChiTietPhieuKhoPTListQueryToFlatSelect(q: any, query: ChiTietPhieuKhoPTListServerQuery): any {
+function applyChiTietPhieuKhoPTListQueryToFlatSelect(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  q: any,
+  query: ChiTietPhieuKhoPTListServerQuery,
+  /** Id hàng thuộc danh mục đã chọn; `null` = không lọc danh mục. */
+  hangHoaIdsTheoDm: number[] | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any {
   let b = q;
+  if (hangHoaIdsTheoDm != null) {
+    // Danh mục chưa có hàng nào → không dòng nào khớp (không phải "xem tất cả").
+    b = hangHoaIdsTheoDm.length ? b.in('id_hang_hoa', hangHoaIdsTheoDm) : b.eq('chi_tiet_id', -1);
+  }
   const phamVi = phamViOrFilter(query.phamVi, 'phieu_nguoi_tao_id');
   if (phamVi != null) b = phamVi ? b.or(phamVi) : b.eq('phieu_id', -1);
   if (query.loaiDb.length) b = b.in('loai', query.loaiDb);
@@ -1120,6 +1131,13 @@ function applyChiTietPhieuKhoPTListQueryToFlatSelect(q: any, query: ChiTietPhieu
   return b;
 }
 
+/** Id hàng hoá thuộc các danh mục cấp 2 đã chọn (view chi tiết không có cột danh mục). */
+async function getHangHoaIdsTheoDanhMucDb(bt: KhoBienThe, danhMucIds: number[]): Promise<number[]> {
+  const { data, error } = await db.from(bt.bang.hangHoa).select('id').in('danh_muc_id', danhMucIds);
+  if (error) throwDbError(error);
+  return ((data ?? []) as { id: number }[]).map((r) => Number(r.id));
+}
+
 const CHI_TIET_PAGE_SIZE_DEFAULT = 100;
 const DANH_SACH_PAGE_SIZE_DEFAULT = 50;
 
@@ -1145,10 +1163,13 @@ export async function getChiTietPhieuKhoPTPageDb(
   pageSize: number = CHI_TIET_PAGE_SIZE_DEFAULT,
   listQuery?: ChiTietPhieuKhoPTListServerQuery
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoPTFlat>> {
+  const hangHoaIdsTheoDm = listQuery?.danhMucIds?.length
+    ? await getHangHoaIdsTheoDanhMucDb(bt, listQuery.danhMucIds)
+    : null;
   const [pageResult, nvMap] = await Promise.all([
     fetchTablePage<PhieuKhoPTChiTietFlatViewRow>(page, pageSize, async (from, to) => {
       let sel = db.from(bt.view.phieuKhoChiTietFlat).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });
-      if (listQuery) sel = applyChiTietPhieuKhoPTListQueryToFlatSelect(sel, listQuery);
+      if (listQuery) sel = applyChiTietPhieuKhoPTListQueryToFlatSelect(sel, listQuery, hangHoaIdsTheoDm);
       const res = await sel
         .order('ngay', { ascending: false })
         .order('so_phieu', { ascending: false })
@@ -1210,45 +1231,27 @@ export async function getHangMucDangDungDb(bt: KhoBienThe): Promise<string[]> {
     .sort((a, b) => a.localeCompare(b, 'vi'));
 }
 
-/** Tham số tổng hợp tiền theo hạng mục. */
-export interface TongHopHangMucDbParams {
+/** Tham số báo cáo giá trị xuất / luân chuyển. */
+export interface GiaTriXuatChuyenDbParams {
   tu: string;
   den: string;
   /** Rỗng = toàn bộ kho trong phạm vi. */
   khoIds?: string[];
 }
 
-/** Một dòng tổng hợp từ RPC — tiền đã quy về `number`. */
-export interface TongHopHangMucDbRow {
-  hangMuc: string | null;
-  tienXuat: number;
-  tienChuyen: number;
-  soDong: number;
-}
-
 /**
- * Tổng hợp tiền xuất + luân chuyển theo hạng mục trong khoảng ngày.
- * `p_trang_thai` để DB tự mặc định `['Đã duyệt']` — chỉ phiếu đã duyệt mới vào sổ.
+ * Giá trị xuất + luân chuyển (suy giá như báo cáo NXT) theo hạng mục, tuyến kho đi → kho đến,
+ * theo kho và hàng chưa có giá. `p_trang_thai` để DB mặc định `['Đã duyệt']`.
  */
-export async function getTongHopHangMucDb(
+export async function getGiaTriXuatChuyenDb(
   bt: KhoBienThe,
-  { tu, den, khoIds }: TongHopHangMucDbParams
-): Promise<TongHopHangMucDbRow[]> {
-  const params: Record<string, unknown> = { p_tu: tu, p_den: den };
+  { tu, den, khoIds }: GiaTriXuatChuyenDbParams
+): Promise<GiaTriXuatChuyen> {
+  const params: Record<string, unknown> = { p_tu: tu || null, p_den: den || null };
   if (khoIds && khoIds.length > 0) {
     params.p_kho_ids = khoIds.map((s) => Number(s)).filter((n) => !Number.isNaN(n));
   }
-  const { data, error } = await db.rpc(bt.rpc.tongHopHangMuc, params);
+  const { data, error } = await db.rpc(bt.rpc.giaTriXuatChuyen, params);
   if (error) throwDbError(error);
-  return ((data ?? []) as {
-    hang_muc: string | null;
-    tien_xuat: number | string | null;
-    tien_chuyen: number | string | null;
-    so_dong: number | string | null;
-  }[]).map((r) => ({
-    hangMuc: r.hang_muc ?? null,
-    tienXuat: Number(r.tien_xuat) || 0,
-    tienChuyen: Number(r.tien_chuyen) || 0,
-    soDong: Number(r.so_dong) || 0,
-  }));
+  return chuanHoaGiaTriXuatChuyen(data as GiaTriXuatChuyenRaw | null);
 }

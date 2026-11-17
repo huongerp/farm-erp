@@ -23,7 +23,7 @@ export const DEFAULT_COLUMNS_CHI_TIET: ColumnConfig[] = [
   col('ten_nhan_vien_phu_trach', 'nkpp.col.nhanSu', 130, 200, 7),
 ];
 
-const initialFilters: NhatKyPhaPhenFilters = { nam: [], thang: [], id_chi_nhanh: [] };
+const initialFilters: NhatKyPhaPhenFilters = { nam: [], thang: [], id_chi_nhanh: [], tu_ngay: '', den_ngay: '' };
 
 export const useNhatKyPhaPhenChiTietStore = createGenericStore<NhatKyPhaPhenFilters>(
   initialFilters,

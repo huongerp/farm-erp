@@ -191,6 +191,8 @@ function applyNhatKyListQuery(q: any, query: NhatKyPhunCuiListServerQuery, idThe
   }
   const ky = dieuKienKyTheoNgay([], query.thang, 'ngay');
   if (ky.length) sel = sel.or(ky.join(','));
+  if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
 
   const dk = buildPostgrestSearchOr(query.searchTerm, NKPC_SEARCH_SPEC);
   if (dk.length > 0) {
@@ -246,6 +248,8 @@ function applyNkpcChiTietQuery(q: any, query: NkpcChiTietListServerQuery): any {
   }
   const ky = dieuKienKyTheoNgay([], query.thang, 'ngay');
   if (ky.length) sel = sel.or(ky.join(','), { referencedTable: 'nk' });
+  if (query.tuNgay) sel = sel.gte('nk.ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('nk.ngay', query.denNgay);
 
   const sortDb = query.sortColumn != null && query.sortDirection ? NKPC_CHI_TIET_SORT_DB[query.sortColumn] : undefined;
   if (sortDb) sel = sel.order(sortDb, { ascending: query.sortDirection !== 'desc', nullsFirst: false });

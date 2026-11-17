@@ -5,6 +5,7 @@ import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
 import ResponsiveFilterChips, { type FilterChipItem } from '../../../../components/shared/ResponsiveFilterChips';
+import { useKyNgayChip } from '../../shared/use-ky-ngay-chip';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import type { NkppTomTat } from '../services/nhat-ky-pha-phen-service';
 import { useNhatKyPhaPhenChiTietStore } from '../store/useNhatKyPhaPhenChiTietStore';
@@ -22,6 +23,11 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, branches, selectedCount, onE
   const { t } = useTranslation();
   const filters = useNhatKyPhaPhenChiTietStore((s) => s.filters);
   const setFilter = useNhatKyPhaPhenChiTietStore((s) => s.setFilter);
+  const datKhoang = (tu: string, den: string) => {
+    setFilter('tu_ngay', tu);
+    setFilter('den_ngay', den);
+  };
+  const kyNgay = useKyNgayChip(filters.tu_ngay ?? '', filters.den_ngay ?? '', datKhoang);
   const clearSelection = useNhatKyPhaPhenChiTietStore((s) => s.clearSelection);
   const columns = useNhatKyPhaPhenChiTietStore((s) => s.columns);
   const toggleColumn = useNhatKyPhaPhenChiTietStore((s) => s.toggleColumn);
@@ -66,13 +72,12 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, branches, selectedCount, onE
     onChange: (v: string[]) => setFilter(g.key, v),
   }));
 
-  const filterItems: FilterChipItem[] = filterGroups.map((g, i) => ({
-    kind: 'group',
-    group: g,
-    className: `w-full ${groups[i].width}`,
-  }));
+  const filterItems: FilterChipItem[] = [
+    ...filterGroups.map((g, i): FilterChipItem => ({ kind: 'group', group: g, className: `w-full ${groups[i].width}` })),
+    kyNgay.chipItem,
+  ];
 
-  const activeFilterCount = groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0);
+  const activeFilterCount = groups.reduce((s, g) => s + (filters[g.key]?.length ?? 0), 0) + (kyNgay.coKy ? 1 : 0);
 
   const renderActions = (
     <div className="hidden sm:flex items-center gap-2">
@@ -100,10 +105,15 @@ const ChiTietTabToolbar: React.FC<Props> = ({ data, branches, selectedCount, onE
       actions={renderActions}
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
+      mobileFilterExtra={kyNgay.mobileFilterExtra}
+      mobileFilterExtraCount={kyNgay.coKy ? 1 : 0}
       mobileActions={[{ key: 'export', label: t('common.export'), icon: Download, onClick: onExport, description: '' }]}
       showBack
       activeFilterCount={activeFilterCount}
-      onClearAllFilters={() => groups.forEach((g) => setFilter(g.key, []))}
+      onClearAllFilters={() => {
+        groups.forEach((g) => setFilter(g.key, []));
+        datKhoang('', '');
+      }}
       columns={columns}
       onToggleColumn={toggleColumn}
       onReorderColumns={reorderColumns}

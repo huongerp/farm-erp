@@ -114,6 +114,6 @@ describe('resolveBcscPresetKpiDerivedFields — Tỷ lệ thu hồi (mục tiêu
 
   it('chưa có phiếu dự báo → mục tiêu, %, đánh giá trống; thực tế vẫn hiện', () => {
     const r = resolveBcscPresetKpiDerivedFields(src(510, null), '90');
-    expect(r).toEqual({ thucTeStr: '510', mucTieuStr: null, phanTram: null, danhGia: null });
+    expect(r).toEqual({ thucTeStr: '510', mucTieuStr: null, phanTram: null, danhGia: null, tyLeDat: null });
   });
 });

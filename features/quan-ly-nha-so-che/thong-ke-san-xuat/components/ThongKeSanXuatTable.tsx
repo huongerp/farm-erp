@@ -379,7 +379,7 @@ function TableRow({
         <Td className="text-right tabular-nums">{bcsc ? n(bcsc.sl_buong_ton_cuoi_ngay) : '—'}</Td>
         <Td className="text-right tabular-nums">
           {bcsc ? (
-            <span className={cn(bcsc.danh_gia_loi_qc_pct > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground')}>
+            <span className={cn((bcsc.danh_gia_loi_qc_pct ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground')}>
               {pctDirect(bcsc.danh_gia_loi_qc_pct)}
             </span>
           ) : '—'}

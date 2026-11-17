@@ -30,6 +30,10 @@ const p = (o: Partial<GiamSatChatLuong>): GiamSatChatLuong => ({
   id_nguoi_xuat: null,
   ten_nguoi_xuat: null,
   so_thung_da_kiem: 10,
+  so_loi: 0,
+  tong_nhanh_kiem: 0,
+  ti_le_loi: null,
+  loi_theo_tieu_chi: [],
   ...o,
 });
 

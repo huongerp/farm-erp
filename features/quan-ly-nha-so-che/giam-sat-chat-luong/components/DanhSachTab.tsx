@@ -28,7 +28,8 @@ import QuetTemFlow from './QuetTemFlow';
 import CaiDatDialog from './cai-dat/CaiDatDialog';
 
 /** Cột hiển thị → cột sắp xếp ở DB (cột ghép / tính toán không sort ở server). */
-const SORT_COLUMN_MAP: Record<string, string> = {};
+/** Cột bảng → cột DB sắp xếp. «Lỗi» xếp theo % lỗi (null cuối). */
+const SORT_COLUMN_MAP: Record<string, string> = { loi: 'ti_le_loi' };
 
 const DanhSachTab: React.FC = () => {
   const { t } = useTranslation();
@@ -68,10 +69,11 @@ const DanhSachTab: React.FC = () => {
       searchTerm,
       viewAll: viewScope.viewAll,
       allowedBranchIds: viewScope.allowedBranchIds,
-      nam: filters.nam ?? [],
-      thang: filters.thang ?? [],
+      ngayFrom: filters.dateFrom ?? '',
+      ngayTo: filters.dateTo ?? '',
       trangThai: filters.trang_thai ?? [],
       ketLuan: filters.ket_luan ?? [],
+      coLoi: filters.co_loi ?? [],
       idChiNhanh: filters.id_chi_nhanh ?? [],
       idHangHoa: filters.id_hang_hoa ?? [],
       sortColumn: sort.column ? (SORT_COLUMN_MAP[sort.column] ?? sort.column) : null,

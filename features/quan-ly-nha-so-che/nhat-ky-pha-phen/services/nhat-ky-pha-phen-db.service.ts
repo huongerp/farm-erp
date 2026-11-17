@@ -156,6 +156,8 @@ function applyNkppListQuery(q: any, query: NhatKyPhaPhenListServerQuery): any {
   }
   const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay');
   if (ky.length) sel = sel.or(ky.join(','));
+  if (query.tuNgay) sel = sel.gte('ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('ngay', query.denNgay);
   sel = applyPostgrestSearch(sel, query.searchTerm, NKPP_SEARCH_SPEC);
 
   const dbSortable = query.sortColumn != null && NKPP_SORTABLE_DB_COLUMNS.has(query.sortColumn);
@@ -201,6 +203,8 @@ function applyNkppChiTietQuery(q: any, query: NkppChiTietListServerQuery): any {
   }
   const ky = dieuKienKyTheoNgay(query.nam, query.thang, 'ngay');
   if (ky.length) sel = sel.or(ky.join(','), { referencedTable: 'nk' });
+  if (query.tuNgay) sel = sel.gte('nk.ngay', query.tuNgay);
+  if (query.denNgay) sel = sel.lte('nk.ngay', query.denNgay);
 
   const sortDb = query.sortColumn != null && query.sortDirection ? NKPP_CHI_TIET_SORT_DB[query.sortColumn] : undefined;
   if (sortDb) sel = sel.order(sortDb, { ascending: query.sortDirection !== 'desc', nullsFirst: false });

@@ -224,7 +224,9 @@ describe('mergeThongKeSanXuatRows — KPI enrich', () => {
 });
 
 describe('mergeThongKeSanXuatRows — tách 4 nhóm thưởng', () => {
-  // Số liệu thật BCSC 02/11/2026 NSC fp2: Tiền thưởng / QL / nhóm tỉa / nhóm CP
+  // Fixture: NS 35 thùng / 64 giờ ≈ 0,55 so 3,5 (<85%) → 3 cột thưởng dòng 1 = 0;
+  // lỗi 0,5 so 1 (≤100%) → QL dòng 2 = 12.143; dự báo 0 thùng → dòng 3 = 0.
+  // Số thưởng nhập tay ở cột công thức bị ghi đè; CP dòng lỗi + tien_thuong giữ nguyên.
   const bcscFp2 = () =>
     minimalBcsc({
       kpi_thuong: [
@@ -234,32 +236,37 @@ describe('mergeThongKeSanXuatRows — tách 4 nhóm thưởng', () => {
       ],
     });
 
-  it('snapshot cộng riêng từng nhóm, net = cả 4 nhóm', () => {
+  it('snapshot cộng riêng từng nhóm theo công thức, net = cả 4 nhóm', () => {
     const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcscFp2()], [minimalDbdt()]);
     const k = row.kpiSnapshot!;
     expect(k.tongTienThuong).toBe(46747);
-    expect(k.tongThuongQl).toBe(49500);
-    expect(k.tongThuongNhomTia).toBe(50000);
-    expect(k.tongThuongNhomCp).toBe(50000);
-    expect(k.tongThuongNet).toBe(196247);
+    expect(k.tongThuongQl).toBe(12143);
+    expect(k.tongThuongNhomTia).toBe(0);
+    expect(k.tongThuongNhomCp).toBe(35000);
+    expect(k.tongThuongNet).toBe(93890);
   });
 
   it('tiền thưởng KPI âm (phạt) trừ vào net', () => {
     const bcsc = minimalBcsc({
-      kpi_thuong: [kpiRow(0, { tien_thuong: -20000, thuong_ql: 5000, thuong_nhom_tia: 0, thuong_nhom_cp: 0 })],
+      kpi_thuong: [kpiRow(0, { tien_thuong: -20000 }), kpiRow(1), kpiRow(2)],
     });
     const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcsc], [minimalDbdt()]);
     expect(row.kpiSnapshot!.tongTienThuong).toBe(-20000);
-    expect(row.kpiSnapshot!.tongThuongNet).toBe(-15000);
+    expect(row.kpiSnapshot!.tongThuongNet).toBe(-20000 + 12143);
   });
 
-  it('chỉ có thưởng nhóm (tien_thuong = 0) vẫn được tính vào tổng', () => {
+  it('dòng thêm tay chỉ có thưởng nhóm (tien_thuong = 0) vẫn được tính vào tổng', () => {
     const bcsc = minimalBcsc({
-      kpi_thuong: [kpiRow(3, { danh_gia: null, tien_thuong: 0, thuong_ql: 0, thuong_nhom_tia: 0, thuong_nhom_cp: 7000 })],
+      kpi_thuong: [
+        kpiRow(0),
+        kpiRow(1),
+        kpiRow(2),
+        kpiRow(3, { danh_gia: null, tien_thuong: 0, thuong_ql: 0, thuong_nhom_tia: 0, thuong_nhom_cp: 7000 }),
+      ],
     });
     const [row] = mergeThongKeSanXuatRows([minimalBcnc()], [bcsc], [minimalDbdt()]);
     expect(row.kpiSnapshot!.tongThuongNhomCp).toBe(7000);
-    expect(row.kpiSnapshot!.tongThuongNet).toBe(7000);
+    expect(row.kpiSnapshot!.tongThuongNet).toBe(12143 + 7000);
   });
 
   it('summary cộng từng nhóm qua các ngày', () => {
@@ -270,9 +277,9 @@ describe('mergeThongKeSanXuatRows — tách 4 nhóm thưởng', () => {
     );
     const s = computeThongKeSanXuatSummary(rows);
     expect(s.tongTienThuong).toBe(93494);
-    expect(s.tongThuongQl).toBe(99000);
-    expect(s.tongThuongNhomTia).toBe(100000);
-    expect(s.tongThuongNhomCp).toBe(100000);
-    expect(s.tongThuongNet).toBe(392494);
+    expect(s.tongThuongQl).toBe(24286);
+    expect(s.tongThuongNhomTia).toBe(0);
+    expect(s.tongThuongNhomCp).toBe(70000);
+    expect(s.tongThuongNet).toBe(187780);
   });
 });

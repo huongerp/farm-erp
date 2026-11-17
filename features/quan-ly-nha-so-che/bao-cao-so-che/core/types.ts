@@ -41,8 +41,11 @@ export interface FarmBaoCaoSoChe {
   tong_buong_khong_so_che: number;
   tong_buong_so_che: number;
   sl_buong_ton_cuoi_ngay: number;
-  /** Đánh giá lỗi QC (%) — `fp_farm_bao_cao_so_che_ct.danh_gia_loi_qc_pct` */
-  danh_gia_loi_qc_pct: number;
+  /**
+   * Đánh giá lỗi QC (%) — `fp_farm_bao_cao_so_che_ct.danh_gia_loi_qc_pct`.
+   * null = chưa đạt kiểm tra (farm kiểm chưa đủ số thùng tối thiểu trong ngày, migration 081).
+   */
+  danh_gia_loi_qc_pct: number | null;
   /** Tổng lương nhập tay — cột bảng cha `fp_farm_bao_cao_so_che.tong_luong` */
   tong_luong: number;
   /** Meta từng dòng buồng — suy ra từ các dòng `_ct` (ĐVT/ghi chú theo `ma_chi_tieu`), không còn jsonb trên DB. */

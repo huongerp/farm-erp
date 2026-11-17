@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tongHopHangMuc } from './tong-hop-hang-muc';
+import { chuanHoaGiaTriXuatChuyen, tongHopHangMuc } from './tong-hop-hang-muc';
 
 describe('tongHopHangMuc', () => {
   it('quy chuỗi số về number, tong = tiền xuất + tiền luân chuyển', () => {
@@ -48,5 +48,47 @@ describe('tongHopHangMuc', () => {
       { hangMuc: 'B', tienXuat: 20, tienChuyen: 15, soDong: 2 },
     ]);
     expect(tongCong).toEqual({ tienXuat: 30, tienChuyen: 20, tong: 50, soDong: 3 });
+  });
+});
+
+describe('chuanHoaGiaTriXuatChuyen', () => {
+  it('null / thiếu mảng → kết quả rỗng, tổng 0', () => {
+    const kq = chuanHoaGiaTriXuatChuyen(null);
+    expect(kq.tong).toEqual({ tienXuat: 0, tienChuyen: 0, soDong: 0, soDongChuaGia: 0 });
+    expect(kq.luanChuyen).toEqual([]);
+    expect(kq.theoKho).toEqual([]);
+    expect(kq.chuaCoGia).toEqual([]);
+    expect(kq.hangMuc.dong).toEqual([]);
+  });
+
+  it('quy chuỗi số, sắp tuyến luân chuyển theo tiền rồi số dòng', () => {
+    const kq = chuanHoaGiaTriXuatChuyen({
+      tong: { tien_xuat: '100', tien_chuyen: '40', so_dong: '5', so_dong_chua_gia: '2' },
+      luanChuyen: [
+        { id_kho_di: '1', ten_kho_di: 'fp1', id_kho_den: '2', ten_kho_den: 'fp2', so_dong: '9', tien: '0' },
+        { id_kho_di: '3', ten_kho_di: 'fp3', id_kho_den: '1', ten_kho_den: 'fp1', so_dong: '1', tien: '40' },
+        { id_kho_di: '2', ten_kho_di: '', id_kho_den: '3', ten_kho_den: null, so_dong: '20', tien: '0' },
+      ],
+    });
+    expect(kq.tong).toEqual({ tienXuat: 100, tienChuyen: 40, soDong: 5, soDongChuaGia: 2 });
+    expect(kq.luanChuyen.map((d) => d.id)).toEqual(['3-1', '2-3', '1-2']);
+    // Tên trống → rơi về id kho.
+    expect(kq.luanChuyen[1]).toMatchObject({ tenKhoDi: '2', tenKhoDen: '3', soDong: 20 });
+  });
+
+  it('theo kho sắp theo tổng xuất + chuyển đi + nhận về; hạng mục đi qua tongHopHangMuc', () => {
+    const kq = chuanHoaGiaTriXuatChuyen({
+      theoKho: [
+        { id_kho: '1', ten_kho: 'A', tien_xuat: '10', tien_chuyen_di: 0, tien_nhan_ve: 0 },
+        { id_kho: '2', ten_kho: 'B', tien_xuat: 0, tien_chuyen_di: '5', tien_nhan_ve: '20' },
+      ],
+      theoHangMuc: [
+        { hang_muc: null, tien_xuat: 0, tien_chuyen: 0, so_dong: 7 },
+        { hang_muc: 'Phục vụ sản xuất', tien_xuat: '0', tien_chuyen: '440000', so_dong: 1 },
+      ],
+    });
+    expect(kq.theoKho.map((k) => k.tenKho)).toEqual(['B', 'A']);
+    expect(kq.hangMuc.dong.map((d) => d.hangMuc)).toEqual(['Phục vụ sản xuất', null]);
+    expect(kq.hangMuc.tongCong).toEqual({ tienXuat: 0, tienChuyen: 440000, tong: 440000, soDong: 8 });
   });
 });

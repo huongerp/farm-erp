@@ -1,6 +1,6 @@
 # Roadmap
 
-Cập nhật lần cuối: 14/11/2026
+Cập nhật lần cuối: 17/11/2026
 
 Ký hiệu: ✅ xong · 🔄 đang làm · ⏳ chưa làm
 
@@ -22,6 +22,8 @@ React 19 + Vite + TypeScript (PWA) · PostgREST self-host + auth-service (JWT, m
 | Tài chính (thu chi quỹ, thiết lập, thống kê) | ✅ |
 | Nhóm Checklist & bảo trì, Đánh giá đầu vào, Đăng ký tham quan farm (thêm 10–11/2026) | 🔄 còn được bổ sung theo yêu cầu khách — đã có phiếu vệ sinh tuần (lưới T2–CN, migration 080) |
 | Sơ chế: Nhật ký pha phèn, Nhật ký pha thuốc phun cùi (nhóm Phiếu, 11/2026) | ✅ xong (migration 078 đã chạy 14/11/2026) |
+| Phiếu kho Sơ chế/Phân thuốc — tab Theo hạng mục: suy giá như NXT, luân chuyển farm đi → farm đến, theo farm, hàng chưa có giá | ✅ xong (migration 082 đã chạy 17/11/2026) |
+| Giám sát chất lượng: tối thiểu 50 thùng kiểm/farm/ngày mới tính % lỗi QC (dưới mức = «Chưa đạt kiểm tra» ở Báo cáo sơ chế), cột/lọc/sắp xếp «Lỗi» ở danh sách phiếu | ✅ xong (migration 081 đã chạy 17/11/2026) |
 
 ## Giai đoạn 3 — Năng lực dùng chung ✅
 

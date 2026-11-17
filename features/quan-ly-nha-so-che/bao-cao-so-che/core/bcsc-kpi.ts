@@ -3,6 +3,7 @@ import type { FarmDuBaoSlDongThung } from '../../du-bao-sl-dong-thung/core/types
 import { computeDuBaoSlDongThungKpiFromFarm } from '../../du-bao-sl-dong-thung/core/kpi';
 import type { FarmBaoCaoKpiThuongRow } from '../../shared/kpi-thuong/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
+import { computeBcscThuongTheoCongThuc } from './kpi-thuong-cong-thuc';
 import { sumTongGioQuyDoiRowIVFromRows } from '../../bao-cao-nhan-cong/core/ct-sub';
 import {
   normalizeChiTietForDisplay,
@@ -184,6 +185,8 @@ export function resolveBcscPresetKpiDerivedFields(
   mucTieuStr: string | null;
   phanTram: number | null;
   danhGia: string | null;
+  /** Thực tế ÷ mục tiêu × 100 — dùng cho công thức thưởng (khác `phanTram` chênh lệch ở dòng tự lấy mục tiêu). */
+  tyLeDat: number | null;
 } {
   const thucTeStr = numericKpiString(source.thucTeValue);
   if ('mucTieuValue' in source) {
@@ -192,21 +195,22 @@ export function resolveBcscPresetKpiDerivedFields(
     const mt = source.mucTieuValue as number;
     // Chưa có dự báo (hoặc dự báo 0 thùng) → không so được
     if (thucTeStr == null || mucTieuStr == null || mt <= EPS) {
-      return { thucTeStr, mucTieuStr, phanTram: null, danhGia: null };
+      return { thucTeStr, mucTieuStr, phanTram: null, danhGia: null, tyLeDat: null };
     }
     return {
       thucTeStr,
       mucTieuStr,
       phanTram: computeKpiPhanTramChenhLech(tt, mt),
       danhGia: tt >= mt ? 'Đạt' : 'Không đạt',
+      tyLeDat: (tt / mt) * 100,
     };
   }
   if (thucTeStr == null) {
-    return { thucTeStr: null, mucTieuStr: null, phanTram: null, danhGia: null };
+    return { thucTeStr: null, mucTieuStr: null, phanTram: null, danhGia: null, tyLeDat: null };
   }
   const phanTram = computeKpiPhanTram(mucTieu, thucTeStr);
   const danhGia = computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
-  return { thucTeStr, mucTieuStr: null, phanTram, danhGia };
+  return { thucTeStr, mucTieuStr: null, phanTram, danhGia, tyLeDat: phanTram };
 }
 
 function numericKpiString(value: number | null | undefined): string | null {
@@ -233,7 +237,11 @@ export function buildBaoCaoSoCheKpiThuongPresetSources(
 ): [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource] {
   return [
     { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true },
-    { thucTeValue: Number.isFinite(Number(danhGiaLoiQcPct)) ? Number(danhGiaLoiQcPct) : null, isHigherBetter: false },
+    // null = chưa đạt kiểm tra (thiếu thùng) → không có thực tế, không tính thưởng lỗi.
+    {
+      thucTeValue: danhGiaLoiQcPct != null && Number.isFinite(danhGiaLoiQcPct) ? danhGiaLoiQcPct : null,
+      isHigherBetter: false,
+    },
     {
       // Tỷ lệ thu hồi: số thùng nhập kho (phẩm cấp quy đổi) so với số thùng dự báo ĐBĐT
       thucTeValue: kpis.thungThanhPham,
@@ -252,7 +260,7 @@ export function enrichBaoCaoSoCheKpiThuongRows(
   return rows.map((row, index) => {
     if (index >= presetSources.length) return row;
     const source = presetSources[index];
-    const { thucTeStr, mucTieuStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
+    const { thucTeStr, mucTieuStr, phanTram, danhGia, tyLeDat } = resolveBcscPresetKpiDerivedFields(
       source,
       row.muc_tieu
     );
@@ -260,6 +268,8 @@ export function enrichBaoCaoSoCheKpiThuongRows(
       ...row,
       ...(source.donViTinh ? { don_vi_tinh: source.donViTinh } : {}),
       ...('mucTieuValue' in source ? { muc_tieu: mucTieuStr } : {}),
+      // Thưởng QL / nhóm tỉa / nhóm CP theo quy chế (cột không có trong kết quả giữ số nhập tay)
+      ...computeBcscThuongTheoCongThuc(index, tyLeDat),
     };
     if (thucTeStr == null) return base;
     return {

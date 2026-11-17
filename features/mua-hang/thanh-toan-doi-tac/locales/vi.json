@@ -140,6 +140,7 @@
   "thanhToanDoiTac.bulk.toast.success": "Đã chuyển {{count}} phiếu sang “{{status}}”",
   "thanhToanDoiTac.bulk.toast.boQua": "Bỏ qua {{count}} phiếu đã ở trạng thái kết thúc",
   "thanhToanDoiTac.filters.dateRange": "Ngày lập",
+  "thanhToanDoiTac.filters.ngayXuLyRange": "Ngày xử lý",
   "thanhToanDoiTac.toolbar.import": "Nhập Excel",
   "thanhToanDoiTac.toolbar.importDesc": "Nhập nhiều phiếu thanh toán từ file Excel",
   "thanhToanDoiTac.toolbar.export": "Xuất dữ liệu",

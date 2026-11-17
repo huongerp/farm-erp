@@ -18,6 +18,7 @@ import type { KpiThuongFormRow } from '../../shared/kpi-thuong/types';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import type { BcscKpiThuongPresetSource } from '../core/bcsc-kpi';
 import { resolveBcscPresetKpiDerivedFields } from '../core/bcsc-kpi';
+import { computeBcscThuongTheoCongThuc } from '../core/kpi-thuong-cong-thuc';
 
 /** Số hàng preset cố định — luôn là 3. */
 const PRESET_COUNT = 3;
@@ -82,10 +83,15 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
     const rows = kpiRows ?? [];
     presetSources.forEach((source, index) => {
       if (index >= PRESET_COUNT) return;
-      const { thucTeStr, mucTieuStr, phanTram, danhGia } = resolveBcscPresetKpiDerivedFields(
+      const { thucTeStr, mucTieuStr, phanTram, danhGia, tyLeDat } = resolveBcscPresetKpiDerivedFields(
         source,
         rows[index]?.muc_tieu ?? null
       );
+      // Thưởng QL / nhóm tỉa / nhóm CP theo quy chế — lưu DB khớp với số hiển thị
+      const thuong = computeBcscThuongTheoCongThuc(index, tyLeDat);
+      for (const [key, value] of Object.entries(thuong) as [keyof typeof thuong, number][]) {
+        setValue(`kpi_thuong.${index}.${key}`, value, { shouldDirty: false, shouldTouch: false });
+      }
       if (source.donViTinh) {
         setValue(`kpi_thuong.${index}.don_vi_tinh`, source.donViTinh, { shouldDirty: false, shouldTouch: false });
       }
@@ -172,6 +178,10 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                   : null;
 
                 const danhGiaPreset = isPreset ? presetDerived!.danhGia : null;
+                /* Cột thưởng tự tính theo quy chế → chỉ đọc (CP dòng lỗi + dòng thêm tay vẫn nhập) */
+                const thuongCongThuc = isPreset
+                  ? computeBcscThuongTheoCongThuc(index, presetDerived!.tyLeDat)
+                  : {};
                 const pctPreset = isPreset
                   ? presetDerived!.phanTram
                   : computeKpiPhanTram(row?.muc_tieu, row?.thuc_te);
@@ -300,9 +310,19 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                       />
                     </td>
 
-                    {/* Thưởng QL / nhóm tỉa / nhóm CP — nhập tay */}
+                    {/* Thưởng QL / nhóm tỉa / nhóm CP — tự tính theo quy chế ở dòng preset, còn lại nhập tay */}
                     {KPI_COT_THUONG_THEM.map((c) => (
                       <td key={c.key} className="px-2 py-1.5 align-top">
+                        {thuongCongThuc[c.key] != null ? (
+                          <span
+                            className={cn(
+                              'block text-right text-xs tabular-nums font-medium py-2',
+                              thuongCongThuc[c.key]! < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'
+                            )}
+                          >
+                            {formatNumberVN(thuongCongThuc[c.key]!)}
+                          </span>
+                        ) : (
                         <Controller
                           name={`kpi_thuong.${index}.${c.key}`}
                           control={control}
@@ -319,6 +339,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                             />
                           )}
                         />
+                        )}
                       </td>
                     ))}
 

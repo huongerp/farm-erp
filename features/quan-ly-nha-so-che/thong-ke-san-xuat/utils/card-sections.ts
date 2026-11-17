@@ -96,7 +96,7 @@ export function buildRowSections(row: ThongKeSanXuatRow): CardSection[] {
       m(
         'loiQcPct',
         bcsc ? pctDirect(bcsc.danh_gia_loi_qc_pct) : DASH,
-        bcsc && bcsc.danh_gia_loi_qc_pct > 0 ? 'negative' : 'muted'
+        bcsc && (bcsc.danh_gia_loi_qc_pct ?? 0) > 0 ? 'negative' : 'muted'
       ),
       m('kpiNsSoChe', kpiThucTeDisplay(k, 0)),
       m('kpiLoiNaiChuoi', kpiThucTeDisplay(k, 1)),

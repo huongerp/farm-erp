@@ -11,6 +11,10 @@ export interface ThanhToanDoiTacFilters {
   datePreset: string;
   customDateFrom: string;
   customDateEnd: string;
+  /** Khoảng ngày xử lý chứng từ — cùng khuôn preset như ngày lập. */
+  xuLyPreset: string;
+  xuLyFrom: string;
+  xuLyEnd: string;
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -36,6 +40,9 @@ const initialFilters: ThanhToanDoiTacFilters = {
   datePreset: 'all',
   customDateFrom: '',
   customDateEnd: '',
+  xuLyPreset: 'all',
+  xuLyFrom: '',
+  xuLyEnd: '',
 };
 
 export const useThanhToanDoiTacStore = createGenericStore<ThanhToanDoiTacFilters>(

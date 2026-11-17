@@ -76,12 +76,22 @@ const ChiTietList: React.FC<Props> = ({
   onRowClick,
 }) => {
   const { t } = useTranslation();
+  /** Ghim cột Số phiếu bên trái khi cuộn ngang — chỉ khi nó đang là cột đầu (đổi thứ tự thì thôi ghim). */
+  const ghimSoPhieu = visibleColumns[0]?.id === 'so_phieu';
 
   const renderCell = (row: ChiTietPhieuKhoPTFlat, col: ColumnConfig) => {
     switch (col.id) {
       case 'so_phieu':
         return (
-          <td key={col.id} className="px-4 py-3" style={getColumnCellStyle(col)}>
+          <td
+            key={col.id}
+            className={cn(
+              'px-4 py-3',
+              ghimSoPhieu &&
+                'sticky left-0 z-[1] bg-background group-hover:bg-muted border-r border-border/50 transition-colors',
+            )}
+            style={getColumnCellStyle(col)}
+          >
             <span
               role="button"
               tabIndex={0}
@@ -266,7 +276,10 @@ const ChiTietList: React.FC<Props> = ({
               {visibleColumns.map((col) => (
                 <th
                   key={col.id}
-                  className="px-4 py-2.5 text-left text-xs font-semibold text-foreground/80 border-b border-border whitespace-nowrap cursor-pointer hover:bg-muted/80"
+                  className={cn(
+                    'px-4 py-2.5 text-left text-xs font-semibold text-foreground/80 border-b border-border whitespace-nowrap cursor-pointer hover:bg-muted/80',
+                    ghimSoPhieu && col.id === 'so_phieu' && 'sticky left-0 z-[11] bg-muted hover:bg-muted border-r',
+                  )}
                   style={getColumnCellStyle(col)}
                   onClick={() => setSort(col.id, sort.column === col.id && sort.direction === 'asc' ? 'desc' : 'asc')}
                 >
@@ -280,7 +293,7 @@ const ChiTietList: React.FC<Props> = ({
             {sortedRows.map((row) => (
               <tr
                 key={row.id}
-                className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
+                className="group border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => onRowClick(row)}
               >
                 {visibleColumns.map((col) => renderCell(row, col))}

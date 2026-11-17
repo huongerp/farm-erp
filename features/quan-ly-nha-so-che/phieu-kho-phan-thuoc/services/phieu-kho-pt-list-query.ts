@@ -99,6 +99,8 @@ export type ChiTietPhieuKhoPTListServerQuery = {
   nguoiDuyetIds: number[];
   /** Hạng mục đã chọn; `'__none__'` = dòng chưa phân hạng mục (NULL). */
   hangMuc: string[];
+  /** Danh mục hàng hoá cấp 2; DB service tra ra id hàng rồi lọc `id_hang_hoa`. */
+  danhMucIds: number[];
   phamVi: PhieuKhoPTPhamVi;
 };
 
@@ -161,6 +163,7 @@ export function buildChiTietPhieuKhoPTListServerQuery(params: {
     nguoiTaoIds: toNumIds(strArr(filters.nguoiTaoIds)),
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
     hangMuc: strArr(filters.hangMuc),
+    danhMucIds: toNumIds(strArr(filters.danhMucIds)),
     phamVi,
   };
 }

@@ -109,6 +109,13 @@ const BaoCaoSoCheList: React.FC<Props> = ({
         return <span className="text-sm tabular-nums">{formatNumberVN(item.sl_buong_ton_cuoi_ngay)}</span>;
       case 'danh_gia_loi_qc_pct': {
         const qc = item.danh_gia_loi_qc_pct;
+        if (qc == null) {
+          return (
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400" title={t('baoCaoSoChe.qc.chuaDatKiemTraTitle')}>
+              {t('baoCaoSoChe.qc.chuaDatKiemTra')}
+            </span>
+          );
+        }
         return (
           <span className={cn('text-sm tabular-nums', qc > 0 ? 'text-rose-600 dark:text-rose-400 font-medium' : 'text-muted-foreground')}>
             {formatNumberVN(qc)}%
@@ -253,8 +260,13 @@ const BaoCaoSoCheList: React.FC<Props> = ({
           </div>
           <div>
             <div className="text-xs text-muted-foreground">{t('baoCaoSoChe.card.loiQc')}</div>
-            <div className={cn('font-semibold', qc > 0 && 'text-rose-600 dark:text-rose-400')}>
-              {formatNumberVN(qc)}%
+            <div
+              className={cn(
+                'font-semibold',
+                qc == null ? 'text-amber-600 dark:text-amber-400' : qc > 0 && 'text-rose-600 dark:text-rose-400'
+              )}
+            >
+              {qc == null ? t('baoCaoSoChe.qc.chuaDatKiemTra') : `${formatNumberVN(qc)}%`}
             </div>
           </div>
           <div>

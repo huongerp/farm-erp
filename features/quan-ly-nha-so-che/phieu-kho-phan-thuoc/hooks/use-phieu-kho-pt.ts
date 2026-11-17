@@ -17,7 +17,7 @@ import {
   xinSuaPhieuKhoPT,
   xuLyXinSuaPhieuKhoPT,
   getHangMucDangDung,
-  getTongHopHangMuc,
+  getGiaTriXuatChuyen,
   xacNhanNhanPhieuKhoPT,
   suaTraoDoiPhieuKhoPT,
 } from '../services/phieu-kho-pt-service';
@@ -110,8 +110,8 @@ export const useHangMucDangDung = () => {
   });
 };
 
-/** Tổng hợp tiền xuất + luân chuyển theo hạng mục trong khoảng ngày. */
-export const useTongHopHangMuc = (
+/** Giá trị xuất + luân chuyển (hạng mục, tuyến, theo kho, hàng chưa giá) trong khoảng ngày. */
+export const useGiaTriXuatChuyen = (
   { tu, den, khoIds }: { tu: string; den: string; khoIds: string[] },
   /** false khi phạm vi xem chưa tải xong — tránh gọi RPC với toàn bộ kho. */
   enabled = true
@@ -119,9 +119,10 @@ export const useTongHopHangMuc = (
   const bt = useKhoBienThe();
   const sortedKho = [...khoIds].sort();
   return useQuery({
-    queryKey: [...QUERY_KEY_HANG_MUC, 'tongHop', tu, den, sortedKho, bt.key] as const,
-    queryFn: () => getTongHopHangMuc(bt, { tu, den, khoIds }),
-    enabled: enabled && !!tu && !!den,
+    queryKey: [...QUERY_KEY_HANG_MUC, 'giaTri', tu, den, sortedKho, bt.key] as const,
+    queryFn: () => getGiaTriXuatChuyen(bt, { tu, den, khoIds }),
+    enabled,
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 2,
   });
 };

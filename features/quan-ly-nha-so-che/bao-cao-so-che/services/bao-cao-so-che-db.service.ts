@@ -196,7 +196,7 @@ function ctRowsToMetrics(
       tong_buong_khong_so_che: 0,
       tong_buong_so_che: 0,
       sl_buong_ton_cuoi_ngay: 0,
-      danh_gia_loi_qc_pct: 0,
+      danh_gia_loi_qc_pct: null,
       so_lieu_row_meta: {},
     };
   }
@@ -230,7 +230,7 @@ function ctRowsToMetrics(
     tong_buong_khong_so_che: num(byKey.get('tong_buong_khong_so_che')?.gia_tri),
     tong_buong_so_che: num(byKey.get('tong_buong_so_che')?.gia_tri),
     sl_buong_ton_cuoi_ngay: num(byKey.get('sl_buong_ton_cuoi_ngay')?.gia_tri),
-    danh_gia_loi_qc_pct: num(byKey.get('danh_gia_loi_qc_pct')?.gia_tri),
+    danh_gia_loi_qc_pct: numNullable(byKey.get('danh_gia_loi_qc_pct')?.gia_tri),
     so_lieu_row_meta: meta,
   };
 }

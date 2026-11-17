@@ -1,5 +1,5 @@
 /**
- * Kỳ lọc theo ngày cho chip thời gian của tab Thống kê GSCL (`components/ui/DateRangePicker`).
+ * Kỳ lọc theo ngày cho chip thời gian GSCL (`components/ui/DateRangePicker`) — tab Danh sách và Thống kê.
  * Preset chuẩn lấy từ `lib/date-presets.ts`; thêm Hôm nay / 7 ngày qua. Thuần — `today`
  * truyền vào để test được.
  */
@@ -7,6 +7,18 @@ import { getDateRangeFromPreset } from '../../../../lib/date-presets';
 
 export const KY_CUSTOM = 'custom';
 export const KY_TAT_CA = 'all';
+
+/** Preset của chip ở tab Danh sách (thứ tự hiển thị). */
+export const KY_PRESET_DANH_SACH = [
+  KY_TAT_CA,
+  'today',
+  '7days',
+  'thisMonth',
+  'lastMonth',
+  'thisQuarter',
+  'thisYear',
+  KY_CUSTOM,
+] as const;
 
 /** Preset của chip ở tab Thống kê (thứ tự hiển thị). */
 export const KY_PRESET_THONG_KE = [
@@ -37,4 +49,20 @@ export function khoangTheoPreset(
   if (preset === KY_CUSTOM) return { from: customStart, to: customEnd };
   const r = getDateRangeFromPreset(preset);
   return { from: r.dateFrom, to: r.dateTo };
+}
+
+/** Preset khớp với khoảng đang lọc — để chip sáng đúng; không khớp preset nào → `custom`. */
+export function presetTuKhoang(
+  from: string,
+  to: string,
+  today: string,
+  presetIds: readonly string[] = KY_PRESET_DANH_SACH
+): string {
+  if (!from && !to) return KY_TAT_CA;
+  for (const id of presetIds) {
+    if (id === KY_TAT_CA || id === KY_CUSTOM) continue;
+    const r = khoangTheoPreset(id, today);
+    if (r.from === from && r.to === to) return id;
+  }
+  return KY_CUSTOM;
 }

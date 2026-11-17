@@ -82,4 +82,11 @@ describe('bộ lọc hạng mục của tab Chi tiết', () => {
     });
     expect(q.hangMuc).toEqual([]);
   });
+
+  it('danh mục cấp 2: id chuỗi → số, bỏ trùng; filter cũ chưa có trường → rỗng', () => {
+    const base = { searchTerm: '', ngayFrom: '', ngayTo: '', phamVi: pv };
+    const coDm = { ...filters([]), danhMucIds: ['12', '3', '12'] } as ChiTietPhieuKhoPTFilters;
+    expect(buildChiTietPhieuKhoPTListServerQuery({ ...base, filters: coDm }).danhMucIds).toEqual([3, 12]);
+    expect(buildChiTietPhieuKhoPTListServerQuery({ ...base, filters: filters([]) }).danhMucIds).toEqual([]);
+  });
 });

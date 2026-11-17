@@ -13,6 +13,7 @@ import { LOAI_TIEU_CHI, type TieuChiDanhMuc } from '../../core/types';
 import { useLuuTieuChi, useThaoTacTieuChi, useTieuChiDanhMuc } from '../../hooks/use-giam-sat-chat-luong';
 import { moTaNguongTieuChi } from '../../utils/mo-ta-nguong';
 import QuyTacKetLuan from './QuyTacKetLuan';
+import ToiThieuThungNgay from './ToiThieuThungNgay';
 
 
 const RONG: TieuChiFormValues = { ten: '', loai: 'dem_loi', don_vi: 'trái', nguong_min: null, nguong_max: null };
@@ -146,6 +147,7 @@ const TieuChiTab: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   return (
     <div className="space-y-3">
       <QuyTacKetLuan canEdit={canEdit} />
+      <ToiThieuThungNgay canEdit={canEdit} />
 
       <p className="text-xs text-muted-foreground m-0">{t('giamSatChatLuong.tieuChi.gioiThieu')}</p>
 

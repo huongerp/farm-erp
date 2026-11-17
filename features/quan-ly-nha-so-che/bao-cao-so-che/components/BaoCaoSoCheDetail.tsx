@@ -129,7 +129,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
     () =>
       buildBaoCaoSoCheKpiThuongPresetSources(
         kpis,
-        Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+        data.danh_gia_loi_qc_pct,
         dbsdtRecord
       ),
     [kpis, data.danh_gia_loi_qc_pct, dbsdtRecord]
@@ -318,7 +318,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
                     key: def.key,
                     stt: BCSC_SO_LIEU_STT_OFFSET + idx + 1,
                     label: t(def.labelKey),
-                    value: formatNumberVN(data[def.key] as number),
+                    value: data[def.key] == null ? t('baoCaoSoChe.qc.chuaDatKiemTra') : formatNumberVN(data[def.key] as number),
                     dvt: meta.don_vi_tinh_phu?.trim() || SO_LIEU_ROW_DVT_DEFAULT,
                     ghiChu: meta.ghi_chu,
                   };
@@ -349,7 +349,7 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
               </thead>
               <tbody>
                 {SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-                  const val = data[def.key] as number;
+                  const val = data[def.key] as number | null;
                   const meta = soLieuMetaForm[def.key];
                   const dvtDong = meta.don_vi_tinh_phu?.trim() || SO_LIEU_ROW_DVT_DEFAULT;
                   const ghi = meta.ghi_chu?.trim();
@@ -362,7 +362,13 @@ const BaoCaoSoCheDetail: React.FC<Props> = ({
                         {t(def.labelKey)}
                       </td>
                       <td className={`${bcscSoLieuTdGiaTri} text-xs font-medium tabular-nums text-right`}>
-                        {formatNumberVN(val)}
+                        {val == null ? (
+                          <span className="text-amber-600 dark:text-amber-400" title={t('baoCaoSoChe.qc.chuaDatKiemTraTitle')}>
+                            {t('baoCaoSoChe.qc.chuaDatKiemTra')}
+                          </span>
+                        ) : (
+                          formatNumberVN(val)
+                        )}
                       </td>
                       <td className={`${bcscSoLieuTdDvt} text-xs text-muted-foreground whitespace-nowrap`}>
                         {dvtDong}

@@ -6,6 +6,10 @@ export type TrangThaiGscl = (typeof TRANG_THAI_GSCL)[number];
 export const KET_LUAN_GSCL = ['dat', 'khong_dat'] as const;
 export type KetLuanGscl = (typeof KET_LUAN_GSCL)[number];
 
+/** Bộ lọc «Lỗi» của danh sách — theo bộ đếm so_loi / tong_nhanh_kiem (migration 081). */
+export const CO_LOI_GSCL = ['co_loi', 'khong_loi'] as const;
+export type CoLoiGscl = (typeof CO_LOI_GSCL)[number];
+
 /**
  * Loại tiêu chí:
  * - `dem_loi`: đếm số trái lỗi mỗi thùng; ngưỡng = tổng tối đa cho 10 thùng mẫu.
@@ -67,6 +71,19 @@ export interface GiamSatChatLuong {
   ten_nguoi_xuat: string | null;
   /** Số thùng mẫu đã kiểm (đếm từ bảng thùng). */
   so_thung_da_kiem: number;
+  /** Tổng nải lỗi (tiêu chí `dem_loi`) của các thùng đã kiểm — DB giữ bằng trigger (migration 081). */
+  so_loi: number;
+  /** Tổng nhánh/nải của các thùng đã kiểm (mẫu số % lỗi). */
+  tong_nhanh_kiem: number;
+  /** % lỗi = so_loi ÷ tong_nhanh_kiem × 100; null khi chưa có thùng nào. */
+  ti_le_loi: number | null;
+  /** Tiêu chí đếm lỗi có lỗi, cộng các thùng đã kiểm — cho tooltip cột «Lỗi». */
+  loi_theo_tieu_chi: LoiTieuChi[];
+}
+
+export interface LoiTieuChi {
+  ten: string;
+  so_loi: number;
 }
 
 /** Một thùng mẫu — fp_farm_giam_sat_chat_luong_ct. */

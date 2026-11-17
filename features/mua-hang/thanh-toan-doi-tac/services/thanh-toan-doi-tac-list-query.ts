@@ -13,6 +13,9 @@ export interface ThanhToanDoiTacListServerQuery {
   /** Khoảng ngày lập (yyyy-mm-dd, tính cả hai đầu); rỗng = không giới hạn. */
   tuNgay: string;
   denNgay: string;
+  /** Khoảng ngày xử lý chứng từ (yyyy-mm-dd, tính cả hai đầu); rỗng = không giới hạn. */
+  tuNgayXuLy: string;
+  denNgayXuLy: string;
   /** Phạm vi xem: toàn bộ / theo chi nhánh / chỉ phiếu của mình. */
   viewAll: boolean;
   viewByBranch: boolean;

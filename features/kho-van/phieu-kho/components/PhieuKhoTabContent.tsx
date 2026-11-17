@@ -33,6 +33,7 @@ import PhieuKhoToolbar from './PhieuKhoToolbar';
 import PhieuKhoList from './PhieuKhoList';
 import PhieuKhoForm from './PhieuKhoForm';
 import PhieuKhoDetail from './PhieuKhoDetail';
+import { taoBanSaoPhieuKho } from '../core/sao-chep-phieu';
 import PhieuKhoBulkApproveDialog from './PhieuKhoBulkApproveDialog';
 import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
@@ -73,6 +74,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PhieuKho | null>(null);
   const [isCopyMode, setIsCopyMode] = useState(false);
+  /** Loại phiếu mới khi sao chép (có thể khác tab đang xem: nhập xong → xuất luôn). */
+  const [copyLoai, setCopyLoai] = useState<LoaiPhieuKhoTab>(loaiTab);
   // Bản chụp lúc mở chi tiết; bản hiển thị (viewingItem) lấy dòng mới nhất từ trang đang xem khi refetch.
   const [viewingSnapshot, setViewingItem] = useState<PhieuKho | null>(null);
   const [showAddKho, setShowAddKho] = useState(false);
@@ -244,24 +247,20 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
     setShowForm(true);
   };
 
-  const handleCopy = (item: PhieuKho) => {
-    const copy: PhieuKho = {
-      ...item,
-      id: '',
-      so_phieu: '',
-      trang_thai: 'Chờ duyệt',
-      trao_doi: undefined,
-      id_nguoi_duyet: undefined,
-      ten_nguoi_duyet: undefined,
-      nguoi_tao_id: undefined,
-      ten_nguoi_tao: undefined,
-      ngay: new Date().toISOString().slice(0, 10),
-    };
+  const handleCopy = (item: PhieuKho, loaiMoi: LoaiPhieuKhoTab) => {
+    const copy = taoBanSaoPhieuKho(item, loaiMoi, {
+      homNay: new Date().toISOString().slice(0, 10),
+      moTaKhiDoiLoai: t('phieuKho.saoChep.moTa', { soPhieu: item.so_phieu }),
+    });
+    setCopyLoai(loaiMoi);
     setEditingItem(copy);
     setIsCopyMode(true);
     setViewingItem(null);
     setShowForm(true);
   };
+
+  /** Form sao chép có thể mở loại khác tab đang xem. */
+  const formLoai: LoaiPhieuKhoTab = isCopyMode ? copyLoai : loaiTab;
 
   const handleDelete = (id: string) => {
     const item = tableRows.find((p) => p.id === id) ?? (viewingItem?.id === id ? viewingItem : null);
@@ -425,7 +424,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
       <AnimatePresence>
         {showForm && (
           <PhieuKhoForm
-            loai={loaiTab}
+            loai={formLoai}
             khoList={khoList}
             initialData={isCopyMode ? editingItem : (editingPhieuFull ?? editingItem)}
             onClose={() => {
@@ -450,7 +449,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
                 : undefined
             }
             onRequestAddNcc={
-              loaiTab === 'nhap'
+              formLoai === 'nhap'
                 ? () =>
                     new Promise<DoiTac | null>((resolve) => {
                       addDoiTacResolveRef.current = resolve;
@@ -459,7 +458,7 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
                 : undefined
             }
             onRequestAddKh={
-              loaiTab === 'xuat'
+              formLoai === 'xuat'
                 ? () =>
                     new Promise<DoiTac | null>((resolve) => {
                       addDoiTacResolveRef.current = resolve;
@@ -467,8 +466,8 @@ const PhieuKhoTabContent: React.FC<Props> = ({ loai: loaiTab }) => {
                     })
                 : undefined
             }
-            onRequestEditNcc={loaiTab === 'nhap' && canUpdateDoiTac ? openEditDoiTac : undefined}
-            onRequestEditKh={loaiTab === 'xuat' && canUpdateDoiTac ? openEditDoiTac : undefined}
+            onRequestEditNcc={formLoai === 'nhap' && canUpdateDoiTac ? openEditDoiTac : undefined}
+            onRequestEditKh={formLoai === 'xuat' && canUpdateDoiTac ? openEditDoiTac : undefined}
           />
         )}
       </AnimatePresence>

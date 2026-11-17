@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Edit, Trash2 } from 'lucide-react';
 import GenericTable from '../../../../components/shared/GenericTable';
 import type { ColumnConfig, SortState } from '../../../../store/createGenericStore';
-import { cn, formatYmdToDisplay } from '../../../../lib/utils';
+import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import type { GiamSatChatLuong } from '../core/types';
 import { KetLuanBadge, TrangThaiBadge } from './Badges';
 
@@ -27,6 +27,30 @@ interface Props {
   onEdit?: (item: GiamSatChatLuong) => void;
   onDelete?: (id: string) => void;
 }
+
+/** Nải lỗi · % lỗi của phiếu; tooltip liệt kê tiêu chí có lỗi. Chưa kiểm thùng nào → «—». */
+const Loi: React.FC<{ item: GiamSatChatLuong; className?: string }> = ({ item, className }) => {
+  const { t } = useTranslation();
+  if (item.tong_nhanh_kiem <= 0) return <span className={cn('text-sm text-muted-foreground', className)}>—</span>;
+  if (item.so_loi <= 0) {
+    return <span className={cn('text-sm text-muted-foreground', className)}>{t('giamSatChatLuong.loi.khongLoi')}</span>;
+  }
+  const title = [
+    t('giamSatChatLuong.loi.chiTiet'),
+    ...item.loi_theo_tieu_chi.map((x) => `• ${x.ten}: ${formatNumberVN(x.so_loi)}`),
+  ].join('\n');
+  return (
+    <span
+      className={cn('block truncate whitespace-nowrap text-sm font-semibold tabular-nums text-rose-600 dark:text-rose-400', className)}
+      title={title}
+    >
+      {t('giamSatChatLuong.loi.giaTri', {
+        n: formatNumberVN(item.so_loi),
+        pct: formatNumberVN(item.ti_le_loi ?? 0, { maxFractionDigits: 2 }),
+      })}
+    </span>
+  );
+};
 
 const TienDo: React.FC<{ item: GiamSatChatLuong }> = ({ item }) => {
   const du = item.so_thung_da_kiem >= item.so_thung_mau;
@@ -89,6 +113,8 @@ const GiamSatChatLuongList: React.FC<Props> = ({
         return <KetLuanBadge value={item.ket_luan} />;
       case 'tien_do':
         return <TienDo item={item} />;
+      case 'loi':
+        return <Loi item={item} />;
       case 'ten_hang_hoa':
         return one(item.ten_hang_hoa || '—', undefined, item.ten_hang_hoa ?? undefined);
       case 'ma_cay_hang':
@@ -172,6 +198,10 @@ const GiamSatChatLuongList: React.FC<Props> = ({
         </div>
         <div className="mt-2">
           <div className="flex items-baseline justify-between gap-2 text-sm">
+            <span className="text-xs text-muted-foreground">{t('giamSatChatLuong.col.loi')}</span>
+            <Loi item={item} />
+          </div>
+          <div className="mt-1 flex items-baseline justify-between gap-2 text-sm">
             <span className="text-xs text-muted-foreground">{t('giamSatChatLuong.card.daKiem')}</span>
             <span
               className={cn('tabular-nums font-semibold', du && 'text-emerald-600 dark:text-emerald-400')}

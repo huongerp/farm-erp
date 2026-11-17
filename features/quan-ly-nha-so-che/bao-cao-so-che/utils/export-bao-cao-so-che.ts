@@ -59,7 +59,7 @@ export async function exportBaoCaoSoCheToXLSX(
     [...(data.kpi_thuong ?? [])].sort((a, b) => a.thu_tu - b.thu_tu),
     buildBaoCaoSoCheKpiThuongPresetSources(
       kpis,
-      Number.isFinite(Number(data.danh_gia_loi_qc_pct)) ? Number(data.danh_gia_loi_qc_pct) : null,
+      data.danh_gia_loi_qc_pct,
       dbsdtRecord
     )
   );
@@ -98,7 +98,8 @@ export async function exportBaoCaoSoCheToXLSX(
     [`II. ${t('baoCaoSoChe.form.sectionSoCheTitle')}`],
     hdrChiSo,
     ...SO_LIEU_BUONG_ROW_DEFS.map((def, idx) => {
-      const val = (data as unknown as Record<string, unknown>)[def.key] as number;
+      const raw = (data as unknown as Record<string, unknown>)[def.key] as number | null;
+      const val = raw == null ? t('baoCaoSoChe.qc.chuaDatKiemTra') : raw;
       const meta = data.so_lieu_row_meta?.[def.key];
       const dvt = meta?.don_vi_tinh_phu?.trim() || (def.key === 'danh_gia_loi_qc_pct' ? '%' : slipU);
       return [BCSC_SO_LIEU_STT_OFFSET + idx + 1, t(def.labelKey), dvt, val, meta?.ghi_chu?.trim() || ''];

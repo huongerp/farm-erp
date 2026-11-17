@@ -30,6 +30,7 @@ import { useConfirmStore } from '../../../../store/useConfirmStore';
 import ApproveOption, { APPROVE_OPTION_STYLE } from './ApproveOption';
 import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import TraoDoiDialog from '../../../../components/shared/trao-doi/TraoDoiDialog';
+import ChonLoaiSaoChepDialog from './ChonLoaiSaoChepDialog';
 import { hienThiThoiDiemTraoDoi } from '../../../../components/shared/trao-doi/hien-thi';
 import { tachTraoDoi } from '../../../../lib/trao-doi-log';
 
@@ -39,7 +40,8 @@ interface Props {
   onClose: () => void;
   onEdit?: (item: PhieuKho) => void;
   onDelete?: (id: string) => void;
-  onCopy?: (item: PhieuKho) => void;
+  /** Sao chép thành phiếu mới; `loaiMoi` do người dùng chọn trong popup (có thể khác loại gốc). */
+  onCopy?: (item: PhieuKho, loaiMoi: LoaiPhieuKhoTab) => void;
   /** Có quyền phê duyệt – ẩn nút Duyệt khi false */
   canApprove?: boolean;
   /** > 0 khi mở chồng lên drawer khác (vd. section phiếu nhập trong drawer đơn đặt hàng). */
@@ -56,6 +58,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
   const nguoiDuyetTen =
     user?.ho_va_ten?.trim() || user?.full_name?.trim() || user?.email?.trim() || '';
   const [showDuyetPopup, setShowDuyetPopup] = useState(false);
+  const [showSaoChep, setShowSaoChep] = useState(false);
   const [duyetGhiChu, setDuyetGhiChu] = useState('');
   const updateTrangThaiMutation = useUpdatePhieuKhoTrangThai(() => setShowDuyetPopup(false));
   const [showTraoDoi, setShowTraoDoi] = useState(false);
@@ -136,7 +139,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
       actions.push({
         label: t('phieuKho.copyAction'),
         icon: <Copy size={16} />,
-        onClick: () => { onCopy(data); onClose(); },
+        onClick: () => setShowSaoChep(true),
       });
     }
     if (canXacNhanNhan) {
@@ -167,7 +170,7 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
       onClick: () => window.open(`/mua-hang/phieu-kho/preview/${data.id}`, '_blank', 'noopener,noreferrer'),
     });
     return actions;
-  }, [data, showApproveButton, isDaQuyetDinh, onCopy, onClose, canXacNhanNhan, isChuyen, confirm, xacNhanNhanMutation, t]);
+  }, [data, showApproveButton, isDaQuyetDinh, onCopy, canXacNhanNhan, isChuyen, confirm, xacNhanNhanMutation, t]);
 
   const renderFooter = (
     <DetailDrawerFooter
@@ -474,6 +477,21 @@ const PhieuKhoDetail: React.FC<Props> = ({ data, loai, onClose, onEdit, onDelete
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSaoChep && onCopy && (
+          <ChonLoaiSaoChepDialog
+            soPhieu={data.so_phieu}
+            loaiHienTai={loai}
+            onClose={() => setShowSaoChep(false)}
+            onChon={(loaiMoi) => {
+              setShowSaoChep(false);
+              onCopy(data, loaiMoi);
+              onClose();
+            }}
+          />
         )}
       </AnimatePresence>
 

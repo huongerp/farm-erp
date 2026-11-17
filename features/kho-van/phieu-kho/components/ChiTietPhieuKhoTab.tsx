@@ -24,6 +24,7 @@ import { getDateRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-
 import type { DateRangePresetId } from '../../../he-thong/nhan-vien/core/stats-constants';
 import ChiTietPhieuKhoToolbar from './ChiTietPhieuKhoToolbar';
 import PhieuKhoDetail from './PhieuKhoDetail';
+import { taoBanSaoPhieuKho } from '../core/sao-chep-phieu';
 import PhieuKhoForm from './PhieuKhoForm';
 import DanhSachKhoForm from '../../danh-sach-kho/components/danh-sach-kho-form';
 import DanhSachHangHoaForm from '../../danh-sach-hang-hoa/components/DanhSachHangHoaForm';
@@ -324,25 +325,17 @@ const ChiTietPhieuKhoTab: React.FC = () => {
     [canUpdate, canApprove, t]
   );
 
-  const handleCopy = useCallback((item: PhieuKho) => {
-    const copy: PhieuKho = {
-      ...item,
-      id: '',
-      so_phieu: '',
-      trang_thai: 'Chờ duyệt',
-      trao_doi: undefined,
-      id_nguoi_duyet: undefined,
-      ten_nguoi_duyet: undefined,
-      nguoi_tao_id: undefined,
-      ten_nguoi_tao: undefined,
-      ngay: new Date().toISOString().slice(0, 10),
-    };
+  const handleCopy = useCallback((item: PhieuKho, loaiMoi: LoaiPhieuKhoTab) => {
+    const copy = taoBanSaoPhieuKho(item, loaiMoi, {
+      homNay: new Date().toISOString().slice(0, 10),
+      moTaKhiDoiLoai: t('phieuKho.saoChep.moTa', { soPhieu: item.so_phieu }),
+    });
     setEditingItem(copy);
-    setEditingLoai(LOAI_DB_TO_TAB[item.loai]);
+    setEditingLoai(loaiMoi);
     setIsCopyMode(true);
     setViewingPhieuId(null);
     setShowForm(true);
-  }, []);
+  }, [t]);
 
   const handleDelete = useCallback(
     (id: string) => {

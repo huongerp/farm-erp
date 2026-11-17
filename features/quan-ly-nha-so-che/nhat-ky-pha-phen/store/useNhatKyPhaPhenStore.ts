@@ -5,6 +5,9 @@ export interface NhatKyPhaPhenFilters {
   nam: string[];
   thang: string[];
   id_chi_nhanh: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn (chip Ngày). */
+  tu_ngay: string;
+  den_ngay: string;
 }
 
 const col = (id: string, key: string, minWidth: number, maxWidth: number, order: number): ColumnConfig => ({
@@ -33,7 +36,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   col('ghi_chu', 'ghiChu', 120, 260, 13),
 ];
 
-const initialFilters: NhatKyPhaPhenFilters = { nam: [], thang: [], id_chi_nhanh: [] };
+const initialFilters: NhatKyPhaPhenFilters = { nam: [], thang: [], id_chi_nhanh: [], tu_ngay: '', den_ngay: '' };
 
 export const useNhatKyPhaPhenStore = createGenericStore<NhatKyPhaPhenFilters>(
   initialFilters,

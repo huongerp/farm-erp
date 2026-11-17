@@ -58,6 +58,16 @@ function demTheo(data: ThanhToanDoiTacTomTat[], cot: keyof ThanhToanDoiTacTomTat
   return m;
 }
 
+/** Nhãn hiển thị trên chip khoảng ngày ('all' = rỗng để hiện placeholder). */
+function nhanKhoangNgay(preset: string, from: string, end: string): string {
+  if (preset === 'all') return '';
+  return getDateRangeFromPreset(
+    preset as DateRangePresetId,
+    from ? new Date(from) : undefined,
+    end ? new Date(end) : undefined
+  ).label;
+}
+
 const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   data,
   doiTacList,
@@ -90,14 +100,22 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
   const customDateFrom = filters.customDateFrom || '';
   const customDateEnd = filters.customDateEnd || '';
 
-  const dateRangeLabel = useMemo(() => {
-    if (datePreset === 'all') return '';
-    return getDateRangeFromPreset(
-      datePreset as DateRangePresetId,
-      customDateFrom ? new Date(customDateFrom) : undefined,
-      customDateEnd ? new Date(customDateEnd) : undefined
-    ).label;
-  }, [datePreset, customDateFrom, customDateEnd]);
+  const dateRangeLabel = useMemo(
+    () => nhanKhoangNgay(datePreset, customDateFrom, customDateEnd),
+    [datePreset, customDateFrom, customDateEnd]
+  );
+
+  const xuLyPreset = filters.xuLyPreset || 'all';
+  const xuLyFrom = filters.xuLyFrom || '';
+  const xuLyEnd = filters.xuLyEnd || '';
+  const xuLyLabel = useMemo(() => nhanKhoangNgay(xuLyPreset, xuLyFrom, xuLyEnd), [xuLyPreset, xuLyFrom, xuLyEnd]);
+  const xuLyValue: DateRangeValue = { preset: xuLyPreset, customStart: xuLyFrom, customEnd: xuLyEnd };
+  const handleXuLyChange = (v: DateRangeValue) => {
+    setFilter('xuLyPreset', v.preset);
+    setFilter('xuLyFrom', v.customStart);
+    setFilter('xuLyEnd', v.customEnd);
+  };
+  const xuLyActive = xuLyPreset !== 'all';
 
   const dateRangePresets = useMemo(() => DATE_RANGE_PRESETS.map((p) => ({ id: p.id, label: p.label })), []);
   const dateRangeValue: DateRangeValue = { preset: datePreset, customStart: customDateFrom, customEnd: customDateEnd };
@@ -147,7 +165,8 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
     (filters.nhomIds?.length ?? 0) +
     (filters.donViIds?.length ?? 0) +
     (filters.nguoiTaoIds?.length ?? 0) +
-    (dateRangeActive ? 1 : 0);
+    (dateRangeActive ? 1 : 0) +
+    (xuLyActive ? 1 : 0);
 
   const handleClearAllFilters = () => {
     commitSearchTerm('');
@@ -159,6 +178,9 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
     setFilter('datePreset', 'all');
     setFilter('customDateFrom', '');
     setFilter('customDateEnd', '');
+    setFilter('xuLyPreset', 'all');
+    setFilter('xuLyFrom', '');
+    setFilter('xuLyEnd', '');
   };
 
   const filterGroups = useMemo(
@@ -240,6 +262,20 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
         />
       ),
     },
+    {
+      kind: 'custom',
+      key: 'ngayXuLyRange',
+      node: (
+        <DateRangePicker
+          presets={dateRangePresets}
+          value={xuLyValue}
+          onChange={handleXuLyChange}
+          displayLabel={xuLyLabel}
+          placeholder={t('thanhToanDoiTac.filters.ngayXuLyRange')}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
     { kind: 'group', group: nguoiTaoGroup },
   ];
 
@@ -280,11 +316,16 @@ const ThanhToanDoiTacToolbar: React.FC<Props> = ({
       filters={<ResponsiveFilterChips items={filterItems} luonVaoFilter={LUON_VAO_FILTER} />}
       filterGroups={filterGroups}
       mobileFilterExtra={
-        <MobileFilterField label={t('thanhToanDoiTac.filters.dateRange')} icon={Calendar} active={dateRangeActive}>
-          <DateRangePicker inline presets={dateRangePresets} value={dateRangeValue} onChange={handleDateRangeChange} />
-        </MobileFilterField>
+        <>
+          <MobileFilterField label={t('thanhToanDoiTac.filters.dateRange')} icon={Calendar} active={dateRangeActive}>
+            <DateRangePicker inline presets={dateRangePresets} value={dateRangeValue} onChange={handleDateRangeChange} />
+          </MobileFilterField>
+          <MobileFilterField label={t('thanhToanDoiTac.filters.ngayXuLyRange')} icon={Calendar} active={xuLyActive}>
+            <DateRangePicker inline presets={dateRangePresets} value={xuLyValue} onChange={handleXuLyChange} />
+          </MobileFilterField>
+        </>
       }
-      mobileFilterExtraCount={dateRangeActive ? 1 : 0}
+      mobileFilterExtraCount={(dateRangeActive ? 1 : 0) + (xuLyActive ? 1 : 0)}
       mobileActions={mobileActions}
       onAdd={canCreate ? onAdd : undefined}
       showBack

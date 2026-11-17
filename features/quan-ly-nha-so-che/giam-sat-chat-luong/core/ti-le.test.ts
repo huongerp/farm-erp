@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { docTongNhanh, tiLeLoi } from './ti-le';
+import { docTongNhanh, tiLeLoi, tomTatLoiPhieu } from './ti-le';
 import type { TieuChi } from './types';
 
 const tc = (loai: TieuChi['loai']): TieuChi => ({ ma: 'x', ten: 'X', loai, don_vi: null, nguong_min: null, nguong_max: 4 });
@@ -36,5 +36,31 @@ describe('docTongNhanh', () => {
     expect(docTongNhanh('0')).toBeNull();
     expect(docTongNhanh('-3')).toBeNull();
     expect(docTongNhanh('3,5')).toBeNull();
+  });
+});
+
+describe('tomTatLoiPhieu', () => {
+  const tieuChi: TieuChi[] = [
+    { ma: 'dap', ten: 'Dập', loai: 'dem_loi', don_vi: null, nguong_min: null, nguong_max: 4 },
+    { ma: 'seo', ten: 'Sẹo', loai: 'dem_loi', don_vi: null, nguong_min: null, nguong_max: 4 },
+    { ma: 'kg', ten: 'Kg/nải', loai: 'do_luong', don_vi: 'kg', nguong_min: 1, nguong_max: 2 },
+  ];
+
+  it('cộng lỗi theo tiêu chí trên thùng đã kiểm có tổng nhánh, nhiều lỗi trước, bỏ tiêu chí 0 lỗi', () => {
+    const out = tomTatLoiPhieu(tieuChi, [
+      { da_kiem: true, ket_qua: { dap: 1, seo: 2, kg: 1.5 }, tong_nhanh: 30 },
+      { da_kiem: true, ket_qua: { seo: 1 }, tong_nhanh: 30 },
+      // chưa kiểm / thiếu tổng nhánh → không tính (khớp so_loi trên DB)
+      { da_kiem: false, ket_qua: { dap: 9 }, tong_nhanh: 30 },
+      { da_kiem: true, ket_qua: { dap: 9 }, tong_nhanh: null },
+    ]);
+    expect(out).toEqual([
+      { ten: 'Sẹo', so_loi: 3 },
+      { ten: 'Dập', so_loi: 1 },
+    ]);
+  });
+
+  it('không có lỗi → mảng rỗng; ô không phải số tính 0', () => {
+    expect(tomTatLoiPhieu(tieuChi, [{ da_kiem: true, ket_qua: { dap: null, seo: true }, tong_nhanh: 20 }])).toEqual([]);
   });
 });

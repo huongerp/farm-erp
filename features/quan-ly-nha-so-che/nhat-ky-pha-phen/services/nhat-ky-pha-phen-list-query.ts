@@ -10,6 +10,9 @@ export interface NhatKyPhaPhenListServerQuery {
   /** yyyy-mm */
   thang: string[];
   idChiNhanh: string[];
+  /** YYYY-MM-DD, rỗng = không giới hạn. */
+  tuNgay: string;
+  denNgay: string;
   sortColumn: string | null;
   sortDirection: 'asc' | 'desc' | null;
 }

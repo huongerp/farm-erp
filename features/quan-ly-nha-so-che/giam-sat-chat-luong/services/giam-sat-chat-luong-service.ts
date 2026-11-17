@@ -1,6 +1,6 @@
 import { db, throwDbError, type PaginatedTableResult } from '../../../../lib/db';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
-import type { GiamSatChatLuong, KetLuanGscl, ThongTinTemCongKhai, ThungMau, TrangThaiGscl } from '../core/types';
+import type { CoLoiGscl, GiamSatChatLuong, KetLuanGscl, ThongTinTemCongKhai, ThungMau, TrangThaiGscl } from '../core/types';
 import type { GiamSatChatLuongListServerQuery } from './giam-sat-chat-luong-list-query';
 import {
   fetchAllGsclThongKeDb,
@@ -106,6 +106,8 @@ export interface GsclTomTat {
   trang_thai: TrangThaiGscl;
   ket_luan: KetLuanGscl | null;
   id_nguoi_tao: string | null;
+  /** Nhóm lọc «Lỗi»; null = chưa kiểm thùng nào. */
+  co_loi: CoLoiGscl | null;
 }
 
 export async function getGsclTomTat(viewAll: boolean, allowedBranchIds: string[]): Promise<GsclTomTat[]> {
@@ -119,5 +121,6 @@ export async function getGsclTomTat(viewAll: boolean, allowedBranchIds: string[]
     trang_thai: r.trang_thai,
     ket_luan: r.ket_luan,
     id_nguoi_tao: s(r.id_nguoi_tao),
+    co_loi: (r.so_loi ?? 0) > 0 ? 'co_loi' : (r.tong_nhanh_kiem ?? 0) > 0 ? 'khong_loi' : null,
   }));
 }
