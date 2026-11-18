@@ -393,6 +393,6 @@
   "baoCaoNhanCong.nsNhom.colCong": "Công",
   "baoCaoNhanCong.nsNhom.colThuong": "Thưởng",
   "baoCaoNhanCong.nsNhom.tong": "Tổng",
-  "baoCaoNhanCong.nsNhom.ghiChuMucTieu": "Mục tiêu đang áp dụng: {{mucTieu}} thùng/giờ-người. Thưởng chỉ cho chuyền Tỉa đạt từ 85%, mức {{muc}} đ/công.",
+  "baoCaoNhanCong.nsNhom.ghiChuMucTieu": "Mục tiêu đang áp dụng: {{mucTieu}} thùng/giờ-người. Thưởng chỉ cho chuyền Tỉa đạt từ 85%, mức {{muc}} đ/công, cộng thêm vào thưởng nhóm tỉa của Báo cáo sơ chế.",
   "baoCaoNhanCong.nsNhom.chiChuyenTia": "Chỉ chuyền Tỉa được thưởng năng suất nhóm."
 }

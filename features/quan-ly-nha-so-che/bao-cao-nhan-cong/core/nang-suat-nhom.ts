@@ -2,6 +2,7 @@
  * Năng suất và thưởng theo nhóm trong chuyền.
  * NS nhóm = số thùng ÷ tổng giờ công (giờ-người, KHÔNG cộng giờ TC); tỷ lệ đạt = NS ÷ mục tiêu × 100.
  * Thưởng chỉ cho chuyền Tỉa, tính khi hiển thị (không lưu DB): đạt ≥ 85% → min(tỷ lệ,100)% × mức × công.
+ * Là khoản CỘNG THÊM vào cột «Thưởng nhóm tỉa» của Báo cáo sơ chế, không thay thế (khách chốt 18/11/2026).
  */
 import { formatNumberVN } from '../../../../lib/utils';
 import { BCSC_MUC_THUONG_NGAY } from '../../bao-cao-so-che/core/kpi-thuong-cong-thuc';
