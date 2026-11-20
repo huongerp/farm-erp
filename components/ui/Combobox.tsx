@@ -53,6 +53,8 @@ interface ComboboxProps {
    * KHÔNG lọc client nữa — `options` truyền vào đã là kết quả lọc của server.
    */
   onSearchChange?: (term: string) => void;
+  /** Hiện nút X xoá lựa chọn (mặc định true). Tắt khi đã có mục «trống» trong options hoặc ô quá hẹp. */
+  clearable?: boolean;
 }
 
 const Combobox: React.FC<ComboboxProps> = ({
@@ -77,6 +79,7 @@ const Combobox: React.FC<ComboboxProps> = ({
   creatableLabel = 'Thêm mới',
   dropdownAutoHeight = false,
   onSearchChange,
+  clearable = true,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   // Điện thoại: luôn mở dạng sheet phủ màn hình qua portal. Popover 320px ngay dưới ô sẽ bị
@@ -259,6 +262,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         aria-controls={listboxId}
         role="combobox"
         disabled={disabled}
+        title={selectedOption?.label}
         className={cn(
           "relative w-full h-10 rounded-lg border border-border bg-background py-2 px-3 text-body-sm text-foreground ring-offset-background flex items-center justify-between cursor-pointer transition-all duration-200 text-left",
           isOpen ? "border-primary ring-2 ring-primary/20" : "hover:border-border/80 focus-within:border-border/80",
@@ -290,7 +294,7 @@ const Combobox: React.FC<ComboboxProps> = ({
         </span>
         
         <div className="flex items-center gap-1 shrink-0">
-            {selectedOption && !disabled && (
+            {clearable && selectedOption && !disabled && (
                 <div 
                     onClick={(e) => { e.stopPropagation(); clearSelection(e); }}
                     className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"

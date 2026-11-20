@@ -45,6 +45,8 @@ export interface FarmBaoCaoNhanCongCt {
    * optional để fixture/test cũ của module khác không phải sửa.
    */
   so_thung_nhom?: Record<string, number>;
+  /** Hệ số nhóm sửa trên phiếu (thưởng vượt thùng, migration 087): khoá "1".."9"; thiếu khoá = mặc định Cài đặt. */
+  he_so_nhom?: Record<string, number>;
 }
 
 /** Chấm công của một người trong phiếu: Sáng, Chiều, Cả ngày (= sáng + chiều), Nghỉ cả ngày (0 công); NUA_NGAY là mã cũ (không biết buổi nào) */
@@ -84,6 +86,8 @@ export interface VarViTriSoChe {
   id: string;
   ten: string;
   dang_dung: boolean;
+  /** Nhóm trưởng / QL: không nhận thưởng vượt thùng, giờ không tính vào định mức nhóm. */
+  khong_thuong_vuot?: boolean;
   thu_tu: number;
 }
 

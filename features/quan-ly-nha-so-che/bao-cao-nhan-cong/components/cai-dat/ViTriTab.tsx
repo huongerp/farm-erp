@@ -25,6 +25,7 @@ const ViTriTab: React.FC = () => {
   const [dangSua, setDangSua] = useState<string | null>(null);
   const [tenSua, setTenSua] = useState('');
   const [dangDungSua, setDangDungSua] = useState(true);
+  const [khongThuongSua, setKhongThuongSua] = useState(false);
 
   const them = () => {
     const ten = gonTen(tenMoi);
@@ -36,12 +37,13 @@ const ViTriTab: React.FC = () => {
     setDangSua(vt.id);
     setTenSua(vt.ten);
     setDangDungSua(vt.dang_dung);
+    setKhongThuongSua(!!vt.khong_thuong_vuot);
   };
 
   const luuSua = () => {
     const ten = gonTen(tenSua);
     if (!ten || !dangSua) return;
-    luu.mutate({ id: dangSua, data: { ten, dang_dung: dangDungSua } }, { onSuccess: () => setDangSua(null) });
+    luu.mutate({ id: dangSua, data: { ten, dang_dung: dangDungSua, khong_thuong_vuot: khongThuongSua } }, { onSuccess: () => setDangSua(null) });
   };
 
   const xacNhanXoa = (vt: VarViTriSoChe) =>
@@ -112,6 +114,18 @@ const ViTriTab: React.FC = () => {
                     />
                     {t('baoCaoNhanCong.caiDat.dangDung')}
                   </label>
+                  <label
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none h-9"
+                    title={t('baoCaoNhanCong.vuot.khongThuongVuotHint')}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary"
+                      checked={khongThuongSua}
+                      onChange={(e) => setKhongThuongSua(e.target.checked)}
+                    />
+                    {t('baoCaoNhanCong.vuot.khongThuongVuot')}
+                  </label>
                   <div className="flex items-center gap-1.5">
                     <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => setDangSua(null)}>
                       <X size={14} className="mr-1" />
@@ -132,7 +146,17 @@ const ViTriTab: React.FC = () => {
               </li>
             ) : (
               <li key={vt.id} className={cn('flex items-center gap-2 px-3 py-2', !vt.dang_dung && 'opacity-50')}>
-                <div className="min-w-0 flex-1 text-sm font-medium truncate">{vt.ten}</div>
+                <div className="min-w-0 flex-1 flex items-center gap-2">
+                  <span className="text-sm font-medium truncate">{vt.ten}</span>
+                  {vt.khong_thuong_vuot && (
+                    <span
+                      className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-caption text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                      title={t('baoCaoNhanCong.vuot.khongThuongVuotHint')}
+                    >
+                      {t('baoCaoNhanCong.vuot.khongThuongVuotBadge')}
+                    </span>
+                  )}
+                </div>
                 <button
                   type="button"
                   className={cn(iconBtn, 'text-primary')}

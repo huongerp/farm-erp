@@ -1,14 +1,32 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Controller, useFieldArray, useWatch, type Control, type FieldErrors } from 'react-hook-form';
+import {
+  Controller,
+  useFieldArray,
+  useWatch,
+  type Control,
+  type FieldErrors,
+  type UseFormSetValue,
+} from 'react-hook-form';
 import { Plus, Trash2, Package } from 'lucide-react';
 import NumberInput from '../../../../components/ui/NumberInput';
 import Input from '../../../../components/ui/Input';
+import Combobox from '../../../../components/ui/Combobox';
 import Button from '../../../../components/ui/Button';
 import FormSection from '../../../../components/shared/FormSection';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import type { FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
-import { PHAM_CAP_ROWS_MAX, emptyPhamCapRow, sumPhamCapTotals, lookupPhieuNhapSoLuong, sumPhieuNhapRefForRows } from '../core/pham-cap';
+import {
+  PHAM_CAP_ROWS_MAX,
+  emptyPhamCapRow,
+  sumPhamCapTotals,
+  lookupPhieuNhapSoLuong,
+  sumPhieuNhapRefForRows,
+  normalizePhamCapKey,
+  type PhamCapRowFormValues,
+} from '../core/pham-cap';
+import { parseHeSo } from '../core/he-so-quy-doi';
+import { useHeSoQuyDoiGoiY } from '../hooks/use-he-so-quy-doi';
 import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
 import { formatNumberVN, cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
@@ -22,6 +40,19 @@ import {
 function pctDisplay(n: number): string {
   if (!Number.isFinite(n)) return '—';
   return `${formatNumberVN(n)}%`;
+}
+
+/** Hệ số hiển thị 2 chữ số thập phân như bảng giấy (1,20 · 0,85). */
+function heSoDisplay(n: number | null | undefined): string {
+  return n == null ? '—' : formatNumberVN(n, { minFractionDigits: 2 });
+}
+
+/**
+ * Dòng được tự điền hệ số gần nhất: chưa có hệ số và chưa có tổng quy đổi nhập tay
+ * (dòng phiếu cũ có số nhập tay thì giữ nguyên).
+ */
+function canAutoFillHeSo(row: Pick<PhamCapRowFormValues, 'he_so_quy_doi' | 'so_thung_quy_doi'> | undefined): boolean {
+  return !!row && row.he_so_quy_doi == null && !(Number(row.so_thung_quy_doi) > 0);
 }
 
 function PhieuNhapRefCell({
@@ -50,6 +81,7 @@ const PHAM_CAP_MOBILE_LABEL_KEY: Record<PhamCapMobileFieldKey, string> = {
   soThung: 'baoCaoSoChe.phamCap.colSoThung',
   tongKg: 'baoCaoSoChe.phamCap.colTongKg',
   tyLe: 'baoCaoSoChe.phamCap.colTyLe',
+  heSo: 'baoCaoSoChe.phamCap.mobileHeSo',
   quyDoi: 'baoCaoSoChe.phamCap.mobileSoThungQuyDoi',
 };
 
@@ -67,7 +99,15 @@ function PhamCapMobileFieldGrid({ fields }: { fields: PhamCapMobileField[] }) {
               f.warn && 'text-amber-600 dark:text-amber-500'
             )}
           >
-            {f.value === null ? '…' : f.pct ? pctDisplay(f.value) : formatNumberVN(f.value)}
+            {f.value === null
+              ? f.key === 'heSo'
+                ? '—'
+                : '…'
+              : f.pct
+                ? pctDisplay(f.value)
+                : f.key === 'heSo'
+                  ? heSoDisplay(f.value)
+                  : formatNumberVN(f.value)}
           </dd>
         </div>
       ))}
@@ -84,10 +124,42 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   /** SL phiếu nhập kho theo phẩm cấp (đối chiếu, không lưu DB). */
   phieuNhapByPhamCap?: Record<string, number>;
   phieuNhapRefLoading?: boolean;
-}> = ({ control, errors, disabled = false, phieuNhapByPhamCap, phieuNhapRefLoading = false }) => {
+  setValue: UseFormSetValue<BaoCaoSoCheFormValues>;
+  /** Phiếu mới: tự điền hệ số lần gần nhất theo tên phẩm cấp khi mở form. */
+  autoFillHeSo?: boolean;
+}> = ({
+  control,
+  errors,
+  disabled = false,
+  phieuNhapByPhamCap,
+  phieuNhapRefLoading = false,
+  setValue,
+  autoFillHeSo = false,
+}) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({ control, name: 'pham_cap' });
   const pham = useWatch({ control, name: 'pham_cap' });
+  const { data: heSoGoiY } = useHeSoQuyDoiGoiY(!disabled);
+  const heSoOptions = useMemo(
+    () => (heSoGoiY?.options ?? []).map((v) => ({ value: v, label: heSoDisplay(v) })),
+    [heSoGoiY]
+  );
+
+  /** Gán hệ số gần nhất của phẩm cấp `ten` vào dòng `idx` nếu dòng đó chưa có hệ số. */
+  const fillHeSoForRow = (idx: number, ten: string | null | undefined, shouldDirty: boolean) => {
+    const heSo = heSoGoiY?.ganNhatTheoPhamCap[normalizePhamCapKey(ten)];
+    if (heSo == null || !canAutoFillHeSo(pham?.[idx])) return;
+    setValue(`pham_cap.${idx}.he_so_quy_doi`, heSo, { shouldDirty });
+  };
+
+  // Phiếu mới: điền một lần khi lịch sử hệ số tải xong (không đánh dấu form «đã sửa»).
+  const autoFilledRef = useRef(false);
+  useEffect(() => {
+    if (!autoFillHeSo || disabled || autoFilledRef.current || !heSoGoiY) return;
+    autoFilledRef.current = true;
+    (pham ?? []).forEach((r, idx) => fillHeSoForRow(idx, r.ten_pham_cap, false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi có dữ liệu gợi ý
+  }, [autoFillHeSo, disabled, heSoGoiY]);
   const derived = useMemo(() => enrichPhamCapRowsWithDerived(pham ?? []), [pham]);
   const totals = useMemo(() => sumPhamCapTotals(pham ?? []), [pham]);
   const phieuNhapRefTotal = useMemo(
@@ -125,7 +197,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
       }
     >
       <div className="overflow-x-auto rounded-lg border border-border -mx-0.5 sm:mx-0">
-        <table className="w-full text-sm min-w-[64rem] text-left border-collapse">
+        <table className="w-full text-sm min-w-[70rem] text-left border-collapse">
           <thead>
             <tr className="bg-muted/50 border-b border-border">
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-12 align-middle border-r border-border/80">
@@ -139,6 +211,9 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               </th>
               <th colSpan={4} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
                 {t('baoCaoSoChe.phamCap.groupLoaiThung')}
+              </th>
+              <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
+                {t('baoCaoSoChe.phamCap.colHeSoQuyDoi')}
               </th>
               <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
                 <span className="block">{t('baoCaoSoChe.phamCap.groupTongQuyDoi')}</span>
@@ -174,7 +249,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
           <tbody>
             {fields.length === 0 ? (
               <tr className="border-b border-border/80">
-                <td colSpan={10} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={11} className="px-3 py-6 text-center text-xs text-muted-foreground">
                   {t('baoCaoSoChe.phamCap.emptyHint')}
                 </td>
               </tr>
@@ -184,7 +259,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                 const errTen = errors.pham_cap?.[idx]?.ten_pham_cap?.message as string | undefined;
                 const errSo = errors.pham_cap?.[idx]?.so_tham_chieu?.message as string | undefined;
                 const errSt = errors.pham_cap?.[idx]?.so_thung?.message as string | undefined;
-                const errQd = errors.pham_cap?.[idx]?.so_thung_quy_doi?.message as string | undefined;
+                const errHeSo = errors.pham_cap?.[idx]?.he_so_quy_doi?.message as string | undefined;
                 const errGhiChu = errors.pham_cap?.[idx]?.ghi_chu?.message as string | undefined;
                 const rowDerived = derived[idx];
                 const slPhieuNhap = lookupPhieuNhapSoLuong(phieuNhapByPhamCap, pham?.[idx]?.ten_pham_cap);
@@ -204,6 +279,10 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                           <Input
                             {...f}
                             value={f.value ?? ''}
+                            onBlur={() => {
+                              f.onBlur();
+                              if (!disabled) fillHeSoForRow(idx, f.value, true);
+                            }}
                             placeholder={t('baoCaoSoChe.phamCap.tenPlaceholder')}
                             className="text-xs h-8"
                             error={errTen}
@@ -263,21 +342,37 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                     </td>
                     <td className="px-2 py-1 align-top border-r border-border/80">
                       <Controller
-                        name={`${base}.so_thung_quy_doi`}
+                        name={`${base}.he_so_quy_doi`}
                         control={control}
                         render={({ field }) => (
-                          <NumberInput
-                            value={field.value ?? 0}
-                            onChange={field.onChange}
-                            min={0}
-                            compact
-                            showZeroFormatted
-                            className="text-right w-full"
-                            error={errQd}
+                          <Combobox
+                            options={heSoOptions}
+                            value={field.value ?? null}
+                            onChange={(v: string | number) => {
+                              if (v === '' || v == null) {
+                                field.onChange(null);
+                                return;
+                              }
+                              const heSo = parseHeSo(v);
+                              if (heSo != null) field.onChange(heSo);
+                            }}
+                            renderValue={(o) => heSoDisplay(Number(o.value))}
+                            placeholder={t('baoCaoSoChe.phamCap.heSoPlaceholder')}
+                            searchPlaceholder={t('baoCaoSoChe.phamCap.heSoSearchPlaceholder')}
+                            creatable
+                            creatableLabel={t('baoCaoSoChe.phamCap.heSoCreatable')}
+                            dropdownAutoHeight
+                            triggerClassName="h-8 px-2 text-xs tabular-nums"
+                            error={errHeSo}
                             disabled={disabled}
                           />
                         )}
                       />
+                    </td>
+                    <td className="px-2 py-1.5 align-top border-r border-border/80 text-right">
+                      <span className="text-xs font-semibold tabular-nums text-foreground">
+                        {formatNumberVN(rowDerived?.tong_quy_doi ?? 0)}
+                      </span>
                     </td>
                     <td className="px-2 py-1.5 align-top border-r border-border/80">
                       <Controller
@@ -323,6 +418,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.so_thung)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{pctDisplay(totals.ty_le_pct)}</td>
+              <td className="px-2 py-2 border-r border-border/80" aria-hidden />
               <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(totals.so_thung_quy_doi)}</td>
               <td className="px-2 py-2 border-r border-border/80" aria-hidden />
               <td className="px-2 py-2 border-border/80" aria-hidden />
@@ -385,7 +481,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border bg-muted/10">
-      <table className="w-full text-sm min-w-[64rem] text-left border-collapse">
+      <table className="w-full text-sm min-w-[70rem] text-left border-collapse">
         <thead>
           <tr className="bg-muted/50 border-b border-border">
             <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-12 align-middle border-r border-border/80">
@@ -399,6 +495,9 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
             </th>
             <th colSpan={4} className="text-center px-2 py-1.5 font-medium text-xs border-r border-border/80">
               {t('baoCaoSoChe.phamCap.groupLoaiThung')}
+            </th>
+            <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-24 align-middle border-r border-border/80 leading-tight">
+              {t('baoCaoSoChe.phamCap.colHeSoQuyDoi')}
             </th>
             <th rowSpan={2} className="text-center px-2 py-2 font-medium text-xs w-[7.5rem] align-middle border-r border-border/80 leading-tight">
               <span className="block">{t('baoCaoSoChe.phamCap.groupTongQuyDoi')}</span>
@@ -431,7 +530,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
+              <td colSpan={10} className="px-3 py-6 text-center text-xs text-muted-foreground">
                 {t('baoCaoSoChe.phamCap.detailEmpty')}
               </td>
             </tr>
@@ -468,7 +567,12 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
                   <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">
                     {pctDisplay(d?.ty_le_pct ?? 0)}
                   </td>
-                  <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(r.so_thung_quy_doi ?? 0)}</td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">
+                    {heSoDisplay(r.he_so_quy_doi)}
+                  </td>
+                  <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">
+                    {formatNumberVN(d?.tong_quy_doi ?? 0)}
+                  </td>
                   <td className="px-2 py-2 text-xs text-muted-foreground whitespace-pre-wrap leading-snug">
                     {r.ghi_chu?.trim() || '—'}
                   </td>
@@ -486,6 +590,7 @@ export const BaoCaoSoChePhamCapDetailTable: React.FC<{
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.so_thung)}</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/60">{formatNumberVN(totals.tong_kg)}</td>
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{pctDisplay(totals.ty_le_pct)}</td>
+            <td className="px-2 py-2 border-r border-border/80" aria-hidden />
             <td className="px-2 py-2 text-xs text-right tabular-nums border-r border-border/80">{formatNumberVN(totals.so_thung_quy_doi)}</td>
             <td className="px-2 py-2" aria-hidden />
           </tr>

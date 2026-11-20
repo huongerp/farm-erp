@@ -1,7 +1,7 @@
 /**
  * Kiểu in «Danh sách theo nhóm»: mỗi chuyền chia khối Nhóm 1, Nhóm 2… (chưa chia nhóm xếp cuối),
  * mỗi khối có dòng tổng (kèm số thùng / NS / % đạt khi đã nhập); dưới cùng bảng «Tổng hợp theo nhóm»
- * để so năng suất giữa các nhóm + bảng thưởng năng suất nhóm.
+ * để so năng suất giữa các nhóm + bảng thưởng vượt thùng của công nhân (core/thuong-vuot-thung.ts).
  * Mọi bảng `<thead>` một hàng không gộp ô → paged.js lặp tiêu đề, trang in ẩn / kéo cột được.
  */
 import React from 'react';
@@ -9,17 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
 import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
 import { tongHopTheoNhom } from '../core/tong-hop-nhom';
-import {
-  CHUYEN_THUONG_NS_NHOM,
-  dsThuongNhom,
-  fmtNsNhom,
-  fmtTyLeNs,
-  lopMauTyLeNs,
-  mucTieuNsNhom,
-  nangSuatNhomCuaPhieu,
-  phieuCoSoThungNhom,
-} from '../core/nang-suat-nhom';
-import { BCSC_MUC_THUONG_NGAY } from '../../bao-cao-so-che/core/kpi-thuong-cong-thuc';
+import { fmtNsNhom, fmtTyLeNs, lopMauTyLeNs, mucTieuNsNhom, nangSuatNhomCuaPhieu, phieuCoSoThungNhom } from '../core/nang-suat-nhom';
+import { dsThuongVuotPhieu, thuongVuotCuaPhieu, vuotTheoChuyenNhom } from '../core/thuong-vuot-thung';
+import { useCaiDatThuongVuot, useViTriKhongThuongVuot } from '../hooks/use-thuong-vuot';
 import { formatNumberVN } from '../../../../lib/utils';
 import { DongNv, LOP_BANG_NV, SO_COT_BANG_NV, TieuDeCotNv, type LopBangNv } from './BaoCaoNhanCongNhanVienBang';
 
@@ -28,17 +20,23 @@ interface Props {
 }
 
 /**
- * Bảng «Tổng hợp theo nhóm» (người đi làm, công, giờ + số thùng / NS / % đạt / thưởng khi phiếu có nhập thùng),
- * bảng «Thưởng năng suất theo nhóm» và ghi chú mục tiêu. Dùng ở trang in (`LOP_BANG_NV.print`) và chi tiết phiếu (`.screen`).
+ * Bảng «Tổng hợp theo nhóm» (người đi làm, công, giờ + số thùng / NS / % đạt / thưởng vượt khi phiếu có nhập thùng),
+ * bảng «Thưởng vượt thùng» từng công nhân và ghi chú cách tính. Dùng ở trang in (`LOP_BANG_NV.print`) và chi tiết
+ * phiếu (`.screen`). Trang in chờ cài đặt thưởng tải xong rồi mới dàn trang (BaoCaoNhanCongPreviewPage).
  */
 export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }> = ({ data, c }) => {
   const { t } = useTranslation();
+  const { caiDat } = useCaiDatThuongVuot(data.id_chi_nhanh);
+  const viTriLoai = useViTriKhongThuongVuot();
   const chuyen = nhomNhanVienTheoChuyen(data).map((g) => ({ ...g, nhom: tongHopTheoNhom(g.nhanVien) }));
   if (chuyen.length === 0) return null;
 
   const nsTheoChuyen = nangSuatNhomCuaPhieu(data);
   const coNs = phieuCoSoThungNhom(nsTheoChuyen);
-  const dsThuong = dsThuongNhom(nsTheoChuyen);
+  const vuotPhieu = thuongVuotCuaPhieu(data, caiDat, viTriLoai);
+  const vuotTheoChuyen = vuotTheoChuyenNhom(vuotPhieu);
+  const dsThuong = dsThuongVuotPhieu(vuotPhieu);
+  const ttTheoLoai = new Map(chuyen.map((g) => [g.ct.loai_chuyen, g.tt]));
   const manHinh = c === LOP_BANG_NV.screen;
   const num = `${c.td} text-right tabular-nums`;
   const tenNhom = (soNhom: number | null) =>
@@ -47,8 +45,8 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
   // Ngoại lệ không quy đổi giờ → giờ hiện «—».
   const gio = (ngoaiLe: boolean, v: number) => (ngoaiLe ? '—' : formatNumberVN(v));
   const tieuDeCon = manHinh ? 'mt-3 mb-1.5 text-sm font-semibold text-foreground' : 'text-[9pt] font-bold uppercase mt-3 mb-1.5 text-gray-900';
-  const tongCong = dsThuong.reduce((s, p) => s + p.cong, 0);
-  const tongThuong = dsThuong.reduce((s, p) => s + p.thuong, 0);
+  const tongGio = dsThuong.reduce((s, p) => s + p.gioCong, 0);
+  const tongThuong = dsThuong.reduce((s, p) => s + p.tien, 0);
 
   return (
     <>
@@ -67,8 +65,8 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.soThung')}</th>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.nsDonVi')}</th>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.tyLeDat')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.thuongNguoi')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.tongThuongNhom')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.thungVuot')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.thuongVuotNhom')}</th>
                 </>
               )}
             </tr>
@@ -80,7 +78,7 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
               return nhom.map((g) => {
                 const ns = g.soNhom == null ? undefined : theoNhom?.get(g.soNhom);
                 const coThung = ns?.soThung != null;
-                const coThuong = coThung && ct.loai_chuyen === CHUYEN_THUONG_NS_NHOM;
+                const vuot = g.soNhom == null ? undefined : vuotTheoChuyen.get(ct.loai_chuyen)?.get(g.soNhom)?.ketQua;
                 return (
                   <tr key={`${ct.loai_chuyen}-${g.soNhom ?? 'chua-chia'}`}>
                     <td className={c.td}>{tenChuyen(tt, ct.loai_chuyen)}</td>
@@ -94,8 +92,8 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
                         <td className={num}>{coThung ? formatNumberVN(ns.soThung) : '—'}</td>
                         <td className={num}>{coThung ? fmtNsNhom(ns.ns) : '—'}</td>
                         <td className={`${num} ${manHinh && coThung ? lopMauTyLeNs(ns.tyLe) : ''}`}>{coThung ? fmtTyLeNs(ns.tyLe) : '—'}</td>
-                        <td className={num}>{coThuong ? formatNumberVN(ns.thuongCaNgay) : '—'}</td>
-                        <td className={num}>{coThuong ? formatNumberVN(ns.tongThuong) : '—'}</td>
+                        <td className={num}>{vuot ? formatNumberVN(vuot.thungVuot, { maxFractionDigits: 2 }) : '—'}</td>
+                        <td className={num}>{vuot ? formatNumberVN(Math.round(vuot.tien)) : '—'}</td>
                       </>
                     )}
                   </tr>
@@ -108,7 +106,7 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
 
       {dsThuong.length > 0 && (
         <>
-          <h3 className={tieuDeCon}>{t('baoCaoNhanCong.nsNhom.thuongTheoNhom')}</h3>
+          <h3 className={tieuDeCon}>{t('baoCaoNhanCong.vuot.thuongTheoNguoi')}</h3>
           <div className={c.wrap}>
             <table className={c.table}>
               <thead>
@@ -116,25 +114,25 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colHoTen')}</th>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colChuyen')}</th>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colNhom')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.colCong')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.colThuong')}</th>
                 </tr>
               </thead>
               <tbody>
                 {dsThuong.map((p, i) => (
-                  <tr key={`${p.tt}-${p.soNhom}-${i}`}>
+                  <tr key={`${p.loai_chuyen}-${p.soNhom}-${i}`}>
                     <td className={c.td}>{p.ho_ten}</td>
-                    <td className={c.td}>{tenChuyen(p.tt, p.loai_chuyen)}</td>
+                    <td className={c.td}>{tenChuyen(ttTheoLoai.get(p.loai_chuyen) ?? '', p.loai_chuyen)}</td>
                     <td className={c.td}>{tenNhom(p.soNhom)}</td>
-                    <td className={num}>{formatNumberVN(p.cong)}</td>
-                    <td className={num}>{formatNumberVN(p.thuong)}</td>
+                    <td className={num}>{formatNumberVN(p.gioCong)}</td>
+                    <td className={num}>{formatNumberVN(p.tien)}</td>
                   </tr>
                 ))}
                 <tr>
                   <td colSpan={3} className={c.total}>
                     {t('baoCaoNhanCong.nsNhom.tong')}
                   </td>
-                  <td className={`${c.total} text-right tabular-nums`}>{formatNumberVN(tongCong)}</td>
+                  <td className={`${c.total} text-right tabular-nums`}>{formatNumberVN(tongGio)}</td>
                   <td className={`${c.total} text-right tabular-nums`}>{formatNumberVN(tongThuong)}</td>
                 </tr>
               </tbody>
@@ -145,9 +143,10 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
 
       {coNs && (
         <p className={`m-0 mt-1.5 break-inside-avoid ${manHinh ? 'text-xs text-muted-foreground' : 'text-[7.5pt] text-gray-600'}`}>
-          {t('baoCaoNhanCong.nsNhom.ghiChuMucTieu', {
+          {t('baoCaoNhanCong.vuot.ghiChuMucTieu', {
             mucTieu: formatNumberVN(mucTieuNsNhom(data.muc_tieu_ns_nhom)),
-            muc: formatNumberVN(BCSC_MUC_THUONG_NGAY.tia.nangSuat),
+            nguongPct: formatNumberVN(caiDat.nguongPct, { maxFractionDigits: 2 }),
+            donGia: formatNumberVN(caiDat.donGia),
           })}
         </p>
       )}

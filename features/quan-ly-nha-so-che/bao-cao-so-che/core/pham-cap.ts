@@ -1,4 +1,7 @@
-/** Bảng con `fp_farm_bao_cao_so_che_pham_cap` — lưu tên + 3 số nhập + ghi chú; tổng kg & % tính trên app. */
+/**
+ * Bảng con `fp_farm_bao_cao_so_che_pham_cap` — lưu tên + kg/thùng + số thùng + hệ số quy đổi + ghi chú;
+ * tổng kg, % và tổng quy đổi tính trên app (`pham-cap-derived.ts`).
+ */
 
 /** Giới hạn số dòng / phiếu (tránh payload quá lớn). */
 export const PHAM_CAP_ROWS_MAX = 50;
@@ -19,7 +22,13 @@ export interface PhamCapRowFormValues {
   /** Kg mỗi thùng (trước đây cột “Số” / `so_tham_chieu`). */
   so_tham_chieu: number;
   so_thung: number;
+  /**
+   * Tổng quy đổi (số thùng) đã lưu. Có hệ số → app tính lại = số thùng × hệ số khi lưu;
+   * hệ số null (phiếu cũ) → số nhập tay trước đây, giữ nguyên.
+   */
   so_thung_quy_doi: number;
+  /** Hệ số quy đổi; null = chưa chọn (phiếu cũ / dòng mới chưa có gợi ý). */
+  he_so_quy_doi?: number | null;
   ghi_chu: string;
 }
 
@@ -29,6 +38,7 @@ export function emptyPhamCapRow(): PhamCapRowFormValues {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    he_so_quy_doi: null,
     ghi_chu: '',
   };
 }
@@ -40,6 +50,7 @@ export function defaultPhamCapRows(): PhamCapRowFormValues[] {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    he_so_quy_doi: null,
     ghi_chu: '',
   }));
 }
@@ -62,6 +73,7 @@ export function defaultPhamCapModelRows(): FarmBaoCaoSoChePhamCapRow[] {
     so_tham_chieu: 0,
     so_thung: 0,
     so_thung_quy_doi: 0,
+    he_so_quy_doi: null,
     ghi_chu: '',
     thu_tu: idx + 1,
   }));
@@ -78,8 +90,16 @@ export function normalizePhamCapFromDb(
     so_tham_chieu: Number(r.so_tham_chieu) || 0,
     so_thung: Number(r.so_thung) || 0,
     so_thung_quy_doi: Number(r.so_thung_quy_doi) || 0,
+    he_so_quy_doi: heSoOrNull(r.he_so_quy_doi),
     ghi_chu: typeof r.ghi_chu === 'string' ? r.ghi_chu : '',
   }));
+}
+
+/** Hệ số từ DB/form: null/'' → null, số hợp lệ ≥ 0 → số. */
+export function heSoOrNull(v: unknown): number | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 /** Suy kg/thùng: ưu tiên `so_tham_chieu`; dữ liệu cũ = tổng kg ÷ số thùng. */

@@ -168,7 +168,7 @@ export async function getViTriSoChe(): Promise<VarViTriSoChe[]> {
 
 export async function luuViTriSoChe(
   id: string | null,
-  data: { ten: string; dang_dung: boolean }
+  data: { ten: string; dang_dung: boolean; khong_thuong_vuot?: boolean }
 ): Promise<void> {
   await luuViTriSoCheDb(id, data);
 }

@@ -47,28 +47,5 @@ Quy tắc đã thể hiện trong code/git log (chưa có tài liệu nghiệp v
 
 - Luồng duyệt: phiếu kho Sơ chế/Phân thuốc khoá sau khi duyệt, sửa qua luồng «Xin sửa»; phiếu quỹ duyệt / không duyệt (trigger `fn_tc_quy_khoa_duyet`); giám sát chất lượng: nộp phiếu → đã nộp → đã xuất.
 - Công thức tính: dự báo SL đóng thùng (dòng 10 cộng tồn đầu, trừ tồn cuối ngày); kết luận giám sát chất lượng theo số tiêu chí; kiểm kê tính SL sổ theo ngày bắt đầu đợt; công thức lương/công/khấu hao cụ thể `(chưa rõ — hỏi khách)`.
-- Chia nhóm chạy năng suất (yêu cầu chị Hương, NSC fp3, 17/11/2026): báo cáo nhân công có cột Nhóm 1–9 cho từng người (mặc định ở danh mục NV, đổi theo ngày trên phiếu), in «Danh sách theo nhóm» có tổng người/công mỗi nhóm. Năng suất nhóm (chốt 17/11/2026) = số thùng nhóm ÷ tổng giờ công thành viên (không tính giờ TC), mục tiêu mặc định 3 thùng/giờ-người (sửa được trên phiếu); thưởng chỉ chuyền Tỉa theo quy chế KPI Tỉa: đạt ≥ 85% → min(tỷ lệ,100)% × 10.714đ × công mỗi người. Thưởng năng suất nhóm là khoản **cộng thêm** vào thưởng «nhóm tỉa» của Báo cáo sơ chế, không thay thế (chốt 18/11/2026).
-- Phạm vi xem: đơn đặt hàng — người không có quyền admin chỉ thấy đơn của farm mình; «cấp cao» (`cap_bac = 1` hoặc quyền admin/all) xem toàn phạm vi.
-- Mẫu in bắt buộc: phiếu in dùng khung chung (khổ giấy, liên, dấu chìm, QR; có ảnh/logo HTX ở đầu phiếu); bản mẫu giấy của khách (có `Phiếu in đề xuất.docx`, `bản in phiếu kho.docx` ở gốc repo) — danh sách mẫu bắt buộc `(chưa rõ — hỏi khách)`.
-
-## 6. Dữ liệu và tích hợp
-
-- Dữ liệu cũ cần nhập: `(chưa rõ — hỏi khách)` (app đã có chức năng nhập Excel).
-- Kết nối ngoài: Google (đăng nhập, xuất/đồng bộ Google Sheet); Web Push; tem QC quét mã. Zalo, hoá đơn điện tử, ngân hàng: không thấy trong code.
-- Lưu ảnh: media-service trên volume VPS, DB chỉ lưu `/media/f/...` (không Cloudinary, không base64). Dung lượng ước tính `(chưa rõ — hỏi khách)`.
-
-## 7. Ràng buộc
-
-- Hạn bàn giao · các mốc: bản 1.0.0 bàn giao kỹ thuật ngày 04/10/2026 (tag `v1.0.0`); mốc tiếp theo `(chưa rõ — hỏi khách)`.
-- Hạ tầng: một VPS (Dokploy + Traefik, Postgres, PostgREST, các service Node) dùng chung với app khác của bên phát triển; tên miền `(chưa rõ — hỏi khách)`; ai đứng tên/trả phí từng dịch vụ xem [`BAN_GIAO_TAI_KHOAN.md`](../BAN_GIAO_TAI_KHOAN.md).
-- Bảo mật, sao lưu: sao lưu DB thủ công trước migration, không có lịch tự động; không có môi trường thử (dev dùng chung DB thật); danh sách hạn chế: [`HAN_CHE_DA_BIET.md`](../HAN_CHE_DA_BIET.md). Yêu cầu riêng của khách `(chưa rõ — hỏi khách)`.
-
-## 8. Ngoài phạm vi
-
-`(chưa rõ — hỏi khách)` — chưa có thoả thuận «không làm» nào ghi lại. Điều đã biết từ code: app chỉ có tiếng Việt; module chấm công đã bỏ (không tự tính lương từ chấm công).
-
-## 9. Câu hỏi còn mở và lịch sử thay đổi
-
-| Ngày | Nội dung | Trạng thái |
-|---|---|---|
-| 13/11/2026 | Tạo file từ docs/code/git log; các mục `(chưa rõ — hỏi khách)` ở §1–§8 cần khách xác nhận | Chờ khách trả lời |
+- Chia nhóm chạy năng suất (yêu cầu chị Hương, NSC fp3, 17/11/2026): báo cáo nhân công có cột Nhóm 1–9 cho từng người (mặc định ở danh mục NV, đổi theo ngày trên phiếu), in «Danh sách theo nhóm» có tổng người/công mỗi nhóm. Năng suất nhóm (chốt 17/11/2026) = số thùng nhóm ÷ tổng giờ công thành viên (không tính giờ TC), mục tiêu mặc định 3 thùng/giờ-người (sửa được trên phiếu); thưởng cho công nhân xem mục «Thưởng vượt thùng» ngay dưới.
+- Thưởng vượt thùng cho công nhân (yêu cầu NSC, chốt 20/11/2026, thay thưởng «10.714đ × công» của nhóm Tỉa): không chia đều mà theo khâu khó/dễ, **không có tổng quỹ**. Mỗi ngày mỗi nhóm: thùng vượt = số thùng nhóm trưởng nhập − 90% × mục tiêu (3 thùng/giờ-người) × giờ công công nhân của nhóm; tiền = thùng vượt × 1.000đ × hệ số chuyền × hệ số nhóm, chia trong nhóm theo giờ công (không tính giờ TC). Hệ số chuyền + hệ số nhóm 1–9 cài riêng từng nhà sơ chế, hệ số nhóm sửa được trên phiếu. Vị trí nhóm trưởng / nhóm phó / quản lý (đánh dấu trong danh mục Vị trí) không nhận và không tính giờ vào định mức. Cuối tháng cộng các ngày × hệ số lỗi Ki từng người (mặc định 1). Thưởng KPI của QL / nhóm trưởng tỉa / nhóm trưởng đóng thùng ở Báo cáo sơ chế giữ nguyên, riêng dòng Năng suất sơ chế đổi ngưỡng 85% → 90% (dòng lỗi, thu hồi giữ 85%).

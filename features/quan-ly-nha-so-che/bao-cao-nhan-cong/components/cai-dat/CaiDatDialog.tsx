@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Briefcase, Settings } from 'lucide-react';
+import { Briefcase, Coins, Settings } from 'lucide-react';
 import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import TabGroup from '../../../../../components/ui/TabGroup';
 import Button from '../../../../../components/ui/Button';
 import { DIALOG_SIZE } from '../../../../../lib/dialog-sizes';
 import ViTriTab from './ViTriTab';
+import HeSoThuongVuotTab from './HeSoThuongVuotTab';
 
-/** Tab cài đặt — hiện chỉ có Vị trí, giữ kiểu union để sau thêm tab khác. */
-export type TabCaiDat = 'vi-tri';
+export type TabCaiDat = 'vi-tri' | 'he-so-vuot';
 
 interface Props {
   onClose: () => void;
@@ -36,11 +36,15 @@ const CaiDatDialog: React.FC<Props> = ({ onClose }) => {
     >
       <div className="space-y-4">
         <TabGroup
-          tabs={[{ id: 'vi-tri', label: t('baoCaoNhanCong.caiDat.tabViTri'), icon: Briefcase }]}
+          tabs={[
+            { id: 'vi-tri', label: t('baoCaoNhanCong.caiDat.tabViTri'), icon: Briefcase },
+            { id: 'he-so-vuot', label: t('baoCaoNhanCong.vuot.tabCaiDat'), icon: Coins },
+          ]}
           activeTab={tab}
           onChange={(id) => setTab(id as TabCaiDat)}
         />
         {tab === 'vi-tri' && <ViTriTab />}
+        {tab === 'he-so-vuot' && <HeSoThuongVuotTab />}
       </div>
     </GenericDrawer>
   );

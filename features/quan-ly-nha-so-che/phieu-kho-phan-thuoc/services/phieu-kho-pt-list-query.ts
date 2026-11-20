@@ -101,6 +101,8 @@ export type ChiTietPhieuKhoPTListServerQuery = {
   hangMuc: string[];
   /** Danh mục hàng hoá cấp 2; DB service tra ra id hàng rồi lọc `id_hang_hoa`. */
   danhMucIds: number[];
+  /** Phẩm cấp (theo danh mục hàng hoá); `'__none__'` = hàng chưa gán. DB service tra ra id hàng. */
+  phamCap: string[];
   phamVi: PhieuKhoPTPhamVi;
 };
 
@@ -164,6 +166,33 @@ export function buildChiTietPhieuKhoPTListServerQuery(params: {
     nguoiDuyetIds: toNumIds(strArr(filters.nguoiDuyetIds)),
     hangMuc: strArr(filters.hangMuc),
     danhMucIds: toNumIds(strArr(filters.danhMucIds)),
+    phamCap: strArr(filters.phamCap),
     phamVi,
   };
+}
+
+/**
+ * Id hàng hoá khớp các phẩm cấp đã chọn — so sánh sau khi `trim` như RPC 088
+ * (`NULLIF(btrim(pham_cap), '')`); `'__none__'` = hàng chưa gán phẩm cấp (null/rỗng).
+ */
+export function hangHoaIdsTheoPhamCap(
+  hangHoa: readonly { id: number | string; pham_cap?: string | null }[],
+  phamCapChon: readonly string[]
+): number[] {
+  const none = phamCapChon.includes('__none__');
+  const chon = new Set(phamCapChon.filter((p) => p !== '__none__').map((p) => p.trim()));
+  return hangHoa
+    .filter((h) => {
+      const pc = (h.pham_cap ?? '').trim();
+      return pc === '' ? none : chon.has(pc);
+    })
+    .map((h) => Number(h.id));
+}
+
+/** Giao hai tập id hàng hoá; `null` = không lọc theo tiêu chí đó. */
+export function giaoHangHoaIds(a: number[] | null, b: number[] | null): number[] | null {
+  if (a == null) return b;
+  if (b == null) return a;
+  const sb = new Set(b);
+  return a.filter((id) => sb.has(id));
 }

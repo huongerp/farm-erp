@@ -1,17 +1,20 @@
 import { describe, it, expect } from 'vitest';
-import { computeBcscThuongTheoCongThuc, thuongNguong85 } from './kpi-thuong-cong-thuc';
+import { computeBcscThuongTheoCongThuc, thuongTheoNguong } from './kpi-thuong-cong-thuc';
 
-describe('thuongNguong85', () => {
-  it('dưới 85% = 0, từ 85% tính theo tỷ lệ, trần 100%', () => {
-    expect(thuongNguong85(84.99, 36429)).toBe(0);
-    expect(thuongNguong85(85, 36429)).toBe(Math.round(0.85 * 36429));
-    expect(thuongNguong85(90, 36429)).toBe(32786);
-    expect(thuongNguong85(100, 36429)).toBe(36429);
-    expect(thuongNguong85(120, 36429)).toBe(36429);
+describe('thuongTheoNguong', () => {
+  it('dưới ngưỡng = 0, từ ngưỡng tính theo tỷ lệ, trần 100%', () => {
+    expect(thuongTheoNguong(85, 36429, 90)).toBe(0);
+    expect(thuongTheoNguong(89.99, 36429, 90)).toBe(0);
+    expect(thuongTheoNguong(90, 36429, 90)).toBe(32786);
+    // phiếu mẫu: NS 90,21% vẫn qua ngưỡng
+    expect(thuongTheoNguong(90.21, 36429, 90)).toBe(Math.round(0.9021 * 36429));
+    expect(thuongTheoNguong(100, 36429, 90)).toBe(36429);
+    expect(thuongTheoNguong(120, 36429, 90)).toBe(36429);
+    expect(thuongTheoNguong(85, 12143, 85)).toBe(Math.round(0.85 * 12143));
   });
   it('thiếu số = 0', () => {
-    expect(thuongNguong85(null, 36429)).toBe(0);
-    expect(thuongNguong85(Number.NaN, 36429)).toBe(0);
+    expect(thuongTheoNguong(null, 36429, 90)).toBe(0);
+    expect(thuongTheoNguong(Number.NaN, 36429, 90)).toBe(0);
   });
 });
 
@@ -27,6 +30,14 @@ describe('computeBcscThuongTheoCongThuc', () => {
       thuong_nhom_tia: 21429,
       thuong_nhom_cp: 0,
     });
+  });
+  it('dòng Năng suất ngưỡng 90%: 89% → 0, 90,21% → có thưởng', () => {
+    expect(computeBcscThuongTheoCongThuc(0, 89)).toEqual({ thuong_ql: 0, thuong_nhom_tia: 0, thuong_nhom_cp: 0 });
+    expect(computeBcscThuongTheoCongThuc(0, 90.21).thuong_nhom_tia).toBe(Math.round(0.9021 * 10714));
+  });
+  it('dòng thu hồi giữ ngưỡng 85%', () => {
+    expect(computeBcscThuongTheoCongThuc(2, 86).thuong_nhom_tia).toBe(Math.round(0.86 * 21429));
+    expect(computeBcscThuongTheoCongThuc(2, 84.9).thuong_nhom_tia).toBe(0);
   });
   it('NS đạt đủ → cả 3 nhóm có thưởng', () => {
     expect(computeBcscThuongTheoCongThuc(0, 100)).toEqual({
@@ -44,10 +55,10 @@ describe('computeBcscThuongTheoCongThuc', () => {
     });
   });
   it('dòng lỗi: ≥ 85% tính theo tỷ lệ, trần 100%; QL 12.143đ, CP 21.429đ', () => {
-    expect(computeBcscThuongTheoCongThuc(1, 90)).toEqual({
-      thuong_ql: Math.round(0.9 * 12143),
+    expect(computeBcscThuongTheoCongThuc(1, 86)).toEqual({
+      thuong_ql: Math.round(0.86 * 12143),
       thuong_nhom_tia: 0,
-      thuong_nhom_cp: Math.round(0.9 * 21429),
+      thuong_nhom_cp: Math.round(0.86 * 21429),
     });
     expect(computeBcscThuongTheoCongThuc(1, 125)).toEqual({
       thuong_ql: 12143,

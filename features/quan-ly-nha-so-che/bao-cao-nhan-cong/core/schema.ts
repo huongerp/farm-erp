@@ -41,6 +41,8 @@ const chiTietRowSchema = z.object({
   nhan_vien: z.array(nhanVienRowSchema).max(200).default([]),
   /** Số thùng theo nhóm: khoá "1".."9"; ô trống đã bị bỏ khoá ở `ganSoThungNhom` (không thành 0). */
   so_thung_nhom: z.record(z.string().regex(/^[1-9]$/), z.number().min(0).max(1_000_000)).default({}),
+  /** Hệ số nhóm sửa trên phiếu (thưởng vượt thùng); thiếu khoá = mặc định Cài đặt. */
+  he_so_nhom: z.record(z.string().regex(/^[1-9]$/), z.number().min(0).max(100)).default({}),
 });
 
 export const baoCaoNhanCongFormSchema = z

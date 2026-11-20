@@ -17,6 +17,7 @@ import {
 } from './ct-sub';
 import { nvChoNgayKe, nvCoTen, nvModelsToForm, nvKhongTinhGio, subTuDanhSachNv } from './danh-sach-nv';
 import { chuanHoaSoThungNhom, MUC_TIEU_NS_NHOM_MAC_DINH, mucTieuNsNhom } from './nang-suat-nhom';
+import { chuanHoaHeSoNhom } from './thuong-vuot-thung';
 
 export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
   return LOAI_CHUYEN_CODES.map((loai_chuyen) => {
@@ -29,6 +30,7 @@ export function defaultChiTietRows(): BaoCaoNhanCongFormValues['chi_tiet'] {
       sub,
       nhan_vien: [],
       so_thung_nhom: {},
+      he_so_nhom: {},
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 }
@@ -69,6 +71,7 @@ export function farmBaoCaoNhanCongToForm(row: FarmBaoCaoNhanCong): BaoCaoNhanCon
       sub,
       nhan_vien: nvModelsToForm(c?.nhan_vien),
       so_thung_nhom: chuanHoaSoThungNhom(c?.so_thung_nhom),
+      he_so_nhom: chuanHoaHeSoNhom(c?.he_so_nhom),
     };
   }) as BaoCaoNhanCongFormValues['chi_tiet'];
 
@@ -93,7 +96,7 @@ export function applySubTotalsToChiTietForm(
   return chi_tiet.map((row) => {
     const nhan_vien = nvCoTen(row.nhan_vien);
     if (row.loai_chuyen === NGOAI_LE_CODE) {
-      return { ...row, nhan_vien: nvKhongTinhGio(nhan_vien), sub: emptySubFormByLoai(), so_thung_nhom: {}, sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0, so_gio_tc: 0 };
+      return { ...row, nhan_vien: nvKhongTinhGio(nhan_vien), sub: emptySubFormByLoai(), so_thung_nhom: {}, he_so_nhom: {}, sl_cong_ngay: 0, sl_cong_nua: 0, sl_tang_ca: 0, so_gio_tc: 0 };
     }
     const nguon = nhan_vien.length > 0 ? subTuDanhSachNv(nhan_vien) : row.sub;
     const sub = normalizeChiTietSubFormByLoai(trimSubEmptyTrailingRows(normalizeChiTietSubFormByLoai(nguon)));
@@ -101,7 +104,8 @@ export function applySubTotalsToChiTietForm(
     // Chỉ giữ số thùng của nhóm còn người — đổi / xoá nhóm thì số cũ không lưu sót.
     const nhomCon = new Set(nhan_vien.flatMap((r) => (r.so_nhom != null ? [String(r.so_nhom)] : [])));
     const so_thung_nhom = Object.fromEntries(Object.entries(chuanHoaSoThungNhom(row.so_thung_nhom)).filter(([k]) => nhomCon.has(k)));
-    return { ...row, sub, nhan_vien, so_thung_nhom, ...totals };
+    const he_so_nhom = Object.fromEntries(Object.entries(chuanHoaHeSoNhom(row.he_so_nhom)).filter(([k]) => nhomCon.has(k)));
+    return { ...row, sub, nhan_vien, so_thung_nhom, he_so_nhom, ...totals };
   });
 }
 

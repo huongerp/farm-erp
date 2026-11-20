@@ -91,4 +91,18 @@ describe('chuanHoaGiaTriXuatChuyen', () => {
     expect(kq.hangMuc.dong.map((d) => d.hangMuc)).toEqual(['Phục vụ sản xuất', null]);
     expect(kq.hangMuc.tongCong).toEqual({ tienXuat: 0, tienChuyen: 440000, tong: 440000, soDong: 8 });
   });
+
+  it('phẩm cấp: chuỗi số → number, nhóm trống (null/rỗng) xếp cuối, tổng cộng gộp đủ', () => {
+    const kq = chuanHoaGiaTriXuatChuyen({
+      theoPhamCap: [
+        { pham_cap: null, tien_xuat: '900', tien_chuyen: '100', so_dong: '939' },
+        { pham_cap: 'NĐ', tien_xuat: '50', tien_chuyen: 0, so_dong: 109 },
+        { pham_cap: ' XK ', tien_xuat: '300', tien_chuyen: '20', so_dong: '158' },
+      ],
+    });
+    expect(kq.phamCap.dong.map((d) => d.hangMuc)).toEqual(['XK', 'NĐ', null]);
+    expect(kq.phamCap.dong[0]).toEqual({ hangMuc: 'XK', tienXuat: 300, tienChuyen: 20, tong: 320, soDong: 158 });
+    expect(kq.phamCap.tongCong).toEqual({ tienXuat: 1250, tienChuyen: 120, tong: 1370, soDong: 1206 });
+    expect(chuanHoaGiaTriXuatChuyen(null).phamCap.dong).toEqual([]);
+  });
 });

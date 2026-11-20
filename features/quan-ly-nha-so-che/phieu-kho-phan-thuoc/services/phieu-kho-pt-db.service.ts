@@ -20,6 +20,8 @@ import { getAllFarmHangHoa } from '../../hang-hoa-phan-thuoc/services/farm-hang-
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { postgrestQuotedIlikePattern } from '../../../../lib/postgrest-or-ilike';
 import {
+  giaoHangHoaIds,
+  hangHoaIdsTheoPhamCap,
   phamViOrFilter,
   type ChiTietPhieuKhoPTListServerQuery,
   type PhieuKhoPTListServerQuery,
@@ -1089,7 +1091,7 @@ function applyChiTietPhieuKhoPTListQueryToFlatSelect(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   q: any,
   query: ChiTietPhieuKhoPTListServerQuery,
-  /** Id hàng thuộc danh mục đã chọn; `null` = không lọc danh mục. */
+  /** Id hàng thuộc danh mục / phẩm cấp đã chọn; `null` = không lọc theo hàng hoá. */
   hangHoaIdsTheoDm: number[] | null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): any {
@@ -1138,6 +1140,13 @@ async function getHangHoaIdsTheoDanhMucDb(bt: KhoBienThe, danhMucIds: number[]):
   return ((data ?? []) as { id: number }[]).map((r) => Number(r.id));
 }
 
+/** Id hàng hoá theo phẩm cấp của danh mục hàng hoá (khớp nhóm của tab «Theo phẩm cấp»). */
+async function getHangHoaIdsTheoPhamCapDb(bt: KhoBienThe, phamCap: string[]): Promise<number[]> {
+  const { data, error } = await db.from(bt.bang.hangHoa).select('id, pham_cap');
+  if (error) throwDbError(error);
+  return hangHoaIdsTheoPhamCap((data ?? []) as { id: number; pham_cap: string | null }[], phamCap);
+}
+
 const CHI_TIET_PAGE_SIZE_DEFAULT = 100;
 const DANH_SACH_PAGE_SIZE_DEFAULT = 50;
 
@@ -1163,9 +1172,11 @@ export async function getChiTietPhieuKhoPTPageDb(
   pageSize: number = CHI_TIET_PAGE_SIZE_DEFAULT,
   listQuery?: ChiTietPhieuKhoPTListServerQuery
 ): Promise<PaginatedTableResult<ChiTietPhieuKhoPTFlat>> {
-  const hangHoaIdsTheoDm = listQuery?.danhMucIds?.length
-    ? await getHangHoaIdsTheoDanhMucDb(bt, listQuery.danhMucIds)
-    : null;
+  const [idsTheoDm, idsTheoPhamCap] = await Promise.all([
+    listQuery?.danhMucIds?.length ? getHangHoaIdsTheoDanhMucDb(bt, listQuery.danhMucIds) : null,
+    listQuery?.phamCap?.length ? getHangHoaIdsTheoPhamCapDb(bt, listQuery.phamCap) : null,
+  ]);
+  const hangHoaIdsTheoDm = giaoHangHoaIds(idsTheoDm, idsTheoPhamCap);
   const [pageResult, nvMap] = await Promise.all([
     fetchTablePage<PhieuKhoPTChiTietFlatViewRow>(page, pageSize, async (from, to) => {
       let sel = db.from(bt.view.phieuKhoChiTietFlat).select(PHIEU_PT_CHI_TIET_FLAT_SELECT, { count: 'exact' });

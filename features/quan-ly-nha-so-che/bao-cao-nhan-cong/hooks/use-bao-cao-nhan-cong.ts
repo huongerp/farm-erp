@@ -252,7 +252,7 @@ export function useViTriSoChe() {
 export function useLuuViTriSoChe(onDone?: () => void) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string | null; data: { ten: string; dang_dung: boolean } }) =>
+    mutationFn: ({ id, data }: { id: string | null; data: { ten: string; dang_dung: boolean; khong_thuong_vuot?: boolean } }) =>
       luuViTriSoChe(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QUERY_KEY_VI_TRI_SO_CHE });

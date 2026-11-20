@@ -139,13 +139,14 @@ const TheoHangMucTab: React.FC = () => {
 
   const query = useGiaTriXuatChuyen({ tu, den, khoIds: khoIdsGui }, scopeReady && kyHopLe);
   const giaTri = query.data;
-  const tongHop = giaTri?.hangMuc;
+  const tongHop = giaTri?.phamCap;
 
   const setFilter = useChiTietPhieuKhoPTStore((s) => s.setFilter);
 
-  /** Bấm dòng → nhảy tab Chi tiết đã lọc sẵn hạng mục + khoảng ngày + kho. */
-  const handleRowClick = (hangMuc: string | null) => {
-    setFilter('hangMuc', hangMuc == null ? ['__none__'] : [hangMuc]);
+  /** Bấm dòng → nhảy tab Chi tiết đã lọc sẵn phẩm cấp + khoảng ngày + kho. */
+  const handleRowClick = (phamCap: string | null) => {
+    setFilter('phamCap', phamCap == null ? ['__none__'] : [phamCap]);
+    setFilter('hangMuc', []);
     if (tu || den) {
       setFilter('datePreset', 'custom');
       setFilter('customDateFrom', tu);
@@ -164,7 +165,7 @@ const TheoHangMucTab: React.FC = () => {
 
   const exportColumns = useMemo<ExportColumn[]>(
     () => [
-      { key: 'hang_muc', label: t('phieuKhoPhanThuoc.theoHangMuc.colHangMuc'), type: 'text' },
+      { key: 'pham_cap', label: t('phieuKhoPhanThuoc.theoHangMuc.colPhamCap'), type: 'text' },
       ...(xemGia
         ? ([
             { key: 'tien_xuat', label: t('phieuKhoPhanThuoc.theoHangMuc.colTienXuat'), type: 'money' as const },
@@ -180,7 +181,7 @@ const TheoHangMucTab: React.FC = () => {
   const exportRows = useMemo(
     () =>
       (tongHop?.dong ?? []).map((d) => ({
-        hang_muc: d.hangMuc ?? t('phieuKhoPhanThuoc.theoHangMuc.chuaPhanHangMuc'),
+        pham_cap: d.hangMuc ?? t('phieuKhoPhanThuoc.theoHangMuc.chuaCoPhamCap'),
         tien_xuat: d.tienXuat,
         tien_chuyen: d.tienChuyen,
         tong: d.tong,
@@ -292,7 +293,7 @@ const TheoHangMucTab: React.FC = () => {
                 <table className="w-full border-collapse">
                   <thead className="bg-muted/60 border-b border-border">
                     <tr>
-                      <th className={cn(thStyle, 'text-left')}>{t('phieuKhoPhanThuoc.theoHangMuc.colHangMuc')}</th>
+                      <th className={cn(thStyle, 'text-left')}>{t('phieuKhoPhanThuoc.theoHangMuc.colPhamCap')}</th>
                       {xemGia && (
                         <>
                           <th className={cn(thStyle, 'text-right')}>{t('phieuKhoPhanThuoc.theoHangMuc.colTienXuat')}</th>
@@ -313,7 +314,7 @@ const TheoHangMucTab: React.FC = () => {
                       >
                         <td className="px-4 py-2.5 text-sm min-w-[160px]">
                           <span className={d.hangMuc == null ? 'italic text-muted-foreground' : undefined}>
-                            {d.hangMuc ?? t('phieuKhoPhanThuoc.theoHangMuc.chuaPhanHangMuc')}
+                            {d.hangMuc ?? t('phieuKhoPhanThuoc.theoHangMuc.chuaCoPhamCap')}
                           </span>
                         </td>
                         {xemGia && (
@@ -420,7 +421,7 @@ const TheoHangMucTab: React.FC = () => {
         onClose={() => setShowExport(false)}
         columns={exportColumns}
         data={exportRows}
-        fileName="Tong_hop_hang_muc"
+        fileName="Tong_hop_pham_cap"
       />
     </div>
   );

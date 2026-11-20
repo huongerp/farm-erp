@@ -4,8 +4,9 @@
  * Nguồn: quy chế «Cách tính thưởng KPI» (QL NSC, CP, Tỉa) — mức/ngày = mức tháng ÷ 28 công
  * (số khách đã làm tròn). Dòng preset: 0 Năng suất sơ chế, 1 Tỷ lệ nải chuỗi lỗi, 2 Tỷ lệ thu hồi.
  *
- * - Mọi dòng dùng ngưỡng 85%: tỷ lệ đạt ≥ 85% → min(tỷ lệ, 100%) × mức; dưới 85% = 0 (không trừ âm).
- * - Dòng lỗi (càng thấp càng tốt): tỷ lệ đạt = mục tiêu ÷ thực tế × 100 (tính ở `resolveBcscPresetKpiDerivedFields`).
+ * - Ngưỡng đạt: dòng Năng suất 90% (trước 20/11/2026 là 85%), dòng lỗi và thu hồi giữ 85% (chốt 20/11/2026).
+ *   Tỷ lệ đạt ≥ ngưỡng → min(tỷ lệ, 100%) × mức; dưới ngưỡng = 0 (không trừ âm).
+ * - Dòng lỗi (càng thấp càng tốt): tỷ lệ đạt = mục tiêu ÷ thực tế × 100, trần 100% (tính ở `resolveBcscPresetKpiDerivedFields`).
  */
 
 export const BCSC_MUC_THUONG_NGAY = {
@@ -17,14 +18,15 @@ export const BCSC_MUC_THUONG_NGAY = {
   cp: { nangSuat: 10_714, loi: 21_429 },
 } as const;
 
-const NGUONG_DAT = 85;
+/** Ngưỡng tỷ lệ đạt theo dòng preset: 0 Năng suất, 1 Lỗi, 2 Thu hồi. */
+export const BCSC_NGUONG_DAT = { nangSuat: 90, loi: 85, thuHoi: 85 } as const;
 
 export type BcscCotThuongCongThuc = 'thuong_ql' | 'thuong_nhom_tia' | 'thuong_nhom_cp';
 export type BcscThuongCongThuc = Partial<Record<BcscCotThuongCongThuc, number>>;
 
-/** Tỷ lệ đạt (thang 0–100+) ≥ 85 → min(tỷ lệ, 100)% × mức; ngược lại / thiếu số = 0. */
-export function thuongNguong85(tyLeDat: number | null | undefined, muc: number): number {
-  if (tyLeDat == null || !Number.isFinite(tyLeDat) || tyLeDat < NGUONG_DAT) return 0;
+/** Tỷ lệ đạt (thang 0–100+) ≥ ngưỡng → min(tỷ lệ, 100)% × mức; ngược lại / thiếu số = 0. */
+export function thuongTheoNguong(tyLeDat: number | null | undefined, muc: number, nguong: number): number {
+  if (tyLeDat == null || !Number.isFinite(tyLeDat) || tyLeDat < nguong) return 0;
   return Math.round((Math.min(tyLeDat, 100) / 100) * muc);
 }
 
@@ -39,25 +41,26 @@ export function computeBcscThuongTheoCongThuc(
   tyLeDat: number | null | undefined
 ): BcscThuongCongThuc {
   const m = BCSC_MUC_THUONG_NGAY;
+  const n = BCSC_NGUONG_DAT;
   switch (index) {
     case 0:
       return {
-        thuong_ql: thuongNguong85(tyLeDat, m.ql.nangSuat),
-        thuong_nhom_tia: thuongNguong85(tyLeDat, m.tia.nangSuat),
-        thuong_nhom_cp: thuongNguong85(tyLeDat, m.cp.nangSuat),
+        thuong_ql: thuongTheoNguong(tyLeDat, m.ql.nangSuat, n.nangSuat),
+        thuong_nhom_tia: thuongTheoNguong(tyLeDat, m.tia.nangSuat, n.nangSuat),
+        thuong_nhom_cp: thuongTheoNguong(tyLeDat, m.cp.nangSuat, n.nangSuat),
       };
     case 1:
       // Tỉa không có KPI lỗi.
       return {
-        thuong_ql: thuongNguong85(tyLeDat, m.ql.loi),
+        thuong_ql: thuongTheoNguong(tyLeDat, m.ql.loi, n.loi),
         thuong_nhom_tia: 0,
-        thuong_nhom_cp: thuongNguong85(tyLeDat, m.cp.loi),
+        thuong_nhom_cp: thuongTheoNguong(tyLeDat, m.cp.loi, n.loi),
       };
     case 2:
       // CP không có KPI thu hồi.
       return {
-        thuong_ql: thuongNguong85(tyLeDat, m.ql.thuHoi),
-        thuong_nhom_tia: thuongNguong85(tyLeDat, m.tia.thuHoi),
+        thuong_ql: thuongTheoNguong(tyLeDat, m.ql.thuHoi, n.thuHoi),
+        thuong_nhom_tia: thuongTheoNguong(tyLeDat, m.tia.thuHoi, n.thuHoi),
         thuong_nhom_cp: 0,
       };
     default:

@@ -25,6 +25,8 @@ export interface ChiTietPhieuKhoPTFilters {
   nguoiTaoIds: string[];
   nguoiDuyetIds: string[];
   hangMuc: string[];
+  /** Phẩm cấp của danh mục hàng hoá; `'__none__'` = hàng chưa gán phẩm cấp. */
+  phamCap: string[];
   /** Danh mục hàng hoá cấp 2 (id) — lọc dòng theo `danh_muc_id` của hàng. */
   danhMucIds: string[];
 }
@@ -60,6 +62,7 @@ const initialFilters: ChiTietPhieuKhoPTFilters = {
   nguoiTaoIds: [],
   nguoiDuyetIds: [],
   hangMuc: [],
+  phamCap: [],
   danhMucIds: [],
 };
 

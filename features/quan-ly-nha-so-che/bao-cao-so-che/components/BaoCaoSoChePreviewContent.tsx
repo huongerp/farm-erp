@@ -211,6 +211,7 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
                   <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThung')}</th>
                   <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTongKg')}</th>
                   <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colTyLe')}</th>
+                  <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colHeSoQuyDoi')}</th>
                   <th className={`${thPrint} text-right`}>{t('baoCaoSoChe.phamCap.colSoThungQD')}</th>
                   <th className={thPrint}>{t('baoCaoSoChe.phamCap.colGhiChu')}</th>
                 </tr>
@@ -226,7 +227,10 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
                     <td className={`${tdPrint} text-right tabular-nums`}>
                       {r.ty_le_pct > 0 ? `${fmtNum(r.ty_le_pct)}%` : '—'}
                     </td>
-                    <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.so_thung_quy_doi)}</td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>
+                      {r.he_so_quy_doi == null ? '—' : formatNumberVN(r.he_so_quy_doi, { minFractionDigits: 2 })}
+                    </td>
+                    <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(r.tong_quy_doi)}</td>
                     <td className={tdPrint}>{r.ghi_chu?.trim() || '—'}</td>
                   </tr>
                 ))}
@@ -236,7 +240,8 @@ const BaoCaoSoChePreviewContent: React.FC<Props> = ({ loai, data, bcncList, dbdt
                   <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung ?? 0), 0))}</td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + r.tong_kg, 0))}</td>
                   <td className={`${tdPrint} text-right tabular-nums`}>{tongTyLe > 0 ? `${fmtNum(tongTyLe)}%` : ''}</td>
-                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(phamCapEnriched.reduce((s, r) => s + (r.so_thung_quy_doi ?? 0), 0))}</td>
+                  <td className={tdPrint}></td>
+                  <td className={`${tdPrint} text-right tabular-nums`}>{fmtNum(tongThungQD)}</td>
                   <td className={tdPrint}></td>
                 </tr>
               </tbody>

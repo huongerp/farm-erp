@@ -45,5 +45,5 @@ export const DGDV_SORTABLE_DB_COLUMNS = new Set([
 /** Mặc định: ngày giảm, chuyến giảm. */
 export const DGDV_SORT_MAC_DINH = { column: 'ngay', ascending: false } as const;
 
-/** Xuất chi tiết dạng dòng từ danh sách: tối đa số phiếu một lần (mỗi phiếu kéo cả lưới). */
-export const DGDV_XUAT_CHI_TIET_TOI_DA = 300;
+/** Xuất chi tiết dạng dòng từ danh sách: tối đa số phiếu một lần (mỗi phiếu kéo cả lưới, tải theo lô 100 phiếu). */
+export const DGDV_XUAT_CHI_TIET_TOI_DA = 2000;

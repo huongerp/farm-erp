@@ -215,12 +215,15 @@ export function resolveBcscPresetKpiDerivedFields(
   return { thucTeStr, mucTieuStr: null, phanTram, danhGia, tyLeDat: phanTram };
 }
 
-/** Chỉ tiêu càng thấp càng tốt (tỷ lệ lỗi): % đạt = mục tiêu ÷ thực tế × 100; thực tế 0 = 100%. */
+/**
+ * Chỉ tiêu càng thấp càng tốt (tỷ lệ lỗi): % đạt = mục tiêu ÷ thực tế × 100, TRẦN 100%
+ * (lỗi ≤ mục tiêu = đạt đủ; tránh số vô lý kiểu 5 ÷ 0,54 = 925%). Thực tế 0 = 100%.
+ */
 function computeKpiPhanTramNguoc(mucTieu: string | null | undefined, thucTe: string | null): number | null {
   const tt = parseFloat(String(thucTe ?? '').replace(',', '.'));
   const mt = parseFloat(String(mucTieu ?? '').replace(',', '.'));
   if (!Number.isFinite(tt) || !Number.isFinite(mt) || mt <= EPS) return null;
-  return tt <= 0 ? 100 : (mt / tt) * 100;
+  return tt <= 0 ? 100 : Math.min((mt / tt) * 100, 100);
 }
 
 function numericKpiString(value: number | null | undefined): string | null {

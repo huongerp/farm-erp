@@ -83,6 +83,8 @@ const so = (v: SoTho): number => Number(v ?? 0) || 0;
 export interface GiaTriXuatChuyenRaw {
   tong?: { tien_xuat?: SoTho; tien_chuyen?: SoTho; so_dong?: SoTho; so_dong_chua_gia?: SoTho } | null;
   theoHangMuc?: { hang_muc?: string | null; tien_xuat?: SoTho; tien_chuyen?: SoTho; so_dong?: SoTho }[] | null;
+  /** Migration 088 — nhóm theo phẩm cấp của danh mục hàng hoá (`null` = hàng chưa gán phẩm cấp). */
+  theoPhamCap?: { pham_cap?: string | null; tien_xuat?: SoTho; tien_chuyen?: SoTho; so_dong?: SoTho }[] | null;
   luanChuyen?:
     | {
         id_kho_di?: string | null;
@@ -125,6 +127,8 @@ export interface HangChuaCoGia {
 export interface GiaTriXuatChuyen {
   tong: { tienXuat: number; tienChuyen: number; soDong: number; soDongChuaGia: number };
   hangMuc: TongHopHangMucKetQua;
+  /** Cùng khuôn `hangMuc`; trường nhóm `hangMuc` của mỗi dòng chứa phẩm cấp. */
+  phamCap: TongHopHangMucKetQua;
   luanChuyen: LuanChuyenTuyen[];
   theoKho: GiaTriTheoKho[];
   chuaCoGia: HangChuaCoGia[];
@@ -133,7 +137,7 @@ export interface GiaTriXuatChuyen {
 /**
  * Quy chuẩn JSON RPC giá trị xuất/luân chuyển:
  * - số dạng chuỗi → number, trống/sai → 0; thiếu mảng → [];
- * - hạng mục đi qua `tongHopHangMuc` (sắp xếp + dòng tổng cộng);
+ * - hạng mục / phẩm cấp đi qua `tongHopHangMuc` (sắp xếp, nhóm trống cuối, dòng tổng cộng);
  * - tuyến luân chuyển: tiền giảm dần, bằng nhau thì số dòng giảm dần;
  * - theo kho: tổng (xuất + chuyển đi + nhận về) giảm dần; hàng chưa giá: số dòng giảm dần.
  */
@@ -142,6 +146,15 @@ export function chuanHoaGiaTriXuatChuyen(raw: GiaTriXuatChuyenRaw | null | undef
   const hangMuc = tongHopHangMuc(
     (r.theoHangMuc ?? []).map((d) => ({
       hangMuc: d.hang_muc ?? null,
+      tienXuat: d.tien_xuat,
+      tienChuyen: d.tien_chuyen,
+      soDong: d.so_dong,
+    }))
+  );
+
+  const phamCap = tongHopHangMuc(
+    (r.theoPhamCap ?? []).map((d) => ({
+      hangMuc: d.pham_cap ?? null,
       tienXuat: d.tien_xuat,
       tienChuyen: d.tien_chuyen,
       soDong: d.so_dong,
@@ -186,6 +199,7 @@ export function chuanHoaGiaTriXuatChuyen(raw: GiaTriXuatChuyenRaw | null | undef
       soDongChuaGia: so(r.tong?.so_dong_chua_gia),
     },
     hangMuc,
+    phamCap,
     luanChuyen,
     theoKho,
     chuaCoGia,

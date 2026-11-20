@@ -27,6 +27,7 @@ import type { FarmBaoCaoNhanCongCtSub, LoaiChiTieu } from '../core/ct-sub';
 import { LOAI_CHI_TIEU_CODES, groupSubModelsByLoai } from '../core/ct-sub';
 import { applySubTotalsToChiTietForm } from '../core/form-mappers';
 import { chuanHoaSoThungNhom, mucTieuNsNhom } from '../core/nang-suat-nhom';
+import { chuanHoaHeSoNhom } from '../core/thuong-vuot-thung';
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 
 const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
@@ -45,7 +46,7 @@ const ROW_CHA_DETAIL =
   'id,ngay,id_chi_nhanh,ten_chi_nhanh,ghi_chu,muc_tieu_ns_nhom,hinh_anh_urls,id_nguoi_tao,trang_thai,tg_tao,tg_cap_nhat';
 
 const ROW_CT =
-  'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu,so_thung_nhom';
+  'id,id_bao_cao,loai_chuyen,sl_cong_ngay,sl_cong_nua,sl_tang_ca,so_gio_tc,ghi_chu,thu_tu,so_thung_nhom,he_so_nhom';
 
 const ROW_CT_SUB =
   'id,id_bcnc_ct,loai_chi_tieu,thu_tu,sl_cong,so_gio,ghi_chu';
@@ -54,7 +55,7 @@ const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,so_nhom,cham_cong,so_gi
 
 const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,so_nhom,loai_chuyen,dang_dung,thu_tu';
 
-const ROW_DM_VT = 'id,ten,dang_dung,thu_tu';
+const ROW_DM_VT = 'id,ten,dang_dung,thu_tu,khong_thuong_vuot';
 
 function parseIdToInt8(id: string | null | undefined): number | null {
   if (id == null || id === '') return null;
@@ -117,6 +118,7 @@ interface DbRowCt {
   ghi_chu: string | null;
   thu_tu: number | null;
   so_thung_nhom?: unknown;
+  he_so_nhom?: unknown;
 }
 
 interface DbRowCtSub {
@@ -159,6 +161,7 @@ interface DbRowDmVt {
   ten: string;
   dang_dung: boolean;
   thu_tu: number | null;
+  khong_thuong_vuot?: boolean | null;
 }
 
 function nvRowToModel(row: DbRowNv): FarmBaoCaoNhanCongNv {
@@ -196,6 +199,7 @@ function dmVtRowToModel(row: DbRowDmVt): VarViTriSoChe {
     ten: row.ten,
     dang_dung: !!row.dang_dung,
     thu_tu: row.thu_tu ?? 0,
+    khong_thuong_vuot: !!row.khong_thuong_vuot,
   };
 }
 
@@ -224,6 +228,7 @@ function ctRowToModel(row: DbRowCt, subs: FarmBaoCaoNhanCongCtSub[]): FarmBaoCao
     thu_tu: row.thu_tu ?? 0,
     sub_by_loai: groupSubModelsByLoai(subs),
     so_thung_nhom: chuanHoaSoThungNhom(row.so_thung_nhom),
+    he_so_nhom: chuanHoaHeSoNhom(row.he_so_nhom),
   };
 }
 
@@ -344,6 +349,7 @@ async function insertCtAndSub(
         ghi_chu: r.ghi_chu ?? null,
         thu_tu: i + 1,
         so_thung_nhom: chuanHoaSoThungNhom(r.so_thung_nhom),
+        he_so_nhom: chuanHoaHeSoNhom(r.he_so_nhom),
       })
       .select('id')
       .single();
@@ -601,9 +607,13 @@ async function thuTuViTriMoiNhatDb(): Promise<number> {
 
 export async function luuViTriSoCheDb(
   id: string | null,
-  data: { ten: string; dang_dung: boolean }
+  data: { ten: string; dang_dung: boolean; khong_thuong_vuot?: boolean }
 ): Promise<void> {
-  const body = { ten: gonTen(data.ten) ?? '', dang_dung: data.dang_dung };
+  const body = {
+    ten: gonTen(data.ten) ?? '',
+    dang_dung: data.dang_dung,
+    ...(data.khong_thuong_vuot !== undefined ? { khong_thuong_vuot: data.khong_thuong_vuot } : {}),
+  };
   if (id) {
     const { error } = await db.from(TABLE_DM_VT).update(body).eq('id', Number(id));
     if (error) throwDbError(error, { resource: `${TABLE_DM_VT}.update` });

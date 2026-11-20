@@ -127,10 +127,12 @@ describe('resolveBcscPresetKpiDerivedFields — Tỷ lệ lỗi (càng thấp c�
     expect(r.tyLeDat).toBeCloseTo((5 / 10.28) * 100, 6);
     expect(r.danhGia).toBe('Không đạt');
   });
-  it('lỗi thấp hơn mục tiêu → % > 100, Đạt', () => {
+  it('lỗi thấp hơn mục tiêu → trần 100%, Đạt', () => {
     const r = resolveBcscPresetKpiDerivedFields(src(4), '5');
-    expect(r.phanTram).toBeCloseTo(125, 6);
+    expect(r.phanTram).toBe(100);
     expect(r.danhGia).toBe('Đạt');
+    // phiếu thật CN 10 ngày 17/11: 3 lỗi / 555 nải = 0,54% → không còn 925,93%
+    expect(resolveBcscPresetKpiDerivedFields(src(0.54), '5').tyLeDat).toBe(100);
   });
   it('không có lỗi (thực tế 0) → 100%, không chia 0', () => {
     const r = resolveBcscPresetKpiDerivedFields(src(0), '5');

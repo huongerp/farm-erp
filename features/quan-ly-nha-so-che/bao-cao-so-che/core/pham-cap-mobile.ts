@@ -3,11 +3,11 @@ import { lookupPhieuNhapSoLuong } from './pham-cap';
 import type { PhamCapRowDerived } from './pham-cap-derived';
 
 /** Mã ô số liệu phẩm cấp trên thẻ mobile — khớp với cột bảng desktop. */
-export type PhamCapMobileFieldKey = 'soKg' | 'phieuNhap' | 'soThung' | 'tongKg' | 'tyLe' | 'quyDoi';
+export type PhamCapMobileFieldKey = 'soKg' | 'phieuNhap' | 'soThung' | 'tongKg' | 'tyLe' | 'heSo' | 'quyDoi';
 
 export interface PhamCapMobileField {
   key: PhamCapMobileFieldKey;
-  /** `null` = đang tải (hiện "…"). */
+  /** `null` = đang tải (hiện "…"); riêng ô hệ số: chưa có hệ số (hiện "—"). */
   value: number | null;
   /** Hiển thị kèm "%". */
   pct?: boolean;
@@ -24,7 +24,7 @@ export interface PhamCapMobileCard {
 /** Một thẻ / phẩm cấp. Ô "SL phiếu nhập" chỉ có khi có dữ liệu đối chiếu (hoặc đang tải). */
 export function buildPhamCapMobileCards(
   rows: FarmBaoCaoSoChePhamCapRow[],
-  derived: Pick<PhamCapRowDerived, 'tong_kg' | 'ty_le_pct'>[],
+  derived: Pick<PhamCapRowDerived, 'tong_kg' | 'ty_le_pct' | 'tong_quy_doi'>[],
   phieuNhapByPhamCap: Record<string, number> | undefined,
   phieuNhapRefLoading: boolean
 ): PhamCapMobileCard[] {
@@ -42,7 +42,8 @@ export function buildPhamCapMobileCards(
       { key: 'soThung', value: r.so_thung ?? 0, warn },
       { key: 'tongKg', value: d?.tong_kg ?? 0 },
       { key: 'tyLe', value: d?.ty_le_pct ?? 0, pct: true },
-      { key: 'quyDoi', value: r.so_thung_quy_doi ?? 0 }
+      { key: 'heSo', value: r.he_so_quy_doi ?? null },
+      { key: 'quyDoi', value: d?.tong_quy_doi ?? r.so_thung_quy_doi ?? 0 }
     );
     return { title: r.ten_pham_cap?.trim() || '—', fields, ghiChu: r.ghi_chu?.trim() ?? '' };
   });

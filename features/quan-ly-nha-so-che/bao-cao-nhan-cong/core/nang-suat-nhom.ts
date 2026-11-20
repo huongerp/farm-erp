@@ -1,33 +1,23 @@
 /**
- * Năng suất và thưởng theo nhóm trong chuyền.
+ * Năng suất theo nhóm trong chuyền.
  * NS nhóm = số thùng ÷ tổng giờ công (giờ-người, KHÔNG cộng giờ TC); tỷ lệ đạt = NS ÷ mục tiêu × 100.
- * Thưởng chỉ cho chuyền Tỉa, tính khi hiển thị (không lưu DB): đạt ≥ 85% → min(tỷ lệ,100)% × mức × công.
- * Là khoản CỘNG THÊM vào cột «Thưởng nhóm tỉa» của Báo cáo sơ chế, không thay thế (khách chốt 18/11/2026).
+ * Thưởng cho công nhân tính ở `thuong-vuot-thung.ts` (thùng vượt × đơn giá × hệ số, chốt 20/11/2026) —
+ * thay khoản «10.714đ × công» chỉ cho nhóm Tỉa trước đây.
  */
 import { formatNumberVN } from '../../../../lib/utils';
-import { BCSC_MUC_THUONG_NGAY } from '../../bao-cao-so-che/core/kpi-thuong-cong-thuc';
-import { CONG_THEO_CHAM_CONG, nhomNhanVienTheoChuyen, type NvFormRow } from './danh-sach-nv';
+import { nhomNhanVienTheoChuyen, type NvFormRow } from './danh-sach-nv';
 import { SO_NHOM_TOI_DA, tongHopTheoNhom } from './tong-hop-nhom';
-import type { ChamCong, FarmBaoCaoNhanCong, LoaiChuyen } from './types';
+import type { FarmBaoCaoNhanCong, LoaiChuyen } from './types';
 
 /** Mục tiêu mặc định (thùng / giờ-người) khi tạo phiếu. */
 export const MUC_TIEU_NS_NHOM_MAC_DINH = 3;
-/** Chuyền duy nhất được thưởng năng suất nhóm. */
-export const CHUYEN_THUONG_NS_NHOM: LoaiChuyen = 'TIA_DANH_GIA';
-const NGUONG_THUONG = 85;
+/** Mốc tô màu «gần đạt» của % đạt. */
+const NGUONG_GAN_DAT = 85;
 
 /** Số thùng theo nhóm của một chuyền: khoá "1".."9" → số ≥ 0; thiếu khoá = chưa nhập. */
 export type SoThungNhom = Record<string, number>;
 
 type DongNsNhom = Pick<NvFormRow, 'ho_ten' | 'cham_cong' | 'so_gio_cong' | 'so_gio_tc'> & { so_nhom: number | null };
-
-export interface NguoiThuongNhom {
-  ho_ten: string;
-  cham_cong: ChamCong;
-  /** Công quy đổi (cả ngày 1, nửa ngày ½, nghỉ 0). */
-  cong: number;
-  thuong: number;
-}
 
 export interface NangSuatNhom {
   soNhom: number;
@@ -39,10 +29,6 @@ export interface NangSuatNhom {
   gioCong: number;
   ns: number | null;
   tyLe: number | null;
-  /** Thưởng của một người làm cả ngày (0 nếu chuyền không thưởng / chưa đạt). */
-  thuongCaNgay: number;
-  tongThuong: number;
-  nguoi: NguoiThuongNhom[];
 }
 
 export function nangSuatNhom(soThung: number | null | undefined, gioCong: number): number | null {
@@ -53,12 +39,6 @@ export function nangSuatNhom(soThung: number | null | undefined, gioCong: number
 export function tyLeDatNs(ns: number | null | undefined, mucTieu: number): number | null {
   if (ns == null || !Number.isFinite(ns) || !(mucTieu > 0)) return null;
   return (ns / mucTieu) * 100;
-}
-
-/** Thưởng một người: đạt ≥ 85% → round(min(tỷ lệ,100)/100 × mức × công), làm tròn một lần. */
-export function thuongNguoiTheoNhom(tyLe: number | null | undefined, chamCong: ChamCong, muc: number): number {
-  if (tyLe == null || !(tyLe >= NGUONG_THUONG)) return 0;
-  return Math.round((Math.min(tyLe, 100) / 100) * muc * CONG_THEO_CHAM_CONG[chamCong]);
 }
 
 /** Số thùng hợp lệ của một nhóm (số hữu hạn ≥ 0), không có → null. */
@@ -89,20 +69,15 @@ export function ganSoThungNhom(soThungNhom: SoThungNhom | null | undefined, soNh
   return out;
 }
 
-/** NS + thưởng từng nhóm của một chuyền; bỏ người chưa chia nhóm. */
+/** NS từng nhóm của một chuyền (mọi người trong nhóm); bỏ người chưa chia nhóm. */
 export function tinhNangSuatChuyen(
   chuyen: { loai_chuyen: LoaiChuyen; nhanVien: readonly DongNsNhom[]; soThungNhom: SoThungNhom | null | undefined },
-  mucTieu: number,
-  muc: number = BCSC_MUC_THUONG_NGAY.tia.nangSuat
+  mucTieu: number
 ): NangSuatNhom[] {
-  const coThuong = chuyen.loai_chuyen === CHUYEN_THUONG_NS_NHOM;
   return tongHopTheoNhom(chuyen.nhanVien).flatMap((g) => {
     if (g.soNhom == null) return [];
     const soThung = soThungCuaNhom(chuyen.soThungNhom, g.soNhom);
     const ns = nangSuatNhom(soThung, g.gioCong);
-    const tyLe = tyLeDatNs(ns, mucTieu);
-    const thuong = (cc: ChamCong) => (coThuong ? thuongNguoiTheoNhom(tyLe, cc, muc) : 0);
-    const nguoi = g.nhanVien.map((r) => ({ ho_ten: r.ho_ten, cham_cong: r.cham_cong, cong: CONG_THEO_CHAM_CONG[r.cham_cong], thuong: thuong(r.cham_cong) }));
     return [
       {
         soNhom: g.soNhom,
@@ -112,10 +87,7 @@ export function tinhNangSuatChuyen(
         soThung,
         gioCong: g.gioCong,
         ns,
-        tyLe,
-        thuongCaNgay: thuong('CA_NGAY'),
-        tongThuong: nguoi.reduce((s, p) => s + p.thuong, 0),
-        nguoi,
+        tyLe: tyLeDatNs(ns, mucTieu),
       },
     ];
   });
@@ -148,26 +120,11 @@ export function phieuCoSoThungNhom(ds: readonly NangSuatNhomTheoChuyen[]): boole
   return ds.some((c) => [...c.theoNhom.values()].some((g) => g.soThung != null));
 }
 
-export interface DongThuongNhom extends NguoiThuongNhom {
-  tt: string;
-  loai_chuyen: LoaiChuyen;
-  soNhom: number;
-}
-
-/** Người được thưởng năng suất nhóm (thưởng > 0), theo thứ tự chuyền → nhóm → danh sách. */
-export function dsThuongNhom(ds: readonly NangSuatNhomTheoChuyen[]): DongThuongNhom[] {
-  return ds.flatMap((c) =>
-    [...c.theoNhom.values()].flatMap((g) =>
-      g.nguoi.filter((p) => p.thuong > 0).map((p) => ({ ...p, tt: c.tt, loai_chuyen: c.loai_chuyen, soNhom: g.soNhom }))
-    )
-  );
-}
-
 /** Mức màu của % đạt: ≥ 100 đạt, 85–99 gần đạt, < 85 chưa đạt. */
 export function mucDatNs(tyLe: number | null | undefined): 'dat' | 'gan-dat' | 'chua-dat' | null {
   if (tyLe == null) return null;
   if (tyLe >= 100) return 'dat';
-  return tyLe >= NGUONG_THUONG ? 'gan-dat' : 'chua-dat';
+  return tyLe >= NGUONG_GAN_DAT ? 'gan-dat' : 'chua-dat';
 }
 
 /** Lớp màu chữ của % đạt (cùng bộ màu với bảng KPI thưởng); chưa có tỷ lệ → ''. */

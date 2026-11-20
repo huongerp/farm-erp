@@ -4,7 +4,7 @@ import { enrichPhamCapRowsWithDerived } from './pham-cap-derived';
 import type { FarmBaoCaoSoChePhamCapRow } from './pham-cap';
 
 const rows: FarmBaoCaoSoChePhamCapRow[] = [
-  { ten_pham_cap: 'Nải', so_tham_chieu: 13, so_thung: 10, so_thung_quy_doi: 10, ghi_chu: ' lô A ', thu_tu: 1 },
+  { ten_pham_cap: 'Nải', so_tham_chieu: 13, so_thung: 10, so_thung_quy_doi: 10, he_so_quy_doi: 1.2, ghi_chu: ' lô A ', thu_tu: 1 },
   { ten_pham_cap: 'CP', so_tham_chieu: 0, so_thung: 0, so_thung_quy_doi: 0, ghi_chu: '', thu_tu: 2 },
 ];
 
@@ -13,7 +13,7 @@ describe('buildPhamCapMobileCards', () => {
 
   it('ô SL phiếu nhập chỉ có khi có dữ liệu đối chiếu; ghi chú được trim', () => {
     const cards = buildPhamCapMobileCards(rows, derived, { 'nải': 12 }, false);
-    expect(cards[0].fields.map((f) => f.key)).toEqual(['soKg', 'phieuNhap', 'soThung', 'tongKg', 'tyLe', 'quyDoi']);
+    expect(cards[0].fields.map((f) => f.key)).toEqual(['soKg', 'phieuNhap', 'soThung', 'tongKg', 'tyLe', 'heSo', 'quyDoi']);
     expect(cards[1].fields.map((f) => f.key)).not.toContain('phieuNhap');
     expect(cards[0].ghiChu).toBe('lô A');
   });
@@ -30,6 +30,9 @@ describe('buildPhamCapMobileCards', () => {
     expect(cards[0].fields.find((f) => f.key === 'phieuNhap')?.value).toBeNull();
     expect(cards[0].fields.find((f) => f.key === 'tongKg')?.value).toBe(130);
     expect(cards[0].fields.find((f) => f.key === 'tyLe')).toMatchObject({ value: 100, pct: true });
+    // Có hệ số → quy đổi = 10 × 1,2 (không lấy số 10 đã lưu); dòng không hệ số → ô hệ số null.
+    expect(cards[0].fields.find((f) => f.key === 'quyDoi')?.value).toBe(12);
+    expect(cards[1].fields.find((f) => f.key === 'heSo')?.value).toBeNull();
   });
 });
 

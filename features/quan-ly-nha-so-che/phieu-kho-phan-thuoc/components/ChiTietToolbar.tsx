@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Download, Calendar, Layers, FolderTree } from 'lucide-react';
+import { FileText, Warehouse, ArrowRightLeft, Tag, User, CheckCircle, Download, Calendar, Layers, FolderTree, Award } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -11,6 +11,7 @@ import { useSearchInputCommit } from '../../../../lib/hooks/use-search-input-com
 import { useChiTietPhieuKhoPTStore, type DatePresetIdChiTietPT } from '../store/useChiTietPhieuKhoPTStore';
 import { useHangMucDangDung } from '../hooks/use-phieu-kho-pt';
 import { useFarmDanhMucCap2WithParent } from '../../hang-hoa-phan-thuoc/hooks/use-farm-danh-muc';
+import { useFarmHangHoaList } from '../../hang-hoa-phan-thuoc/hooks/use-farm-hang-hoa';
 import { useXemGiaNhap } from '../../../he-thong/phan-quyen/hooks/use-xem-gia-nhap';
 import { anhXaChiSoSapXep, locCotTheoXemGia } from '../utils/loc-cot-gia';
 import type { ChiTietPhieuKhoPTFlat } from '../core/types';
@@ -47,6 +48,7 @@ const ChiTietToolbar: React.FC<Props> = ({
   const { t } = useTranslation();
   const { data: hangMucDangDung = [] } = useHangMucDangDung();
   const { data: danhMucCap2 = [] } = useFarmDanhMucCap2WithParent();
+  const { data: hangHoaList = [] } = useFarmHangHoaList();
   const searchTerm = useChiTietPhieuKhoPTStore((s) => s.searchTerm);
   const commitSearchTerm = useChiTietPhieuKhoPTStore((s) => s.commitSearchTerm);
   const filters = useChiTietPhieuKhoPTStore((s) => s.filters);
@@ -156,6 +158,20 @@ const ChiTietToolbar: React.FC<Props> = ({
     [danhMucCap2]
   );
 
+  /**
+   * Phẩm cấp lấy theo danh mục hàng hoá (cùng nguồn tab «Theo phẩm cấp»), kèm «Chưa có phẩm cấp».
+   * Không đếm số dòng: dòng chi tiết chỉ mang snapshot phẩm cấp, có thể lệch danh mục hiện tại.
+   */
+  const phamCapOptions = useMemo(() => {
+    const ds = [...new Set(hangHoaList.map((h) => h.pham_cap?.trim() ?? '').filter((x) => x !== ''))].sort((a, b) =>
+      a.localeCompare(b, 'vi')
+    );
+    return [
+      ...ds.map((pc) => ({ value: pc, label: pc, count: 1 })),
+      { value: '__none__', label: t('phieuKhoPhanThuoc.filters.chuaCoPhamCap'), count: 1 },
+    ];
+  }, [hangHoaList, t]);
+
   const nguoiTaoOptions = useMemo(() => {
     if (unweighted && employeesForChips.length) {
       return [...employeesForChips]
@@ -224,6 +240,7 @@ const ChiTietToolbar: React.FC<Props> = ({
       (filters.nguoiTaoIds?.length ?? 0 ? 1 : 0) +
       (filters.nguoiDuyetIds?.length ?? 0 ? 1 : 0) +
       (filters.hangMuc?.length ?? 0 ? 1 : 0) +
+      (filters.phamCap?.length ?? 0 ? 1 : 0) +
       (filters.danhMucIds?.length ?? 0 ? 1 : 0),
     [
       searchInput,
@@ -235,6 +252,7 @@ const ChiTietToolbar: React.FC<Props> = ({
       filters.nguoiTaoIds?.length,
       filters.nguoiDuyetIds?.length,
       filters.hangMuc?.length,
+      filters.phamCap?.length,
       filters.danhMucIds?.length,
     ]
   );
@@ -282,6 +300,14 @@ const ChiTietToolbar: React.FC<Props> = ({
         onChange: (val: string[]) => setFilter('hangMuc', val),
       },
       {
+        key: 'phamCap',
+        label: t('phieuKhoPhanThuoc.store.phamCapCol'),
+        icon: Award,
+        options: phamCapOptions,
+        value: filters.phamCap ?? [],
+        onChange: (val: string[]) => setFilter('phamCap', val),
+      },
+      {
         key: 'danhMuc',
         label: t('phieuKhoPhanThuoc.filters.danhMuc'),
         icon: FolderTree,
@@ -313,6 +339,7 @@ const ChiTietToolbar: React.FC<Props> = ({
       khoOptions,
       khoDenOptions,
       hangMucOptions,
+      phamCapOptions,
       danhMucOptions,
       nguoiTaoOptions,
       nguoiDuyetOptions,
@@ -321,6 +348,7 @@ const ChiTietToolbar: React.FC<Props> = ({
       filters.khoIds,
       filters.khoDenIds,
       filters.hangMuc,
+      filters.phamCap,
       filters.danhMucIds,
       filters.nguoiTaoIds,
       filters.nguoiDuyetIds,
@@ -369,8 +397,17 @@ const ChiTietToolbar: React.FC<Props> = ({
     setFilter('customDateEnd', v.customEnd);
   };
 
-  const [loaiGroup, trangThaiGroup, khoGroup, khoDenGroup, hangMucGroup, danhMucGroup, nguoiTaoGroup, nguoiDuyetGroup] =
-    filterGroupsComputed;
+  const [
+    loaiGroup,
+    trangThaiGroup,
+    khoGroup,
+    khoDenGroup,
+    hangMucGroup,
+    phamCapGroup,
+    danhMucGroup,
+    nguoiTaoGroup,
+    nguoiDuyetGroup,
+  ] = filterGroupsComputed;
   const filterItems: FilterChipItem[] = [
     { kind: 'group', group: loaiGroup, className: 'w-full sm:w-[140px]' },
     { kind: 'group', group: trangThaiGroup, className: 'w-full sm:w-[130px]' },
@@ -390,6 +427,7 @@ const ChiTietToolbar: React.FC<Props> = ({
     },
     { kind: 'group', group: khoGroup, className: 'w-full sm:w-[160px]' },
     { kind: 'group', group: khoDenGroup, className: 'w-full sm:w-[160px]' },
+    { kind: 'group', group: phamCapGroup },
     { kind: 'group', group: danhMucGroup },
     { kind: 'group', group: hangMucGroup },
     { kind: 'group', group: nguoiTaoGroup },
@@ -430,6 +468,7 @@ const ChiTietToolbar: React.FC<Props> = ({
         setFilter('nguoiTaoIds', []);
         setFilter('nguoiDuyetIds', []);
         setFilter('hangMuc', []);
+        setFilter('phamCap', []);
         setFilter('danhMucIds', []);
       }}
       columns={columns}

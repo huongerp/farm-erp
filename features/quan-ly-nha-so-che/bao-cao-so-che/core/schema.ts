@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import i18n from '../../../../lib/i18n';
 import { emptyPhamCapRows, PHAM_CAP_ROWS_MAX } from './pham-cap';
+import { HE_SO_QUY_DOI_MAX } from './he-so-quy-doi';
 import { kpiThuongArraySchema } from '../../shared/kpi-thuong/schema';
 import { defaultBcscKpiThuongRows } from './kpi-thuong-presets';
 
@@ -14,6 +15,7 @@ function phamCapRowHasNumbers(r: {
 }): boolean {
   const n = (v: unknown) => Number(v) || 0;
   const note = typeof r.ghi_chu === 'string' ? r.ghi_chu.trim() : '';
+  // Hệ số tự điền sẵn theo phẩm cấp → không tính là «có số» (dòng chỉ có hệ số vẫn bỏ qua được).
   return n(r.so_tham_chieu) !== 0 || n(r.so_thung) !== 0 || n(r.so_thung_quy_doi) !== 0 || note !== '';
 }
 
@@ -22,6 +24,11 @@ const phamCapRowFormSchema = z.object({
   so_tham_chieu: z.coerce.number().min(0).default(0),
   so_thung: z.coerce.number().min(0).default(0),
   so_thung_quy_doi: z.coerce.number().min(0).default(0),
+  /** '' / null → null (z.coerce sẽ biến null thành 0 nên không dùng coerce). */
+  he_so_quy_doi: z.preprocess(
+    (v) => (v == null || v === '' ? null : Number(v)),
+    z.number().min(0).max(HE_SO_QUY_DOI_MAX).nullable()
+  ).optional(),
   ghi_chu: z.string().max(500).default(''),
 });
 

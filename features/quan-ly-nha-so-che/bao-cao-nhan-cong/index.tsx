@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { List, CalendarDays } from 'lucide-react';
+import { List, CalendarDays, Coins } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import DanhSachTab from './components/DanhSachTab';
 import TongHopNgayTab from './components/TongHopNgayTab';
+import ThuongVuotThangTab from './components/ThuongVuotThangTab';
 
-const VALID_TABS = ['list', 'tong-hop'] as const;
+const VALID_TABS = ['list', 'tong-hop', 'thuong-vuot'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 const BaoCaoNhanCongPage: React.FC = () => {
@@ -38,6 +39,7 @@ const BaoCaoNhanCongPage: React.FC = () => {
     () => [
       { id: 'list', label: t('baoCaoNhanCong.tabs.list'), icon: List },
       { id: 'tong-hop', label: t('baoCaoNhanCong.tabs.tongHop'), icon: CalendarDays },
+      { id: 'thuong-vuot', label: t('baoCaoNhanCong.tabs.thuongVuot'), icon: Coins },
     ],
     [t]
   );
@@ -51,6 +53,7 @@ const BaoCaoNhanCongPage: React.FC = () => {
       <div className="flex-1 min-h-0 flex flex-col mt-1.5">
         {activeTab === 'list' && <DanhSachTab />}
         {activeTab === 'tong-hop' && <TongHopNgayTab />}
+        {activeTab === 'thuong-vuot' && <ThuongVuotThangTab />}
       </div>
     </div>
   );

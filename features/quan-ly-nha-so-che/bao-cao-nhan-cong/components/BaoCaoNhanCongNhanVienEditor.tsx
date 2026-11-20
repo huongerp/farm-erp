@@ -15,6 +15,7 @@ import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { buoiCuaChamCong, chamChieuCaChuyen, nvCoTen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import { mucTieuNsNhom, type SoThungNhom } from '../core/nang-suat-nhom';
+import type { HeSoNhom } from '../core/thuong-vuot-thung';
 import BaoCaoNhanCongSanLuongNhom from './BaoCaoNhanCongSanLuongNhom';
 import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
@@ -59,12 +60,18 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const themViTriNeuMoi = useThemViTriNeuMoi();
   const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
+  /**
+   * Cột hẹp có bề rộng cố định (không dùng `auto`): mỗi dòng là một grid riêng, `auto` khiến dòng
+   * tiêu đề và dòng dữ liệu lệch cột. Phần còn lại dồn cho Họ tên để đọc đủ tên trước khi xoá.
+   */
   const gridCols = ngoaiLe
-    ? 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_6rem_auto_minmax(0,1.5fr)_auto]'
-    : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,1.5fr)_6rem_auto_5.5rem_5.5rem_minmax(0,1.5fr)_auto]';
+    ? 'sm:grid-cols-[1.5rem_minmax(11rem,2.4fr)_minmax(7rem,1.2fr)_6rem_9.5rem_minmax(6rem,1fr)_2.25rem]'
+    : 'sm:grid-cols-[1.5rem_minmax(11rem,2.4fr)_minmax(7rem,1.2fr)_6rem_9.5rem_4.5rem_4.5rem_minmax(6rem,1fr)_2.25rem]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
   const soThungNhom = useWatch({ control, name: `chi_tiet.${chiTietIndex}.so_thung_nhom` }) as SoThungNhom | undefined;
+  const heSoNhom = useWatch({ control, name: `chi_tiet.${chiTietIndex}.he_so_nhom` }) as HeSoNhom | undefined;
+  const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
   const mucTieuRaw = useWatch({ control, name: 'muc_tieu_ns_nhom' });
   const mucTieu = mucTieuNsNhom(mucTieuRaw);
   /** Khối sản lượng nhóm chỉ hiện khi có người có tên đã chia nhóm; Ngoại lệ không tính giờ nên bỏ. */
@@ -176,6 +183,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
 
       {ds.length > 0 && (
         <div className={`hidden sm:grid ${gridCols} gap-2 px-2 text-caption text-muted-foreground`}>
+          <span className="text-right">#</span>
           <span>{t('baoCaoNhanCong.nv.hoTen')}</span>
           <span>{t('baoCaoNhanCong.nv.viTri')}</span>
           <span>{t('baoCaoNhanCong.nv.nhom')}</span>
@@ -185,18 +193,20 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
             <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
           </>)}
           <span>{t('baoCaoNhanCong.nv.ghiChu')}</span>
-          <span className="w-9" />
+          <span />
         </div>
       )}
 
       {ds.map((row, idx) => {
         const err = nvErrors?.[idx];
         const moi = laTenMoi(row.ho_ten, dsTenDanhMuc);
+        const nhanXoa = row.ho_ten?.trim() ? t('baoCaoNhanCong.nv.xoaKhoiChuyen', { ten: row.ho_ten.trim() }) : t('common.delete');
         return (
           <div
             key={idx}
             className={`grid grid-cols-2 ${gridCols} gap-2 items-start rounded-lg bg-muted/30 p-2`}
           >
+            <span className="hidden sm:block h-9 leading-9 text-right text-caption tabular-nums text-muted-foreground">{idx + 1}</span>
             <div className="col-span-2 sm:col-span-1 min-w-0">
               <Combobox
                 options={tenOptions}
@@ -235,12 +245,13 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 label={isMobile ? t('baoCaoNhanCong.nv.nhom') : undefined}
                 placeholder={t('baoCaoNhanCong.nv.nhomTrong')}
                 searchable={false}
+                clearable={false}
                 dropdownInPortal
                 error={err?.so_nhom?.message as string | undefined}
               />
             </div>
-            <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 self-start">
-              <div className="inline-flex rounded-md border border-border overflow-hidden h-9">
+            <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 self-start min-w-0">
+              <div className="inline-flex sm:flex sm:w-full rounded-md border border-border overflow-hidden h-9">
                 {(['sang', 'chieu'] as const).map((buoi) => {
                   const bat = buoiCuaChamCong(row.cham_cong)[buoi];
                   return (
@@ -299,7 +310,8 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                   size="sm"
                   className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
                   onClick={() => xoa(idx)}
-                  aria-label={t('common.delete')}
+                  aria-label={nhanXoa}
+                  title={nhanXoa}
                 >
                   <Trash2 size={15} />
                 </Button>
@@ -324,7 +336,8 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                   size="sm"
                   className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
                   onClick={() => xoa(idx)}
-                  aria-label={t('common.delete')}
+                  aria-label={nhanXoa}
+                  title={nhanXoa}
                 >
                   <Trash2 size={15} />
                 </Button>
@@ -336,7 +349,8 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
               size="sm"
               className="h-9 w-9 p-0 shrink-0 text-rose-600 hidden sm:inline-flex"
               onClick={() => xoa(idx)}
-              aria-label={t('common.delete')}
+              aria-label={nhanXoa}
+              title={nhanXoa}
             >
               <Trash2 size={15} />
             </Button>
@@ -364,8 +378,11 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
           loaiChuyen={loaiChuyen}
           nhanVien={ds}
           soThungNhom={soThungNhom}
+          heSoNhom={heSoNhom}
+          idChiNhanh={idChiNhanh}
           mucTieu={mucTieu}
           onChange={(next) => setValue(`chi_tiet.${chiTietIndex}.so_thung_nhom`, next, { shouldDirty: true })}
+          onChangeHeSoNhom={(next) => setValue(`chi_tiet.${chiTietIndex}.he_so_nhom`, next, { shouldDirty: true })}
         />
       )}
     </div>

@@ -19,7 +19,13 @@ import i18n from '../../../../lib/i18n';
 import type { FarmBaoCaoSoChe, FarmBaoCaoKpiThuongRow, TrangThaiBaoCaoSoChePhieu } from '../core/types';
 import { computeKpiPhanTram } from '../../shared/kpi-thuong/types';
 import { TRANG_THAI_BAO_CAO_SO_CHE } from '../core/types';
-import { defaultPhamCapModelRows, inferSoThamChieuKgPerThung, type FarmBaoCaoSoChePhamCapRow } from '../core/pham-cap';
+import {
+  defaultPhamCapModelRows,
+  heSoOrNull,
+  inferSoThamChieuKgPerThung,
+  type FarmBaoCaoSoChePhamCapRow,
+} from '../core/pham-cap';
+import { phamCapTongQuyDoiRow } from '../core/pham-cap-derived';
 import type { BaoCaoSoCheFormValues } from '../core/schema';
 import {
   SO_LIEU_BUONG_ROW_DEFS,
@@ -42,7 +48,7 @@ const ROW_CHA = 'id,ngay,id_chi_nhanh,ten_chi_nhanh,tong_luong,ghi_chu,id_nguoi_
 const ROW_CT = 'id,id_bao_cao,ma_chi_tieu,gia_tri,don_vi_tinh,ghi_chu,thu_tu';
 
 const ROW_PCAP =
-  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,ghi_chu,thu_tu';
+  'id,id_bao_cao,ten_pham_cap,so_tham_chieu,so_thung,so_thung_quy_doi,he_so_quy_doi,ghi_chu,thu_tu';
 
 const ROW_KPI =
   'id,id_bao_cao,thu_tu,ten_hang_muc,don_vi_tinh,muc_tieu,thuc_te,phan_tram,danh_gia,tien_thuong,thuong_ql,thuong_nhom_tia,thuong_nhom_cp,ghi_chu';
@@ -146,6 +152,7 @@ interface DbRowPcap {
   so_tham_chieu: string | number | null;
   so_thung: string | number | null;
   so_thung_quy_doi: string | number | null;
+  he_so_quy_doi: string | number | null;
   ghi_chu: string | null;
   thu_tu: number | null;
 }
@@ -165,6 +172,7 @@ function pcapDbRowsToModel(rows: DbRowPcap[]): FarmBaoCaoSoChePhamCapRow[] {
         }),
         so_thung,
         so_thung_quy_doi: num(r.so_thung_quy_doi),
+        he_so_quy_doi: numNullable(r.he_so_quy_doi),
         ghi_chu: r.ghi_chu ?? '',
         thu_tu: Number(r.thu_tu) || 0,
       };
@@ -396,7 +404,9 @@ function pcapRowsFromForm(values: BaoCaoSoCheFormValues, idBaoCao: number) {
       ten_pham_cap: String(r.ten_pham_cap).trim(),
       so_tham_chieu: r.so_tham_chieu ?? 0,
       so_thung: r.so_thung ?? 0,
-      so_thung_quy_doi: r.so_thung_quy_doi ?? 0,
+      he_so_quy_doi: heSoOrNull(r.he_so_quy_doi),
+      // Có hệ số → lưu kết quả số thùng × hệ số; không có → giữ số cũ (phiếu nhập tay trước đây).
+      so_thung_quy_doi: phamCapTongQuyDoiRow(r),
       ghi_chu: r.ghi_chu?.trim() || null,
       thu_tu: idx + 1,
     }));
