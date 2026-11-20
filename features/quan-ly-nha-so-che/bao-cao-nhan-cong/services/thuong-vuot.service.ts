@@ -1,9 +1,10 @@
 /**
  * Thưởng vượt thùng (migration 087): cài đặt đơn giá / ngưỡng / hệ số theo nhà sơ chế và
- * hệ số lỗi Ki theo tháng. Tiền tính ở `core/thuong-vuot-thung.ts`, không lưu DB.
+ * hệ số lỗi Ki theo tháng. Tiền tính ở `core/thuong-vuot-thung.ts`; chỉ lưu ảnh chụp khi chốt tháng (089).
  */
 import { db, throwDbError } from '../../../../lib/db';
-import { caiDatTuDb, docHeSo, type CaiDatThuongVuot, type DongHeSoDb } from '../core/thuong-vuot-thung';
+import { caiDatTuDb, docHeSo, type CaiDatThuongVuot, type DongHeSoDb, type DongThuongThang } from '../core/thuong-vuot-thung';
+import { dongChotTuThuongThang, dongThuongTuChot, type DongChotDb } from '../core/chot-thuong-thang';
 import { CHUYEN_PRODUCTION_CODES } from '../core/types';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 
@@ -99,4 +100,80 @@ export async function luuHeSoLoiThang(p: LuuHeSoLoi): Promise<void> {
       { onConflict: 'id_chi_nhanh,thang,khoa_nv' }
     );
   if (error) throwDbError(error, { resource: `${TABLE_KI}.upsert` });
+}
+
+// ---------------------------------------------------------------------------
+// Chốt thưởng tháng (migration 089): ảnh chụp số tiền từng người; ghi chỉ qua RPC.
+// ---------------------------------------------------------------------------
+
+const TABLE_CHOT = 'fp_farm_bcnc_chot_thang';
+
+export interface ChotThuongThang {
+  id: string;
+  tgChot: string;
+  nguoiChot: string | null;
+  soNguoi: number;
+  tongTien: number;
+  donGia: number | null;
+  nguongPct: number | null;
+  dong: DongThuongThang[];
+}
+
+/** Ảnh chụp tháng đã chốt của một nhà sơ chế; chưa chốt → null. */
+export async function getChotThang(idChiNhanh: string, thang: string): Promise<ChotThuongThang | null> {
+  const { data, error } = await db
+    .from(TABLE_CHOT)
+    .select(
+      'id,tg_chot,so_nguoi,tong_tien,don_gia_vuot,nguong_ns_pct,nguoi:fp_var_nhan_vien!nguoi_chot(ho_va_ten),' +
+        'dong:fp_farm_bcnc_chot_thang_ct(thu_tu,khoa_nv,id_nhan_vien,ho_ten,vi_tri,chuyen,so_ngay,gio_cong,thung_vuot,tien_truoc_ki,ki,tien,chi_tiet_ngay)'
+    )
+    .eq('id_chi_nhanh', idSo(idChiNhanh))
+    .eq('thang', ngayDauThang(thang))
+    .maybeSingle();
+  if (error) throwDbError(error, { resource: TABLE_CHOT });
+  if (!data) return null;
+  const r = data as unknown as {
+    id: number;
+    tg_chot: string;
+    so_nguoi: number;
+    tong_tien: number | string;
+    don_gia_vuot: number | string | null;
+    nguong_ns_pct: number | string | null;
+    nguoi: { ho_va_ten: string | null } | null;
+    dong: DongChotDb[] | null;
+  };
+  const soHoacNull = (v: number | string | null) => (v == null ? null : Number(v));
+  return {
+    id: String(r.id),
+    tgChot: r.tg_chot,
+    nguoiChot: r.nguoi?.ho_va_ten ?? null,
+    soNguoi: Number(r.so_nguoi) || 0,
+    tongTien: Number(r.tong_tien) || 0,
+    donGia: soHoacNull(r.don_gia_vuot),
+    nguongPct: soHoacNull(r.nguong_ns_pct),
+    dong: dongThuongTuChot(r.dong ?? []),
+  };
+}
+
+export interface ChotThangInput {
+  idChiNhanh: string;
+  thang: string;
+  caiDat: CaiDatThuongVuot;
+  ds: readonly DongThuongThang[];
+}
+
+export async function chotThang(p: ChotThangInput): Promise<void> {
+  const { error } = await db.rpc('rpc_bcnc_chot_thang', {
+    p_id_chi_nhanh: idSo(p.idChiNhanh),
+    p_thang: ngayDauThang(p.thang),
+    p_don_gia: p.caiDat.donGia,
+    p_nguong_pct: p.caiDat.nguongPct,
+    p_dong: dongChotTuThuongThang(p.ds),
+  });
+  if (error) throwDbError(error, { resource: 'rpc_bcnc_chot_thang' });
+}
+
+export async function moChotThang(idChiNhanh: string, thang: string): Promise<void> {
+  const { error } = await db.rpc('rpc_bcnc_mo_chot_thang', { p_id_chi_nhanh: idSo(idChiNhanh), p_thang: ngayDauThang(thang) });
+  if (error) throwDbError(error, { resource: 'rpc_bcnc_mo_chot_thang' });
 }

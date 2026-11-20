@@ -11,7 +11,7 @@ import { useAuthStore } from '../../../../store/useStore';
 
 /** Phân quyền module báo cáo nhân công (xem / thêm / sửa / xóa / quản trị + quy tắc khóa phiếu). */
 export function useBaoCaoNhanCongPermissions() {
-  const { canView, canCreate, canUpdate, canDelete, canAdmin, isLoading } =
+  const { canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading } =
     useModulePermissionFromContext();
   const capBac = useAuthStore((s) => s.user?.cap_bac);
 
@@ -31,6 +31,10 @@ export function useBaoCaoNhanCongPermissions() {
       canCopyNextDay: () => canCopyBaoCaoNhanCongToNextDay(canCreate || canAdmin),
       /** Thêm vị trí công việc mới vào danh mục dùng chung — chỉ cấp cao. */
       canThemViTri: coQuyenThemViTri({ canAdmin, capBac }),
+      /** Chốt thưởng vượt tháng — khớp rpc_bcnc_chot_thang (approve/admin/all, migration 089). */
+      canChotThuongThang: canApprove || canAdmin,
+      /** Mở chốt — khớp rpc_bcnc_mo_chot_thang (admin/all). */
+      canMoChotThuongThang: canAdmin,
       canMutate: (item: FarmBaoCaoNhanCong, action: 'update' | 'delete') =>
         canMutateBaoCaoNhanCong(
           item,
@@ -38,6 +42,6 @@ export function useBaoCaoNhanCongPermissions() {
           canAdmin
         ),
     }),
-    [canView, canCreate, canUpdate, canDelete, canAdmin, isLoading, capBac]
+    [canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading, capBac]
   );
 }

@@ -25,6 +25,7 @@ React 19 + Vite + TypeScript (PWA) · PostgREST self-host + auth-service (JWT, m
 | Báo cáo nhân công: cột Nhóm (chia nhóm chạy năng suất), in «Danh sách theo nhóm», Excel có cột Nhóm | ✅ xong (migration 084 đã chạy 17/11/2026) |
 | Báo cáo nhân công: số thùng theo nhóm, năng suất nhóm (thùng/giờ-người, mục tiêu 3) và thưởng nhóm chuyền Tỉa | ✅ xong (migration 085 đã chạy 17/11/2026) — thưởng nhóm cộng thêm vào thưởng «nhóm tỉa» của Báo cáo sơ chế (chốt 18/11/2026) |
 | Báo cáo nhân công: thưởng vượt thùng cho công nhân (1.000đ × hệ số chuyền × hệ số nhóm, ngưỡng 90% mục tiêu, Ki tháng), tab «Thưởng vượt tháng», Cài đặt hệ số; Báo cáo sơ chế: ngưỡng KPI Năng suất 90% | ✅ xong (migration 087 đã chạy 20/11/2026) |
+| Báo cáo nhân công: chốt thưởng vượt tháng (ảnh chụp số tiền, khoá phiếu + Ki tháng đã chốt, quản trị mở chốt) và in «Bảng thưởng vượt thùng tháng» có cột ký nhận + hàng ký | ✅ xong (migration 089 đã chạy 20/11/2026) |
 | Báo cáo sơ chế: hệ số quy đổi cho từng phẩm cấp / loại thùng (Tổng quy đổi = số thùng × hệ số, hệ số gõ một lần rồi bấm chọn, phiếu mới tự điền theo phẩm cấp) | ✅ xong (migration 086 đã chạy 20/11/2026) |
 | Phiếu kho Sơ chế/Phân thuốc — tab Theo hạng mục: suy giá như NXT, luân chuyển farm đi → farm đến, theo farm, hàng chưa có giá | ✅ xong (migration 082 đã chạy 17/11/2026) |
 | Phiếu kho Sơ chế/Phân thuốc — tab đổi thành «Theo phẩm cấp» (phẩm cấp cố định theo danh mục hàng hoá), lọc Phẩm cấp ở Chi tiết dòng | ✅ xong (migration 088 đã chạy 20/11/2026) |

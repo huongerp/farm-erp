@@ -1,21 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import { Calendar, ChevronDown, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Calendar, ChevronDown, ChevronRight, FileSpreadsheet, Lock, LockOpen, Printer } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Select from '../../../../components/ui/Select';
 import EmptyState from '../../../../components/shared/EmptyState';
 import ErrorState from '../../../../components/shared/ErrorState';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
-import { cn, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
-import { docHeSo, tongHopThuongThang, type DongThuongThang } from '../core/thuong-vuot-thung';
+import { cn, formatDateTime, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
+import { useConfirmStore } from '../../../../store/useConfirmStore';
+import { docHeSo, type DongThuongThang } from '../core/thuong-vuot-thung';
+import { tongThuongThang } from '../core/chot-thuong-thang';
+import { duongDanInThuongThang } from '../core/preview-url';
 import {
-  useCaiDatThuongVuot,
-  useHeSoLoiThang,
+  useBangThuongThang,
+  useChotThangMutation,
   useLuuHeSoLoiThang,
+  useMoChotThangMutation,
   useNhaSoCheTrongPhamVi,
-  usePhieuThangThuongVuot,
-  useViTriKhongThuongVuot,
 } from '../hooks/use-thuong-vuot';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 import { exportThuongVuotThangToXLSX } from '../utils/export-thuong-vuot-thang';
@@ -75,32 +77,50 @@ const ThuongVuotThangTab: React.FC = () => {
       { replace: true }
     );
 
-  const { canUpdate, canAdmin } = useBaoCaoNhanCongPermissions();
-  const coQuyenKi = canUpdate || canAdmin;
-  const { caiDat, isPending: dangTaiCaiDat } = useCaiDatThuongVuot(idChiNhanh);
-  const viTriLoai = useViTriKhongThuongVuot();
-  const phieuQ = usePhieuThangThuongVuot(idChiNhanh, thang, scope, !scope.isLoading);
-  const kiQ = useHeSoLoiThang(idChiNhanh, thang, !scope.isLoading);
+  const { canUpdate, canAdmin, canChotThuongThang, canMoChotThuongThang } = useBaoCaoNhanCongPermissions();
+  const bang = useBangThuongThang(idChiNhanh, thang, scope);
+  const { ds, chot, caiDat } = bang;
+  const daChot = chot != null;
+  const coQuyenKi = (canUpdate || canAdmin) && !daChot;
   const luuKi = useLuuHeSoLoiThang();
+  const chotM = useChotThangMutation();
+  const moChotM = useMoChotThangMutation();
+  const confirm = useConfirmStore((s) => s.confirm);
+  const navigate = useNavigate();
   const [moRong, setMoRong] = useState<string | null>(null);
 
-  const ds = useMemo(
-    () => tongHopThuongThang(phieuQ.data ?? [], caiDat, viTriLoai, kiQ.data ?? {}),
-    [phieuQ.data, caiDat, viTriLoai, kiQ.data]
-  );
-  const tong = ds.reduce(
-    (s, d) => ({ gio: s.gio + d.gioCong, thung: s.thung + d.thungVuotQuyDoi, truocKi: s.truocKi + d.tienTruocKi, tien: s.tien + d.tien }),
-    { gio: 0, thung: 0, truocKi: 0, tien: 0 }
-  );
-  const isLoading = dangTaiNha || (idChiNhanh !== '' && (phieuQ.isPending || kiQ.isPending || dangTaiCaiDat));
+  const tong = useMemo(() => tongThuongThang(ds), [ds]);
+  const isLoading = dangTaiNha || bang.isLoading;
+  const thangHienThi = `${thang.slice(5, 7)}/${thang.slice(0, 4)}`;
+
+  const hoiChot = () =>
+    confirm({
+      title: t('baoCaoNhanCong.vuot.chotTieuDe', { thang: thangHienThi }),
+      message: t('baoCaoNhanCong.vuot.chotNoiDung', {
+        nhaSoChe: tenNhaSoChe,
+        n: ds.length,
+        tien: formatNumberVN(tong.tien),
+      }),
+      variant: 'warning',
+      confirmText: t('baoCaoNhanCong.vuot.chotThang'),
+      onConfirm: () => chotM.mutateAsync({ idChiNhanh, thang, caiDat, ds }).then(() => undefined),
+    });
+  const hoiMoChot = () =>
+    confirm({
+      title: t('baoCaoNhanCong.vuot.moChotTieuDe', { thang: thangHienThi }),
+      message: t('baoCaoNhanCong.vuot.moChotNoiDung'),
+      variant: 'danger',
+      confirmText: t('baoCaoNhanCong.vuot.moChot'),
+      onConfirm: () => moChotM.mutateAsync({ idChiNhanh, thang }).then(() => undefined),
+    });
 
   const renderBody = () => {
     if (isLoading) return <LoadingSpinnerWithText text={t('baoCaoNhanCong.loading')} className="py-10" />;
     if (options.length === 0) return <EmptyState title={t('baoCaoNhanCong.vuot.chuaCoNhaSoChe')} />;
-    if (phieuQ.isError || kiQ.isError) return <ErrorState onRetry={() => { void phieuQ.refetch(); void kiQ.refetch(); }} />;
+    if (bang.isError) return <ErrorState onRetry={bang.refetch} />;
     if (ds.length === 0) return <EmptyState title={t('baoCaoNhanCong.vuot.thangTrong')} />;
     return (
-      <div className={cn('overflow-x-auto rounded-lg border border-border transition-opacity', phieuQ.isFetching && 'opacity-60')}>
+      <div className={cn('overflow-x-auto rounded-lg border border-border transition-opacity', bang.isFetching && 'opacity-60')}>
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-muted text-muted-foreground">
@@ -216,17 +236,46 @@ const ThuongVuotThangTab: React.FC = () => {
             </div>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={ds.length === 0}
-          onClick={() => void exportThuongVuotThangToXLSX({ ds, thang, tenNhaSoChe, caiDat })}
-        >
-          <FileSpreadsheet size={14} className="mr-1.5" />
-          {t('baoCaoNhanCong.vuot.xuatExcel')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {!daChot && canChotThuongThang && (
+            <Button type="button" size="sm" disabled={ds.length === 0 || isLoading || chotM.isPending} onClick={hoiChot}>
+              <Lock size={14} className="mr-1.5" />
+              {t('baoCaoNhanCong.vuot.chotThang')}
+            </Button>
+          )}
+          {daChot && canMoChotThuongThang && (
+            <Button type="button" variant="outline" size="sm" disabled={moChotM.isPending} onClick={hoiMoChot}>
+              <LockOpen size={14} className="mr-1.5" />
+              {t('baoCaoNhanCong.vuot.moChot')}
+            </Button>
+          )}
+          {ds.length > 0 && idChiNhanh !== '' && (
+            <Button type="button" variant="outline" size="sm" onClick={() => navigate(duongDanInThuongThang(idChiNhanh, thang))}>
+              <Printer size={14} className="mr-1.5" />
+              {t('baoCaoNhanCong.vuot.inBangThuong')}
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={ds.length === 0}
+            onClick={() => void exportThuongVuotThangToXLSX({ ds, thang, tenNhaSoChe, caiDat })}
+          >
+            <FileSpreadsheet size={14} className="mr-1.5" />
+            {t('baoCaoNhanCong.vuot.xuatExcel')}
+          </Button>
+        </div>
       </div>
+      {daChot && (
+        <p className="shrink-0 m-0 mx-4 mt-3 flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+          <Lock size={14} className="shrink-0" />
+          {t('baoCaoNhanCong.vuot.daChotBoi', {
+            nguoi: chot.nguoiChot ?? '—',
+            luc: formatDateTime(chot.tgChot),
+          })}
+        </p>
+      )}
       <p className="shrink-0 m-0 px-4 pt-2 text-caption text-muted-foreground">
         {t('baoCaoNhanCong.vuot.ghiChuThang', {
           nguongPct: formatNumberVN(caiDat.nguongPct, { maxFractionDigits: 2 }),
