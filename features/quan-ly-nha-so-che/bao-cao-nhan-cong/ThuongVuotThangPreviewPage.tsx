@@ -50,7 +50,7 @@ export const NoiDungBangThuong: React.FC<{
             <th className={cn(th, 'text-left')}>{t('baoCaoNhanCong.nsNhom.colHoTen')}</th>
             <th className={cn(th, 'text-left')}>{t('baoCaoNhanCong.vuot.colViTri')}</th>
             <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.vuot.colSoNgay')}</th>
-            <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.nv.gioCong')}</th>
+            <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.vuot.colGioTinh')}</th>
             <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.vuot.colThungQuyDoi')}</th>
             <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.vuot.colTruocKi')}</th>
             <th className={cn(th, 'text-right')}>{t('baoCaoNhanCong.vuot.colKi')}</th>

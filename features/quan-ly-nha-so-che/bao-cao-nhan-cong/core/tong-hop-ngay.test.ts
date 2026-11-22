@@ -30,7 +30,7 @@ describe('tongHopNhanSuTheoNgay', () => {
       []
     );
     expect(dong).toHaveLength(1);
-    expect(dong[0]!.soNguoi).toEqual({ quanLy: 3, xanTia: 10, canDongThung: 5, kho: 1, tangCuong: 3 });
+    expect(dong[0]!.soNguoi).toEqual({ quanLy: 1, xanTia: 10, canDongThung: 5, kho: 3, tangCuong: 3 });
     expect(dong[0]!.tongNs).toBe(22);
     expect(dong[0]!.daBaoCao).toBe(true);
   });
@@ -59,7 +59,7 @@ describe('tongHopNhanSuTheoNgay', () => {
       ['Nhà An', false],
       ['Nhà Bình', true],
     ]);
-    expect(tongCong).toEqual({ quanLy: 0, xanTia: 0, canDongThung: 0, kho: 4, tangCuong: 0, tongNs: 4 });
+    expect(tongCong).toEqual({ quanLy: 4, xanTia: 0, canDongThung: 0, kho: 0, tangCuong: 0, tongNs: 4 });
   });
 
   it('giá trị rỗng / null / chuỗi lỗi → 0, chuỗi số vẫn cộng', () => {
@@ -67,7 +67,7 @@ describe('tongHopNhanSuTheoNgay', () => {
       [phieu('1', 'Nhà A', [ct('XAN_NAI', null, ''), ct('TIA_DANH_GIA', 'abc', undefined), ct('KHO_HUT_CHAN_KHONG', '2', '1')])],
       []
     );
-    expect(dong[0]!.soNguoi).toEqual({ quanLy: 0, xanTia: 0, canDongThung: 0, kho: 3, tangCuong: 0 });
+    expect(dong[0]!.soNguoi).toEqual({ quanLy: 3, xanTia: 0, canDongThung: 0, kho: 0, tangCuong: 0 });
     expect(Number.isNaN(dong[0]!.tongNs)).toBe(false);
   });
 
@@ -79,7 +79,7 @@ describe('tongHopNhanSuTheoNgay', () => {
       ],
       []
     );
-    expect(tongCong).toEqual({ quanLy: 4, xanTia: 0, canDongThung: 0, kho: 0, tangCuong: 5, tongNs: 9 });
+    expect(tongCong).toEqual({ quanLy: 0, xanTia: 0, canDongThung: 0, kho: 4, tangCuong: 5, tongNs: 9 });
   });
 
   it('không có phiếu, không có nhà sơ chế → rỗng', () => {

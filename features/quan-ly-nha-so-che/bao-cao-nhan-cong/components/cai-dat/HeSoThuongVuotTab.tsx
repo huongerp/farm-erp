@@ -53,6 +53,7 @@ function nhapSangCaiDat(nhap: Nhap): CaiDatThuongVuot | null {
 const BangHeSo: React.FC<{ idChiNhanh: string; caiDat: CaiDatThuongVuot; coQuyen: boolean }> = ({ idChiNhanh, caiDat, coQuyen }) => {
   const { t } = useTranslation();
   const [nhap, setNhap] = useState<Nhap>(() => caiDatSangNhap(caiDat));
+  const [nhom, setNhom] = useState(1);
   const luu = useLuuCaiDatThuongVuot();
   const ketQua = nhapSangCaiDat(nhap);
   const doi = (k: string, v: string) => setNhap((d) => ({ ...d, [k]: v }));
@@ -81,27 +82,47 @@ const BangHeSo: React.FC<{ idChiNhanh: string; caiDat: CaiDatThuongVuot; coQuyen
         </div>
       </div>
 
+      {/* Chọn một nhóm rồi nhập hệ số của nhóm đó cho từng chuyền — thay bảng 9 cột phải kéo ngang trên điện thoại. */}
+      <div className="space-y-1.5">
+        <p className="text-xs text-muted-foreground m-0">{t('baoCaoNhanCong.vuot.chonNhomNhap')}</p>
+        <div className="flex flex-wrap gap-1.5" role="tablist">
+          {NHOM.map((n) => {
+            const dangChon = n === nhom;
+            const daNhap = CHUYEN_PRODUCTION_CODES.some((loai) => (nhap[`${loai}|${n}`] ?? '').trim() !== '');
+            return (
+              <button
+                key={n}
+                type="button"
+                role="tab"
+                aria-selected={dangChon}
+                onClick={() => setNhom(n)}
+                className={`relative h-8 min-w-[4.5rem] rounded-full border px-3 text-xs font-medium ${
+                  dangChon ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground hover:border-primary/50'
+                }`}
+              >
+                {t('baoCaoNhanCong.nsNhom.nhomN', { n })}
+                {daNhap && !dangChon && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-caption text-muted-foreground">
             <tr>
-              <th className="sticky left-0 z-[1] bg-muted px-2 py-1.5 text-left font-medium min-w-[11rem]">{t('baoCaoNhanCong.nsNhom.colChuyen')}</th>
-              <th className="px-1 py-1.5 font-medium">{t('baoCaoNhanCong.vuot.heSoChuyen')}</th>
-              {NHOM.map((n) => (
-                <th key={n} className="px-1 py-1.5 font-medium whitespace-nowrap">{t('baoCaoNhanCong.nsNhom.nhomN', { n })}</th>
-              ))}
+              <th className="px-2 py-1.5 text-left font-medium">{t('baoCaoNhanCong.nsNhom.colChuyen')}</th>
+              <th className="px-1 py-1.5 font-medium w-[4.5rem]">{t('baoCaoNhanCong.vuot.heSoChuyen')}</th>
+              <th className="px-1 py-1.5 font-medium w-[4.5rem] text-primary">{t('baoCaoNhanCong.vuot.heSoNhomN', { n: nhom })}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {CHUYEN_PRODUCTION_CODES.map((loai) => (
               <tr key={loai}>
-                <td className="sticky left-0 z-[1] bg-card px-2 py-1 text-xs">{tenChuyen(loai)}</td>
+                <td className="px-2 py-1 text-xs">{tenChuyen(loai)}</td>
                 <td className="px-1 py-1">{o(`${loai}|0`, `${tenChuyen(loai)} — ${t('baoCaoNhanCong.vuot.heSoChuyen')}`)}</td>
-                {NHOM.map((n) => (
-                  <td key={n} className="px-1 py-1">
-                    {o(`${loai}|${n}`, `${tenChuyen(loai)} — ${t('baoCaoNhanCong.nsNhom.nhomN', { n })}`)}
-                  </td>
-                ))}
+                <td className="px-1 py-1">{o(`${loai}|${nhom}`, `${tenChuyen(loai)} — ${t('baoCaoNhanCong.vuot.heSoNhomN', { n: nhom })}`)}</td>
               </tr>
             ))}
           </tbody>

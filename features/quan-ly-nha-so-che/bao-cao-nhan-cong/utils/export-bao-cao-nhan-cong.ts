@@ -6,7 +6,6 @@ import { ghiXlsxCoBangHinh } from '../../../../lib/export/xlsx-bang-hinh';
 import { NGOAI_LE_CODE, chuyenTtLabelByThuTu, normalizeChiTietForDisplay, sumSlCongNgay, sumSlCongNua, sumSlTangCa, sumSoGioTc, sumTongCongQuyDoiPhieu, sumTongCongQuyDoiTuChiTiet, sumTongGioTangCaTichPhieu, sumTongGioTangCaTichTuChiTiet, tongCongQuyDoiNgayVaNua, tongGioTangCaTichMotDong } from '../core/types';
 import { combinedRowGhiChuAtIndex, displayLoaiTotalsOnCt, formatGioTbVN, hasSubLinesOnCt, isSubFormRowEmpty, subAlignedRowCount, subByLoaiForCtDisplay, sumDisplayLoaiTotalsOnRows, sumTongGioQuyDoiRowIVFromRows, tongGioCongNgayVaNua } from '../core/ct-sub';
 import { formatNumberVN, formatYmdToDisplay, getTodayISODate } from '../../../../lib/utils';
-import { mucTieuNsNhom, nangSuatNhomCuaPhieu } from '../core/nang-suat-nhom';
 import {
   caiDatThuongVuotMacDinh,
   dsThuongVuotPhieu,
@@ -14,6 +13,8 @@ import {
   vuotTheoChuyenNhom,
   type CaiDatThuongVuot,
   type DongThuongVuotPhieu,
+  type KpiSoCheNgay,
+  type QuyVuotNgay,
 } from '../core/thuong-vuot-thung';
 import i18n from '../../../../lib/i18n';
 import { useUIStore } from '../../../../store/useStore';
@@ -281,23 +282,20 @@ function sheetTongHopNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong, tv: Thuong
       t('baoCaoNhanCong.preview.colCongQuyDoi'),
       t('baoCaoNhanCong.nv.gioCong'),
       t('baoCaoNhanCong.nv.gioTc'),
-      t('baoCaoNhanCong.nsNhom.soThung'),
-      t('baoCaoNhanCong.nsNhom.nsDonVi'),
-      t('baoCaoNhanCong.nsNhom.tyLeDat'),
-      t('baoCaoNhanCong.vuot.thungVuot'),
+      t('baoCaoNhanCong.vuot.colGioTinh'),
+      t('baoCaoNhanCong.vuot.colXuongSom'),
+      t('baoCaoNhanCong.vuot.heSoNhom'),
       t('baoCaoNhanCong.vuot.thuongVuotNhom'),
     ],
   ];
-  const vuotTheoChuyen = vuotTheoChuyenNhom(thuongVuotCuaPhieu(data, tv.caiDat, tv.viTriLoai));
-  const nsTheoTt = new Map(nangSuatNhomCuaPhieu(data).map((c) => [`${c.tt}|${c.loai_chuyen}`, c.theoNhom]));
+  const vuotPhieu = thuongVuotCuaPhieu(data, tv.kpi, tv.caiDat, tv.viTriLoai);
+  const vuotTheoChuyen = vuotTheoChuyenNhom(vuotPhieu.chuyen);
   for (const { ct, tt, nhanVien } of nhomNhanVienTheoChuyen(data)) {
     // Ngoại lệ không quy đổi giờ → giờ để «—» như bản in.
     const ngoaiLe = ct.loai_chuyen === NGOAI_LE_CODE;
-    const theoNhom = nsTheoTt.get(`${tt}|${ct.loai_chuyen}`);
     for (const g of tongHopTheoNhom(nhanVien)) {
-      // Nhóm null / chưa nhập số thùng → các ô năng suất, thưởng để trống.
-      const ns = g.soNhom == null ? undefined : theoNhom?.get(g.soNhom);
-      const vuot = g.soNhom == null ? undefined : vuotTheoChuyen.get(ct.loai_chuyen)?.get(g.soNhom)?.ketQua;
+      // Nhóm null / chuyền không tính thưởng → các ô thưởng để trống.
+      const vuot = g.soNhom == null ? undefined : vuotTheoChuyen.get(ct.loai_chuyen)?.get(g.soNhom);
       rows.push([
         `${tt}. ${t(`baoCaoNhanCong.chuyen.${ct.loai_chuyen}`)}`,
         g.soNhom == null ? t('baoCaoNhanCong.preview.chuaChiaNhom') : t('baoCaoNhanCong.preview.nhomN', { n: g.soNhom }),
@@ -305,24 +303,23 @@ function sheetTongHopNhom(XLSX: XlsxModule, data: FarmBaoCaoNhanCong, tv: Thuong
         g.cong,
         ngoaiLe ? EMPTY : g.gioCong,
         ngoaiLe ? EMPTY : g.gioTc,
-        ns?.soThung ?? '',
-        ns?.ns == null ? '' : Math.round(ns.ns * 100) / 100,
-        ns?.tyLe == null ? '' : Math.round(ns.tyLe * 10) / 10,
-        vuot ? Math.round(vuot.thungVuot * 100) / 100 : '',
-        vuot ? Math.round(vuot.tien) : '',
+        vuot ? Math.round(vuot.gioCong * 100) / 100 : '',
+        vuot ? vuot.soXuongSom : '',
+        vuot ? vuot.heSoNhom : '',
+        vuot && vuotPhieu.quy ? Math.round(vuot.tien) : '',
       ]);
     }
   }
   rows.push([]);
+  rows.push([dongQuyText(vuotPhieu.quy, tv.caiDat.nguongPct)]);
   rows.push([
     t('baoCaoNhanCong.vuot.ghiChuMucTieu', {
-      mucTieu: mucTieuNsNhom(data.muc_tieu_ns_nhom),
       nguongPct: formatNumberVN(tv.caiDat.nguongPct, { maxFractionDigits: 2 }),
       donGia: formatNumberVN(tv.caiDat.donGia),
     }),
   ]);
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{ wch: 34 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 8 }, { wch: 14 }, { wch: 14 }];
+  ws['!cols'] = [{ wch: 34 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 14 }];
   return ws;
 }
 
@@ -336,7 +333,7 @@ function sheetThuongVuot(XLSX: XlsxModule, data: FarmBaoCaoNhanCong, ds: readonl
       t('baoCaoNhanCong.nsNhom.colHoTen'),
       t('baoCaoNhanCong.nsNhom.colChuyen'),
       t('baoCaoNhanCong.nsNhom.colNhom'),
-      t('baoCaoNhanCong.nv.gioCong'),
+      t('baoCaoNhanCong.vuot.colGioTinh'),
       t('baoCaoNhanCong.nsNhom.colThuong'),
     ],
     ...ds.map((p) => [
@@ -353,10 +350,25 @@ function sheetThuongVuot(XLSX: XlsxModule, data: FarmBaoCaoNhanCong, ds: readonl
   return ws;
 }
 
-/** Cài đặt thưởng vượt của nhà sơ chế + vị trí loại trừ (thiếu → mặc định, không loại ai). */
+/** Cài đặt thưởng vượt của nhà sơ chế + vị trí loại trừ + KPI Báo cáo sơ chế cùng ngày (thiếu → mặc định / chưa tính). */
 export interface ThuongVuotXuat {
   caiDat: CaiDatThuongVuot;
   viTriLoai: ReadonlySet<string>;
+  kpi?: KpiSoCheNgay | null;
+}
+
+/** Dòng tóm tắt quỹ ngày (giống `DongQuyVuot` trên màn hình) cho Excel. */
+function dongQuyText(quy: QuyVuotNgay | null, nguongPct: number): string {
+  const t = i18n.t.bind(i18n);
+  if (!quy) return t('baoCaoNhanCong.vuot.chuaCoBcsc');
+  const so = (v: number) => formatNumberVN(v, { maxFractionDigits: 2 });
+  return `${t('baoCaoNhanCong.vuot.dongQuy', {
+    thucTe: so(quy.thuHoiThucTe),
+    mucTieu: so(quy.thuHoiMucTieu),
+    vuot: so(quy.thungVuot),
+    ns: quy.nsTyLe == null ? '—' : formatNumberVN(quy.nsTyLe, { maxFractionDigits: 1 }),
+    nguong: formatNumberVN(nguongPct, { maxFractionDigits: 2 }),
+  })} ${quy.datNs ? t('baoCaoNhanCong.vuot.datNs') : t('baoCaoNhanCong.vuot.khongDatNs')} · ${t('baoCaoNhanCong.vuot.quyNgay', { tien: formatNumberVN(Math.round(quy.quy)) })}`;
 }
 
 export async function exportBaoCaoNhanCongToXLSX(
@@ -376,7 +388,7 @@ export async function exportBaoCaoNhanCongToXLSX(
   if (noiDung !== 'chuyen' && coTen) XLSX.utils.book_append_sheet(wb, sheetNhanVien(XLSX, data), 'Danh_sach_NV');
   if (noiDung === 'theo-nhom' && coTen) XLSX.utils.book_append_sheet(wb, sheetTongHopNhom(XLSX, data, tv), 'Tong_hop_nhom');
   if (noiDung === 'theo-nhom') {
-    const dsThuong = dsThuongVuotPhieu(thuongVuotCuaPhieu(data, tv.caiDat, tv.viTriLoai));
+    const dsThuong = dsThuongVuotPhieu(thuongVuotCuaPhieu(data, tv.kpi, tv.caiDat, tv.viTriLoai).chuyen);
     if (dsThuong.length > 0) XLSX.utils.book_append_sheet(wb, sheetThuongVuot(XLSX, data, dsThuong), 'Thuong_vuot');
   }
   if (wb.SheetNames.length === 0) XLSX.utils.book_append_sheet(wb, sheetChuyen(XLSX, data), 'Bao_cao_nhan_cong');

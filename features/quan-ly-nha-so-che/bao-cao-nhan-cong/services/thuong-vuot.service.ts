@@ -3,7 +3,7 @@
  * hệ số lỗi Ki theo tháng. Tiền tính ở `core/thuong-vuot-thung.ts`; chỉ lưu ảnh chụp khi chốt tháng (089).
  */
 import { db, throwDbError } from '../../../../lib/db';
-import { caiDatTuDb, docHeSo, type CaiDatThuongVuot, type DongHeSoDb, type DongThuongThang } from '../core/thuong-vuot-thung';
+import { caiDatTuDb, docHeSo, kpiSoCheTuDong, type CaiDatThuongVuot, type DongHeSoDb, type DongThuongThang, type KpiSoCheNgay } from '../core/thuong-vuot-thung';
 import { dongChotTuThuongThang, dongThuongTuChot, type DongChotDb } from '../core/chot-thuong-thang';
 import { CHUYEN_PRODUCTION_CODES } from '../core/types';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
@@ -11,6 +11,8 @@ import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 const TABLE_CAI_DAT = 'fp_var_bcnc_cai_dat_thuong';
 const TABLE_HE_SO = 'fp_var_bcnc_he_so_ns';
 const TABLE_KI = 'fp_farm_bcnc_he_so_loi_thang';
+const TABLE_BCSC = 'fp_farm_bao_cao_so_che';
+const TABLE_BCSC_KPI = 'fp_farm_bao_cao_so_che_kpi';
 
 const idSo = (idChiNhanh: string) => {
   const n = Number(idChiNhanh);
@@ -30,6 +32,28 @@ export async function getCaiDatThuongVuot(idChiNhanh: string): Promise<CaiDatThu
 }
 
 /** Lưu cả bộ cài đặt: upsert đơn giá + ngưỡng, thay toàn bộ hệ số của nhà sơ chế (ô trống = xoá dòng = 1). */
+type DongBcscKpi = { ngay: string; [TABLE_BCSC_KPI]?: { ten_hang_muc: string | null; muc_tieu: unknown; thuc_te: unknown }[] | null };
+
+/**
+ * KPI đã lưu của Báo cáo sơ chế (thu hồi + năng suất) theo ngày "yyyy-mm-dd" của một nhà sơ chế, một request
+ * (embed). Ngày chưa có Báo cáo sơ chế thì không có khoá.
+ */
+export async function getKpiSoChe(idChiNhanh: string, tuNgay: string, denNgay: string): Promise<Map<string, KpiSoCheNgay>> {
+  const { data, error } = await db
+    .from(TABLE_BCSC)
+    .select(`ngay,${TABLE_BCSC_KPI}(ten_hang_muc,muc_tieu,thuc_te)`)
+    .eq('id_chi_nhanh', idSo(idChiNhanh))
+    .gte('ngay', tuNgay)
+    .lte('ngay', denNgay);
+  if (error) throwDbError(error, { resource: `${TABLE_BCSC}.select` });
+  const out = new Map<string, KpiSoCheNgay>();
+  for (const r of (data ?? []) as unknown as DongBcscKpi[]) {
+    const kpi = kpiSoCheTuDong(r[TABLE_BCSC_KPI]);
+    if (kpi) out.set(String(r.ngay).slice(0, 10), kpi);
+  }
+  return out;
+}
+
 export async function luuCaiDatThuongVuot(idChiNhanh: string, caiDat: CaiDatThuongVuot): Promise<void> {
   const id = idSo(idChiNhanh);
   const { error: e1 } = await db

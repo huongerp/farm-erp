@@ -9,7 +9,7 @@ import ErrorState from '../../../../components/shared/ErrorState';
 import LoadingSpinnerWithText from '../../../../components/shared/LoadingSpinnerWithText';
 import { cn, formatDateTime, formatNumberVN, formatYmdToDisplay } from '../../../../lib/utils';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
-import { docHeSo, type DongThuongThang } from '../core/thuong-vuot-thung';
+import { docHeSo, quyVuotNgay, type DongThuongThang } from '../core/thuong-vuot-thung';
 import { tongThuongThang } from '../core/chot-thuong-thang';
 import { duongDanInThuongThang } from '../core/preview-url';
 import {
@@ -90,6 +90,15 @@ const ThuongVuotThangTab: React.FC = () => {
   const [moRong, setMoRong] = useState<string | null>(null);
 
   const tong = useMemo(() => tongThuongThang(ds), [ds]);
+  /** Tóm tắt quỹ của một ngày từ KPI Báo cáo sơ chế (tháng đã chốt không tải KPI → «—»). */
+  const moTaQuyNgay = (ngay: string) => {
+    if (!bang.kpiTheoNgay) return '—';
+    const quy = quyVuotNgay(bang.kpiTheoNgay.get(ngay), caiDat);
+    if (!quy) return t('baoCaoNhanCong.vuot.quyNgayChuaCo');
+    return t(quy.datNs ? 'baoCaoNhanCong.vuot.quyNgayDat' : 'baoCaoNhanCong.vuot.quyNgayKhongDat', {
+      vuot: formatNumberVN(quy.thungVuot, { maxFractionDigits: 2 }),
+    });
+  };
   const isLoading = dangTaiNha || bang.isLoading;
   const thangHienThi = `${thang.slice(5, 7)}/${thang.slice(0, 4)}`;
 
@@ -128,7 +137,7 @@ const ThuongVuotThangTab: React.FC = () => {
               <th className={cn(th, 'text-left sticky left-0 z-[1] bg-muted min-w-[10rem]')}>{t('baoCaoNhanCong.nsNhom.colHoTen')}</th>
               <th className={cn(th, 'text-left')}>{t('baoCaoNhanCong.vuot.colViTri')}</th>
               <th className={th}>{t('baoCaoNhanCong.vuot.colSoNgay')}</th>
-              <th className={th}>{t('baoCaoNhanCong.nv.gioCong')}</th>
+              <th className={th}>{t('baoCaoNhanCong.vuot.colGioTinh')}</th>
               <th className={th}>{t('baoCaoNhanCong.vuot.colThungQuyDoi')}</th>
               <th className={th}>{t('baoCaoNhanCong.vuot.colTruocKi')}</th>
               <th className={th} title={t('baoCaoNhanCong.vuot.kiHint')}>{t('baoCaoNhanCong.vuot.colKi')}</th>
@@ -173,7 +182,8 @@ const ThuongVuotThangTab: React.FC = () => {
                               <th className="pr-4 text-left font-medium">{t('baoCaoNhanCong.vuot.colNgay')}</th>
                               <th className="pr-4 text-left font-medium">{t('baoCaoNhanCong.nsNhom.colChuyen')}</th>
                               <th className="pr-4 text-left font-medium">{t('baoCaoNhanCong.nsNhom.colNhom')}</th>
-                              <th className="pr-4 text-right font-medium">{t('baoCaoNhanCong.nv.gioCong')}</th>
+                              <th className="pr-4 text-left font-medium">{t('baoCaoNhanCong.vuot.colQuyNgay')}</th>
+                              <th className="pr-4 text-right font-medium">{t('baoCaoNhanCong.vuot.colGioTinh')}</th>
                               <th className="pr-4 text-right font-medium">{t('baoCaoNhanCong.vuot.colThungQuyDoi')}</th>
                               <th className="text-right font-medium">{t('baoCaoNhanCong.vuot.colTruocKi')}</th>
                             </tr>
@@ -184,6 +194,7 @@ const ThuongVuotThangTab: React.FC = () => {
                                 <td className="pr-4">{formatYmdToDisplay(n.ngay)}</td>
                                 <td className="pr-4">{t(`baoCaoNhanCong.chuyen.${n.loai_chuyen}`)}</td>
                                 <td className="pr-4">{t('baoCaoNhanCong.nsNhom.nhomN', { n: n.soNhom })}</td>
+                                <td className="pr-4">{moTaQuyNgay(n.ngay)}</td>
                                 <td className="pr-4 text-right tabular-nums">{fmt2(n.gioCong)}</td>
                                 <td className="pr-4 text-right tabular-nums">{fmt2(n.thungVuotQuyDoi)}</td>
                                 <td className="text-right tabular-nums">{formatNumberVN(Math.round(n.tien))}</td>

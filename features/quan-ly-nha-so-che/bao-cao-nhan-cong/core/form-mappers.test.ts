@@ -4,7 +4,6 @@ import vi from '../locales/vi.json';
 import { applySubTotalsToChiTietForm, defaultFormValues, farmBaoCaoNhanCongToFormNextDay } from './form-mappers';
 import { nvFormRowMoi, tongHopNgoaiLe, nhomNhanVienTheoChuyen } from './danh-sach-nv';
 import { baoCaoNhanCongFormSchema } from './schema';
-import { ganSoThungNhom } from './nang-suat-nhom';
 import type { FarmBaoCaoNhanCong } from './types';
 
 i18n.addResourceBundle('vi', 'translation', vi, true, true);
@@ -48,14 +47,7 @@ describe('Ngoại lệ trong báo cáo nhân công', () => {
   });
 });
 
-describe('Số thùng theo nhóm + mục tiêu NS nhóm trên form', () => {
-  it('ô trống / chữ = chưa nhập (bỏ khoá), không thành 0; «0» vẫn là 0 thùng', () => {
-    expect(ganSoThungNhom({ '1': 50 }, 1, '')).toEqual({});
-    expect(ganSoThungNhom({ '1': 50 }, 2, ' 12,5 ')).toEqual({ '1': 50, '2': 12.5 });
-    expect(ganSoThungNhom({}, 3, 'abc')).toEqual({});
-    expect(ganSoThungNhom({}, 3, '0')).toEqual({ '3': 0 });
-  });
-
+describe('Số thùng theo nhóm + mục tiêu NS nhóm (dữ liệu cũ, form giữ nguyên)', () => {
   it('lưu chỉ giữ số thùng của nhóm còn người; copy ngày sau giữ mục tiêu, xoá số thùng', () => {
     const v = values();
     v.muc_tieu_ns_nhom = 3.5;

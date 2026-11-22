@@ -14,7 +14,6 @@ import { syncChiTietTotalsFromSub } from '../core/ct-sub';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { buoiCuaChamCong, chamChieuCaChuyen, nvCoTen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
-import { mucTieuNsNhom, type SoThungNhom } from '../core/nang-suat-nhom';
 import type { HeSoNhom } from '../core/thuong-vuot-thung';
 import BaoCaoNhanCongSanLuongNhom from './BaoCaoNhanCongSanLuongNhom';
 import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
@@ -65,15 +64,18 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
    * tiêu đề và dòng dữ liệu lệch cột. Phần còn lại dồn cho Họ tên để đọc đủ tên trước khi xoá.
    */
   const gridCols = ngoaiLe
-    ? 'sm:grid-cols-[1.5rem_minmax(11rem,2.4fr)_minmax(7rem,1.2fr)_6rem_9.5rem_minmax(6rem,1fr)_2.25rem]'
-    : 'sm:grid-cols-[1.5rem_minmax(11rem,2.4fr)_minmax(7rem,1.2fr)_6rem_9.5rem_4.5rem_4.5rem_minmax(6rem,1fr)_2.25rem]';
+    ? 'sm:grid-cols-[1.5rem_minmax(10rem,2fr)_minmax(10rem,1.6fr)_7rem_9.5rem_minmax(5.5rem,1fr)_2.25rem]'
+    : 'sm:grid-cols-[1.5rem_minmax(10rem,2fr)_minmax(10rem,1.6fr)_7rem_9.5rem_4.5rem_4.5rem_minmax(5.5rem,1fr)_2.25rem]';
+  /**
+   * Bề rộng tối thiểu = tổng min các cột + gap + p-2 của dòng. Không dùng `min-w-max`: input/combobox có
+   * bề rộng nội tại (~20 ký tự) nên max-content phình hơn cần, panel rộng vẫn bị cuộn ngang thừa.
+   * Thường: 54.75rem cột + 8×0.375 gap + 1 đệm = 58.75rem (vừa panel ~942px của drawer); Ngoại lệ: 45.75 + 6×0.375 + 1 = 49rem. Đổi `gridCols`/gap thì tính lại.
+   */
+  const minRongLuoi = ngoaiLe ? 'sm:min-w-[49rem]' : 'sm:min-w-[58.75rem]';
   const watched = useWatch({ control, name: `chi_tiet.${chiTietIndex}.nhan_vien` }) as NvFormRow[] | undefined;
   const ds = useMemo(() => watched ?? [], [watched]);
-  const soThungNhom = useWatch({ control, name: `chi_tiet.${chiTietIndex}.so_thung_nhom` }) as SoThungNhom | undefined;
   const heSoNhom = useWatch({ control, name: `chi_tiet.${chiTietIndex}.he_so_nhom` }) as HeSoNhom | undefined;
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
-  const mucTieuRaw = useWatch({ control, name: 'muc_tieu_ns_nhom' });
-  const mucTieu = mucTieuNsNhom(mucTieuRaw);
   /** Khối sản lượng nhóm chỉ hiện khi có người có tên đã chia nhóm; Ngoại lệ không tính giờ nên bỏ. */
   const coNguoiCoNhom = !ngoaiLe && nvCoTen(ds).some((r) => r.so_nhom != null);
 
@@ -181,134 +183,178 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
         )}
       </div>
 
-      {ds.length > 0 && (
-        <div className={`hidden sm:grid ${gridCols} gap-2 px-2 text-caption text-muted-foreground`}>
-          <span className="text-right">#</span>
-          <span>{t('baoCaoNhanCong.nv.hoTen')}</span>
-          <span>{t('baoCaoNhanCong.nv.viTri')}</span>
-          <span>{t('baoCaoNhanCong.nv.nhom')}</span>
-          <span />
-          {!ngoaiLe && (<>
-            <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
-            <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
-          </>)}
-          <span>{t('baoCaoNhanCong.nv.ghiChu')}</span>
-          <span />
-        </div>
-      )}
+      {/* Panel hẹp hơn tổng bề rộng cột (drawer ~1070px): desktop cuộn ngang trong panel để không
+          cắt mất cột cuối (nút xoá). Mobile giữ nguyên lưới 2 cột, nút xoá nằm trong dòng. */}
+      <div className="sm:overflow-x-auto">
+        <div className={`space-y-2 ${minRongLuoi}`}>
+          {ds.length > 0 && (
+            <div className={`hidden sm:grid ${gridCols} gap-2 sm:gap-1.5 px-2 text-caption text-muted-foreground`}>
+              <span className="text-right">#</span>
+              <span>{t('baoCaoNhanCong.nv.hoTen')}</span>
+              <span>{t('baoCaoNhanCong.nv.viTri')}</span>
+              <span>{t('baoCaoNhanCong.nv.nhom')}</span>
+              <span />
+              {!ngoaiLe && (<>
+                <span className="text-right">{t('baoCaoNhanCong.nv.gioCong')}</span>
+                <span className="text-right">{t('baoCaoNhanCong.nv.gioTc')}</span>
+              </>)}
+              <span>{t('baoCaoNhanCong.nv.ghiChu')}</span>
+              <span />
+            </div>
+          )}
 
-      {ds.map((row, idx) => {
-        const err = nvErrors?.[idx];
-        const moi = laTenMoi(row.ho_ten, dsTenDanhMuc);
-        const nhanXoa = row.ho_ten?.trim() ? t('baoCaoNhanCong.nv.xoaKhoiChuyen', { ten: row.ho_ten.trim() }) : t('common.delete');
-        return (
-          <div
-            key={idx}
-            className={`grid grid-cols-2 ${gridCols} gap-2 items-start rounded-lg bg-muted/30 p-2`}
-          >
-            <span className="hidden sm:block h-9 leading-9 text-right text-caption tabular-nums text-muted-foreground">{idx + 1}</span>
-            <div className="col-span-2 sm:col-span-1 min-w-0">
-              <Combobox
-                options={tenOptions}
-                value={row.ho_ten}
-                onChange={(x) => chonTen(idx, x)}
-                placeholder={t('baoCaoNhanCong.nv.chonTen')}
-                creatable
-                creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
-                dropdownInPortal
-                error={err?.ho_ten?.message as string | undefined}
-              />
-              {!err?.ho_ten && moi && <p className="text-caption text-primary m-0 mt-0.5">{t('baoCaoNhanCong.nv.tenMoiSeThem')}</p>}
-            </div>
-            <div className="col-span-2 sm:col-span-1 min-w-0">
-              <Combobox
-                options={viTriOptions}
-                value={row.vi_tri ?? ''}
-                onChange={(x) => {
-                  const viTri = x ? String(x).trim() : null;
-                  patchRow(idx, { vi_tri: viTri });
-                  themViTriNeuMoi(viTri);
-                }}
-                placeholder={t('baoCaoNhanCong.nv.viTri')}
-                error={err?.vi_tri?.message as string | undefined}
-                creatable={canThemViTri}
-                creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
-                dropdownInPortal
-              />
-            </div>
-            {/* Nhóm chỉ đổi dòng trên phiếu, không đổi nhóm mặc định trong danh mục. */}
-            <div className="col-span-2 sm:col-span-1 min-w-0">
-              <Combobox
-                options={nhomOptions}
-                value={row.so_nhom ?? 0}
-                onChange={(x) => patchRow(idx, { so_nhom: Number(x) || null })}
-                label={isMobile ? t('baoCaoNhanCong.nv.nhom') : undefined}
-                placeholder={t('baoCaoNhanCong.nv.nhomTrong')}
-                searchable={false}
-                clearable={false}
-                dropdownInPortal
-                error={err?.so_nhom?.message as string | undefined}
-              />
-            </div>
-            <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 self-start min-w-0">
-              <div className="inline-flex sm:flex sm:w-full rounded-md border border-border overflow-hidden h-9">
-                {(['sang', 'chieu'] as const).map((buoi) => {
-                  const bat = buoiCuaChamCong(row.cham_cong)[buoi];
-                  return (
+          {ds.map((row, idx) => {
+            const err = nvErrors?.[idx];
+            const moi = laTenMoi(row.ho_ten, dsTenDanhMuc);
+            const nhanXoa = row.ho_ten?.trim() ? t('baoCaoNhanCong.nv.xoaKhoiChuyen', { ten: row.ho_ten.trim() }) : t('common.delete');
+            return (
+              <div
+                key={idx}
+                className={`grid grid-cols-2 ${gridCols} gap-2 sm:gap-1.5 items-start rounded-lg bg-muted/30 p-2`}
+              >
+                <span className="hidden sm:block h-9 leading-9 text-right text-caption tabular-nums text-muted-foreground">{idx + 1}</span>
+                <div className="col-span-2 sm:col-span-1 min-w-0">
+                  <Combobox
+                    options={tenOptions}
+                    value={row.ho_ten}
+                    onChange={(x) => chonTen(idx, x)}
+                    placeholder={t('baoCaoNhanCong.nv.chonTen')}
+                    creatable
+                    creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
+                    dropdownInPortal
+                    error={err?.ho_ten?.message as string | undefined}
+                  />
+                  {!err?.ho_ten && moi && <p className="text-caption text-primary m-0 mt-0.5">{t('baoCaoNhanCong.nv.tenMoiSeThem')}</p>}
+                </div>
+                <div className="col-span-2 sm:col-span-1 min-w-0">
+                  <Combobox
+                    options={viTriOptions}
+                    value={row.vi_tri ?? ''}
+                    onChange={(x) => {
+                      const viTri = x ? String(x).trim() : null;
+                      patchRow(idx, { vi_tri: viTri });
+                      themViTriNeuMoi(viTri);
+                    }}
+                    placeholder={t('baoCaoNhanCong.nv.viTri')}
+                    error={err?.vi_tri?.message as string | undefined}
+                    creatable={canThemViTri}
+                    creatableLabel={t('baoCaoNhanCong.nv.themViTriMoi')}
+                    dropdownInPortal
+                  />
+                </div>
+                {/* Nhóm chỉ đổi dòng trên phiếu, không đổi nhóm mặc định trong danh mục. */}
+                <div className="col-span-2 sm:col-span-1 min-w-0">
+                  <Combobox
+                    options={nhomOptions}
+                    value={row.so_nhom ?? 0}
+                    onChange={(x) => patchRow(idx, { so_nhom: Number(x) || null })}
+                    label={isMobile ? t('baoCaoNhanCong.nv.nhom') : undefined}
+                    placeholder={t('baoCaoNhanCong.nv.nhomTrong')}
+                    searchable={false}
+                    clearable={false}
+                    dropdownInPortal
+                    error={err?.so_nhom?.message as string | undefined}
+                  />
+                </div>
+                <div className="col-span-2 sm:col-span-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 self-start min-w-0">
+                  <div className="inline-flex sm:flex sm:w-full rounded-md border border-border overflow-hidden h-9">
+                    {(['sang', 'chieu'] as const).map((buoi) => {
+                      const bat = buoiCuaChamCong(row.cham_cong)[buoi];
+                      return (
+                        <button
+                          key={buoi}
+                          type="button"
+                          onClick={() => bamBuoi(idx, buoi)}
+                          aria-pressed={bat}
+                          className={cn(
+                            'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors',
+                            bat ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-primary'
+                          )}
+                        >
+                          {t(`baoCaoNhanCong.nv.${buoi}`)}
+                        </button>
+                      );
+                    })}
                     <button
-                      key={buoi}
                       type="button"
-                      onClick={() => bamBuoi(idx, buoi)}
-                      aria-pressed={bat}
+                      onClick={() => bamNghi(idx)}
+                      aria-pressed={row.cham_cong === 'NGHI'}
                       className={cn(
-                        'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors',
-                        bat ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:text-primary'
+                        'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors border-l border-border',
+                        row.cham_cong === 'NGHI' ? 'bg-rose-600 text-white' : 'bg-background text-muted-foreground hover:text-rose-600'
                       )}
                     >
-                      {t(`baoCaoNhanCong.nv.${buoi}`)}
+                      {t('baoCaoNhanCong.nv.nghi')}
                     </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => bamNghi(idx)}
-                  aria-pressed={row.cham_cong === 'NGHI'}
-                  className={cn(
-                    'flex-1 px-2.5 text-xs font-medium whitespace-nowrap transition-colors border-l border-border',
-                    row.cham_cong === 'NGHI' ? 'bg-rose-600 text-white' : 'bg-background text-muted-foreground hover:text-rose-600'
+                  </div>
+                  {row.cham_cong === 'NUA_NGAY' && <span className="text-caption text-muted-foreground whitespace-nowrap">{t('baoCaoNhanCong.nv.nuaNgayCu')}</span>}
+                </div>
+                {!ngoaiLe && (<>
+                  <NumberInput
+                    value={row.so_gio_cong}
+                    onChange={(v) => patchRow(idx, { so_gio_cong: v })}
+                    {...GIO_INPUT}
+                    disabled={row.cham_cong === 'NGHI'}
+                    compact
+                    label={isMobile ? t('baoCaoNhanCong.nv.gioCong') : undefined}
+                    className="w-full min-w-0"
+                    error={err?.so_gio_cong?.message as string | undefined}
+                  />
+                  <div className="flex items-start gap-1">
+                    <NumberInput
+                      value={row.so_gio_tc}
+                      onChange={(v) => patchRow(idx, { so_gio_tc: v })}
+                      {...GIO_INPUT}
+                      disabled={row.cham_cong === 'NGHI'}
+                      compact
+                      label={isMobile ? t('baoCaoNhanCong.nv.gioTc') : undefined}
+                      className="w-full min-w-0"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
+                      onClick={() => xoa(idx)}
+                      aria-label={nhanXoa}
+                      title={nhanXoa}
+                    >
+                      <Trash2 size={15} />
+                    </Button>
+                  </div>
+                </>)}
+                {/* Ghi chú riêng của người này — in ở cột Ghi chú của «Danh sách nhân công theo chuyền». */}
+                <div className="col-span-2 sm:col-span-1 flex items-start gap-1 min-w-0">
+                  <Input
+                    value={row.ghi_chu ?? ''}
+                    onChange={(e) => patchRow(idx, { ghi_chu: e.target.value.trim() ? e.target.value : null })}
+                    maxLength={GHI_CHU_MAX}
+                    placeholder={t('baoCaoNhanCong.nv.ghiChu')}
+                    aria-label={t('baoCaoNhanCong.nv.ghiChu')}
+                    title={row.ghi_chu ?? undefined}
+                    className="h-9"
+                    error={err?.ghi_chu?.message as string | undefined}
+                  />
+                  {ngoaiLe && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
+                      onClick={() => xoa(idx)}
+                      aria-label={nhanXoa}
+                      title={nhanXoa}
+                    >
+                      <Trash2 size={15} />
+                    </Button>
                   )}
-                >
-                  {t('baoCaoNhanCong.nv.nghi')}
-                </button>
-              </div>
-              {row.cham_cong === 'NUA_NGAY' && <span className="text-caption text-muted-foreground whitespace-nowrap">{t('baoCaoNhanCong.nv.nuaNgayCu')}</span>}
-            </div>
-            {!ngoaiLe && (<>
-              <NumberInput
-                value={row.so_gio_cong}
-                onChange={(v) => patchRow(idx, { so_gio_cong: v })}
-                {...GIO_INPUT}
-                disabled={row.cham_cong === 'NGHI'}
-                compact
-                label={isMobile ? t('baoCaoNhanCong.nv.gioCong') : undefined}
-                className="w-full min-w-0"
-                error={err?.so_gio_cong?.message as string | undefined}
-              />
-              <div className="flex items-start gap-1">
-                <NumberInput
-                  value={row.so_gio_tc}
-                  onChange={(v) => patchRow(idx, { so_gio_tc: v })}
-                  {...GIO_INPUT}
-                  disabled={row.cham_cong === 'NGHI'}
-                  compact
-                  label={isMobile ? t('baoCaoNhanCong.nv.gioTc') : undefined}
-                  className="w-full min-w-0"
-                />
+                </div>
+                {/* Dính phải + nền đặc: cuộn ngang trong panel vẫn luôn thấy nút xoá. */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
+                  className="h-9 w-9 p-0 shrink-0 text-rose-600 hidden bg-card sm:sticky sm:right-0 sm:z-10 sm:inline-flex"
                   onClick={() => xoa(idx)}
                   aria-label={nhanXoa}
                   title={nhanXoa}
@@ -316,47 +362,10 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                   <Trash2 size={15} />
                 </Button>
               </div>
-            </>)}
-            {/* Ghi chú riêng của người này — in ở cột Ghi chú của «Danh sách nhân công theo chuyền». */}
-            <div className="col-span-2 sm:col-span-1 flex items-start gap-1 min-w-0">
-              <Input
-                value={row.ghi_chu ?? ''}
-                onChange={(e) => patchRow(idx, { ghi_chu: e.target.value.trim() ? e.target.value : null })}
-                maxLength={GHI_CHU_MAX}
-                placeholder={t('baoCaoNhanCong.nv.ghiChu')}
-                aria-label={t('baoCaoNhanCong.nv.ghiChu')}
-                title={row.ghi_chu ?? undefined}
-                className="h-9"
-                error={err?.ghi_chu?.message as string | undefined}
-              />
-              {ngoaiLe && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 shrink-0 text-rose-600 sm:hidden"
-                  onClick={() => xoa(idx)}
-                  aria-label={nhanXoa}
-                  title={nhanXoa}
-                >
-                  <Trash2 size={15} />
-                </Button>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0 shrink-0 text-rose-600 hidden sm:inline-flex"
-              onClick={() => xoa(idx)}
-              aria-label={nhanXoa}
-              title={nhanXoa}
-            >
-              <Trash2 size={15} />
-            </Button>
-          </div>
-        );
-      })}
+            );
+          })}
+        </div>
+      </div>
 
       {ngoaiLe && ds.length > 0 && <p className="text-xs text-muted-foreground">{t('baoCaoNhanCong.ngoaiLe.tong', { n: tongNgoaiLe.soNguoi, sang: tongNgoaiLe.sang, chieu: tongNgoaiLe.chieu, cong: tongNgoaiLe.cong })}</p>}
       <div className="flex flex-wrap gap-2">
@@ -375,13 +384,11 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
 
       {coNguoiCoNhom && (
         <BaoCaoNhanCongSanLuongNhom
+          control={control}
+          chiTietIndex={chiTietIndex}
           loaiChuyen={loaiChuyen}
-          nhanVien={ds}
-          soThungNhom={soThungNhom}
           heSoNhom={heSoNhom}
           idChiNhanh={idChiNhanh}
-          mucTieu={mucTieu}
-          onChange={(next) => setValue(`chi_tiet.${chiTietIndex}.so_thung_nhom`, next, { shouldDirty: true })}
           onChangeHeSoNhom={(next) => setValue(`chi_tiet.${chiTietIndex}.he_so_nhom`, next, { shouldDirty: true })}
         />
       )}

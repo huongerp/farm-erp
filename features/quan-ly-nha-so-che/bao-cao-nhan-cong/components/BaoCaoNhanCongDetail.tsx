@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BaoCaoNhanCongChuyenTable from './BaoCaoNhanCongChuyenTable';
 import BaoCaoNhanCongNhanVienBang, { LOP_BANG_NV } from './BaoCaoNhanCongNhanVienBang';
 import { NsNhomTongHop } from './BaoCaoNhanCongNhanVienTheoNhom';
-import { nangSuatNhomCuaPhieu, phieuCoSoThungNhom } from '../core/nang-suat-nhom';
 import { useTranslation } from 'react-i18next';
 import { Copy, Lock, Printer, Unlock, Users, Images, X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { FarmBaoCaoNhanCong } from '../core/types';
@@ -259,7 +258,7 @@ const BaoCaoNhanCongDetail: React.FC<Props> = ({
           </DetailSection>
         )}
 
-        {coDanhSachTen && phieuCoSoThungNhom(nangSuatNhomCuaPhieu(data)) && (
+        {coDanhSachTen && data.chi_tiet.some((ct) => ct.nhan_vien?.some((nv) => nv.so_nhom != null)) && (
           <DetailSection title={t('baoCaoNhanCong.preview.tongHopTheoNhom')} icon={<Users size={14} />} variant="primary">
             <NsNhomTongHop data={data} c={LOP_BANG_NV.screen} />
           </DetailSection>

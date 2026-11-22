@@ -10,7 +10,7 @@ import { FileSpreadsheet } from 'lucide-react';
 import PhieuInPage from '../../../components/shared/phieu-in/PhieuInPage';
 import { formatYmdToDisplay } from '../../../lib/utils';
 import { useBaoCaoNhanCongById, useViTriSoChe } from './hooks/use-bao-cao-nhan-cong';
-import { useCaiDatThuongVuot, useViTriKhongThuongVuot } from './hooks/use-thuong-vuot';
+import { useCaiDatThuongVuot, useKpiSoCheNgay, useViTriKhongThuongVuot } from './hooks/use-thuong-vuot';
 import { exportBaoCaoNhanCongToXLSX, fileName } from './utils/export-bao-cao-nhan-cong';
 import BaoCaoNhanCongPreviewContent from './components/BaoCaoNhanCongPreviewContent';
 import { docNoiDungIn, NOI_DUNG_IN_PARAM, type NoiDungIn } from './core/preview-url';
@@ -36,11 +36,13 @@ const BaoCaoNhanCongPreviewPage: React.FC = () => {
   const noiDung = docNoiDungIn(searchParams.get(NOI_DUNG_IN_PARAM));
   const inDoc = noiDung === 'nhan-vien' || noiDung === 'theo-nhom';
   const { data, isLoading: dangTaiPhieu, isError, error, refetch } = useBaoCaoNhanCongById(id ?? undefined);
-  // Bảng «Tổng hợp theo nhóm» cần cài đặt thưởng vượt → chờ tải xong rồi mới dàn trang in.
+  // Bảng «Tổng hợp theo nhóm» cần cài đặt thưởng vượt + KPI Báo cáo sơ chế → chờ tải xong rồi mới dàn trang in.
   const thuongVuot = useCaiDatThuongVuot(data?.id_chi_nhanh);
+  const kpiSoChe = useKpiSoCheNgay(data?.id_chi_nhanh, data?.ngay);
   const viTri = useViTriSoChe();
   const viTriLoai = useViTriKhongThuongVuot();
-  const isLoading = dangTaiPhieu || (!!data?.id_chi_nhanh && thuongVuot.isPending) || viTri.isPending;
+  const isLoading =
+    dangTaiPhieu || (!!data?.id_chi_nhanh && (thuongVuot.isPending || kpiSoChe.isPending)) || viTri.isPending;
 
   const loi = isError
     ? (error?.message ?? t('baoCaoNhanCong.preview.loadError'))
@@ -60,7 +62,7 @@ const BaoCaoNhanCongPreviewPage: React.FC = () => {
       onRetry={isError ? () => void refetch() : undefined}
       taiThem={
         data
-          ? [{ key: 'xlsx', label: 'XLSX', icon: <FileSpreadsheet size={16} />, onClick: () => exportBaoCaoNhanCongToXLSX(data, noiDung, { caiDat: thuongVuot.caiDat, viTriLoai }) }]
+          ? [{ key: 'xlsx', label: 'XLSX', icon: <FileSpreadsheet size={16} />, onClick: () => exportBaoCaoNhanCongToXLSX(data, noiDung, { caiDat: thuongVuot.caiDat, viTriLoai, kpi: kpiSoChe.kpi }) }]
           : undefined
       }
     >

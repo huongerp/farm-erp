@@ -9,6 +9,7 @@ import {
   getCaiDatThuongVuot,
   getChotThang,
   getHeSoLoiThang,
+  getKpiSoChe,
   moChotThang,
   type ChotThangInput,
   luuCaiDatThuongVuot,
@@ -47,6 +48,34 @@ export function useLuuCaiDatThuongVuot(onDone?: () => void) {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+}
+
+const RE_NGAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Ngày cuối tháng "yyyy-mm" → "yyyy-mm-dd". */
+const ngayCuoiThang = (thang: string) => {
+  const [y, m] = thang.split('-').map(Number);
+  return `${thang}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+};
+
+/** KPI Báo cáo sơ chế (thu hồi + NS) theo ngày của một nhà sơ chế trong khoảng [tuNgay, denNgay]. */
+export function useKpiSoChe(idChiNhanh: string | null | undefined, tuNgay: string | null | undefined, denNgay: string | null | undefined, enabled = true) {
+  const id = idChiNhanh ? String(idChiNhanh) : '';
+  const tu = tuNgay ? String(tuNgay).slice(0, 10) : '';
+  const den = denNgay ? String(denNgay).slice(0, 10) : '';
+  return useQuery({
+    queryKey: [...QUERY_KEY_THUONG_VUOT, 'kpiSoChe', id, tu, den],
+    queryFn: () => getKpiSoChe(id, tu, den),
+    enabled: enabled && id !== '' && RE_NGAY.test(tu) && RE_NGAY.test(den),
+    staleTime: 1000 * 60,
+  });
+}
+
+/** KPI Báo cáo sơ chế của đúng một ngày (phiếu nhân công); chưa có báo cáo → null. */
+export function useKpiSoCheNgay(idChiNhanh: string | null | undefined, ngay: string | null | undefined) {
+  const q = useKpiSoChe(idChiNhanh, ngay, ngay);
+  const khoa = ngay ? String(ngay).slice(0, 10) : '';
+  return { ...q, kpi: q.data?.get(khoa) ?? null };
 }
 
 /** Tập vị trí (khoá tên) không nhận thưởng vượt — từ danh mục Vị trí. */
@@ -148,10 +177,17 @@ export function useBangThuongThang(
   // Đã chốt thì không cần tải phiếu / Ki để tính lại.
   const phieuQ = usePhieuThangThuongVuot(idChiNhanh, thang, scope, sanSang && chotQ.isSuccess && !daChot);
   const kiQ = useHeSoLoiThang(idChiNhanh, thang, sanSang && chotQ.isSuccess && !daChot);
+  const thangHopLe = /^\d{4}-\d{2}$/.test(thang);
+  const kpiQ = useKpiSoChe(
+    idChiNhanh,
+    thangHopLe ? `${thang}-01` : '',
+    thangHopLe ? ngayCuoiThang(thang) : '',
+    sanSang && chotQ.isSuccess && !daChot
+  );
 
   const ds = useMemo(
-    () => (chot ? chot.dong : tongHopThuongThang(phieuQ.data ?? [], caiDatSong, viTriLoai, kiQ.data ?? {})),
-    [chot, phieuQ.data, caiDatSong, viTriLoai, kiQ.data]
+    () => (chot ? chot.dong : tongHopThuongThang(phieuQ.data ?? [], kpiQ.data ?? new Map(), caiDatSong, viTriLoai, kiQ.data ?? {})),
+    [chot, phieuQ.data, kpiQ.data, caiDatSong, viTriLoai, kiQ.data]
   );
   const caiDat = useMemo(
     () =>
@@ -162,20 +198,23 @@ export function useBangThuongThang(
   );
   const coNha = idChiNhanh !== '';
   const isLoading =
-    coNha && (chotQ.isPending || dangTaiCaiDat || (!daChot && (phieuQ.isPending || kiQ.isPending)));
-  const isError = chotQ.isError || phieuQ.isError || kiQ.isError;
+    coNha && (chotQ.isPending || dangTaiCaiDat || (!daChot && (phieuQ.isPending || kiQ.isPending || kpiQ.isPending)));
+  const isError = chotQ.isError || phieuQ.isError || kiQ.isError || kpiQ.isError;
   return {
     ds,
     chot,
     caiDat,
     isLoading,
     isError,
-    isFetching: chotQ.isFetching || phieuQ.isFetching,
+    /** KPI Báo cáo sơ chế theo ngày (chi tiết từng ngày của tab tháng); tháng đã chốt → rỗng. */
+    kpiTheoNgay: kpiQ.data,
+    isFetching: chotQ.isFetching || phieuQ.isFetching || kpiQ.isFetching,
     refetch: () => {
       void chotQ.refetch();
       if (!daChot) {
         void phieuQ.refetch();
         void kiQ.refetch();
+        void kpiQ.refetch();
       }
     },
   };

@@ -507,29 +507,6 @@ const BaoCaoNhanCongForm: React.FC<Props> = ({
                 />
               )}
             />
-            <Controller
-              name="muc_tieu_ns_nhom"
-              control={control}
-              render={({ field }) => (
-                <div className="w-full">
-                  <Input
-                    type="number"
-                    step={0.1}
-                    min={0}
-                    inputMode="decimal"
-                    name={field.name}
-                    ref={field.ref}
-                    onBlur={field.onBlur}
-                    // Ô xoá trắng → '' (schema báo lỗi), không Number('') = 0.
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value)}
-                    label={t('baoCaoNhanCong.nsNhom.mucTieu')}
-                    error={errors.muc_tieu_ns_nhom?.message as string | undefined}
-                  />
-                  {!errors.muc_tieu_ns_nhom && <p className="text-caption text-muted-foreground m-0 mt-1">{t('baoCaoNhanCong.nsNhom.mucTieuHint')}</p>}
-                </div>
-              )}
-            />
           </FormGrid>
           <Controller
             name="ghi_chu"

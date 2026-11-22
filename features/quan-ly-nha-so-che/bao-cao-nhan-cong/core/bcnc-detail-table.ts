@@ -80,7 +80,11 @@ export const bcncBgIv =
 export const bcncBgTong =
   'bg-[color-mix(in_srgb,hsl(var(--primary))_15%,hsl(var(--card)))] dark:bg-[color-mix(in_srgb,hsl(var(--primary))_20%,hsl(var(--card)))]';
 
-/** Panel mở rộng (danh sách nhân sự): dính trái, rộng bằng vùng nhìn thấy → không bị cuộn khỏi màn hình. */
-export const bcncExpandPanelClass = 'sticky left-0 w-[100cqw] min-w-0';
+/**
+ * Panel mở rộng (danh sách nhân sự): dính trái, rộng bằng vùng nhìn thấy → không bị cuộn khỏi màn hình.
+ * Trừ 1rem vì ô chứa panel có `px-2` hai bên (BaoCaoNhanCongForm) — lấy đủ `100cqw` thì mép phải
+ * (nút xoá công nhân) lòi ra ngoài khung và bị cắt.
+ */
+export const bcncExpandPanelClass = 'sticky left-0 w-[calc(100cqw-1rem)] min-w-0';
 /** Ô «Tổng ngày» gộp 2 cột (STT + Chuyền) — dính trái từ mép. */
 export const bcncStickyTong = 'sticky left-0 z-10 shadow-[2px_0_0_0_hsl(var(--border))]';

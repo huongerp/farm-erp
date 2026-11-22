@@ -1,18 +1,16 @@
 /**
- * Thưởng vượt thùng cho công nhân (chốt với NSC 20/11/2026, migration 087).
+ * Thưởng vượt thùng cho công nhân (chốt với NSC 21/11/2026, thay bản 20/11).
  *
- *   Giờ nhóm    = tổng giờ công (KHÔNG cộng giờ TC) của công nhân trong nhóm — bỏ vị trí nhóm trưởng / QL
- *                 (`khong_thuong_vuot` trong danh mục Vị trí).
- *   Ngưỡng thùng = ngưỡng% × mục tiêu NS phiếu × giờ nhóm   (90% × 3 = 2,7 thùng/giờ-người)
- *   Thùng vượt   = max(0, số thùng nhóm − ngưỡng thùng)
- *   Thùng vượt quy đổi = thùng vượt × hệ số chuyền × hệ số nhóm;  tiền = quy đổi × đơn giá (1.000đ)
- *   Chia trong nhóm theo giờ công; cuối tháng cộng các ngày × hệ số lỗi Ki rồi mới làm tròn.
- *
- * Nhóm đông người → ngưỡng cao, vượt ít, chia nhiều phần → mỗi người ít (đúng ý «bố trí nhiều thì nhận ít»).
- * Chỉ 5 chuyền sản xuất; dòng V (định biên) và Ngoài lô không tính. Tiền KHÔNG lưu DB.
+ *   Thùng vượt ngày = max(0, thu hồi thực tế − mục tiêu) — dòng KPI «Tỷ lệ thu hồi» của Báo cáo sơ chế
+ *                     cùng ngày + nhà sơ chế (vd 211 − 196 = 15).
+ *   Quỹ ngày        = thùng vượt × đơn giá (1.000đ), CHỈ khi KPI «Năng suất sơ chế» ≥ ngưỡng% mục tiêu
+ *                     (`nguongPct`, mặc định 90); không đạt → 0.
+ *   Giờ một người   = giờ công + giờ TC. Nhóm có người tăng ca → người không tăng ca («xuống sớm») không tính.
+ *                     Bỏ vị trí nhóm trưởng / QL (`khong_thuong_vuot` trong danh mục Vị trí).
+ *   Chia quỹ        = về từng nhóm (5 chuyền) theo giờ nhóm × hệ số chuyền × hệ số nhóm, trong nhóm theo giờ.
+ *   Cuối tháng cộng các ngày × hệ số lỗi Ki rồi mới làm tròn. Tiền KHÔNG lưu DB (trừ ảnh chụp khi chốt tháng).
  */
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
-import { mucTieuNsNhom, soThungCuaNhom, type SoThungNhom } from './nang-suat-nhom';
 import { SO_NHOM_TOI_DA } from './tong-hop-nhom';
 import { CHUYEN_PRODUCTION_CODES, type FarmBaoCaoNhanCong, type LoaiChuyen } from './types';
 
@@ -120,28 +118,61 @@ export function viTriKhongThuongVuot(danhMuc: readonly { ten: string; khong_thuo
 export const laNguoiNhanThuongVuot = (viTri: string | null | undefined, viTriLoai: ReadonlySet<string>) =>
   !viTriLoai.has(khoaTen(viTri));
 
-export interface KetQuaVuotNhom {
-  nguongThung: number;
-  thungVuot: number;
-  thungVuotQuyDoi: number;
-  tien: number;
+/** KPI của Báo cáo sơ chế cùng ngày + nhà sơ chế (lấy từ dòng đã lưu). */
+export interface KpiSoCheNgay {
+  thuHoiThucTe: number | null;
+  thuHoiMucTieu: number | null;
+  nsThucTe: number | null;
+  nsMucTieu: number | null;
 }
 
-/** Thưởng vượt của một nhóm; chưa nhập số thùng / không có giờ công nhân → null. */
-export function thuongVuotNhom(p: {
-  soThung: number | null;
-  gioCong: number;
-  mucTieu: number;
-  nguongPct: number;
-  heSoChuyen: number;
-  heSoNhom: number;
-  donGia: number;
-}): KetQuaVuotNhom | null {
-  if (p.soThung == null || !(p.gioCong > 0)) return null;
-  const nguongThung = (p.nguongPct / 100) * p.mucTieu * p.gioCong;
-  const thungVuot = Math.max(0, p.soThung - nguongThung);
-  const thungVuotQuyDoi = thungVuot * p.heSoChuyen * p.heSoNhom;
-  return { nguongThung, thungVuot, thungVuotQuyDoi, tien: thungVuotQuyDoi * p.donGia };
+/** Quỹ thưởng vượt của một ngày (cả nhà sơ chế). */
+export interface QuyVuotNgay {
+  thuHoiThucTe: number;
+  thuHoiMucTieu: number;
+  /** max(0, thu hồi thực tế − mục tiêu). */
+  thungVuot: number;
+  /** NS sơ chế thực tế ÷ mục tiêu × 100; null = Báo cáo sơ chế chưa có NS. */
+  nsTyLe: number | null;
+  datNs: boolean;
+  /** datNs ? thùng vượt × đơn giá : 0. */
+  quy: number;
+}
+
+const docSoKpi = (v: unknown): number | null => {
+  if (v == null) return null;
+  const s = String(v).trim().replace(/\s/g, '').replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+};
+
+const TEN_KPI_NS = khoaTen('Năng suất sơ chế');
+const TEN_KPI_THU_HOI = khoaTen('Tỷ lệ thu hồi');
+
+/** Dòng KPI đã lưu của Báo cáo sơ chế → số cần cho thưởng vượt (khớp theo tên hạng mục, không theo thứ tự). */
+export function kpiSoCheTuDong(
+  rows: readonly { ten_hang_muc: string | null; muc_tieu: unknown; thuc_te: unknown }[] | null | undefined
+): KpiSoCheNgay | null {
+  if (!rows || rows.length === 0) return null;
+  const tim = (ten: string) => rows.find((r) => khoaTen(r.ten_hang_muc) === ten);
+  const ns = tim(TEN_KPI_NS);
+  const th = tim(TEN_KPI_THU_HOI);
+  return {
+    thuHoiThucTe: docSoKpi(th?.thuc_te),
+    thuHoiMucTieu: docSoKpi(th?.muc_tieu),
+    nsThucTe: docSoKpi(ns?.thuc_te),
+    nsMucTieu: docSoKpi(ns?.muc_tieu),
+  };
+}
+
+/** Quỹ ngày; null = chưa có Báo cáo sơ chế hoặc thiếu số thu hồi (thực tế / mục tiêu > 0). */
+export function quyVuotNgay(kpi: KpiSoCheNgay | null | undefined, caiDat: Pick<CaiDatThuongVuot, 'donGia' | 'nguongPct'>): QuyVuotNgay | null {
+  if (!kpi || kpi.thuHoiThucTe == null || kpi.thuHoiMucTieu == null || !(kpi.thuHoiMucTieu > 0)) return null;
+  const thungVuot = Math.max(0, kpi.thuHoiThucTe - kpi.thuHoiMucTieu);
+  const nsTyLe = kpi.nsThucTe != null && kpi.nsMucTieu != null && kpi.nsMucTieu > 0 ? (kpi.nsThucTe / kpi.nsMucTieu) * 100 : null;
+  const datNs = nsTyLe != null && nsTyLe >= caiDat.nguongPct;
+  return { thuHoiThucTe: kpi.thuHoiThucTe, thuHoiMucTieu: kpi.thuHoiMucTieu, thungVuot, nsTyLe, datNs, quy: datNs ? thungVuot * caiDat.donGia : 0 };
 }
 
 const num = (v: unknown) => {
@@ -154,13 +185,31 @@ type DongNvVuot = {
   vi_tri: string | null;
   so_nhom: number | null;
   so_gio_cong: number;
+  so_gio_tc: number;
   id_nhan_vien?: string | number | null;
 };
 
+/**
+ * Giờ tính thưởng của từng người trong một nhóm (đã bỏ nhóm trưởng / QL): giờ công + giờ TC.
+ * Nhóm có người tăng ca → người đi làm mà không tăng ca («xuống sớm») = 0 giờ, không nhận.
+ * Nhóm không ai tăng ca → tính đủ.
+ */
+export function gioTinhThuong<T extends Pick<DongNvVuot, 'so_gio_cong' | 'so_gio_tc'>>(ds: readonly T[]): { nv: T; gio: number; xuongSom: boolean }[] {
+  const nhomCoTc = ds.some((r) => num(r.so_gio_tc) > 0);
+  return ds.map((nv) => {
+    const cong = num(nv.so_gio_cong);
+    const tc = num(nv.so_gio_tc);
+    const xuongSom = nhomCoTc && tc <= 0 && cong > 0;
+    return { nv, gio: xuongSom ? 0 : cong + tc, xuongSom };
+  });
+}
+
 export interface NguoiThuongVuot<T extends DongNvVuot = DongNvVuot> {
   nv: T;
+  /** Giờ tính thưởng (công + TC; xuống sớm = 0). */
   gioCong: number;
-  /** Phần thùng vượt quy đổi của người này (chưa làm tròn). */
+  xuongSom: boolean;
+  /** Phần thùng vượt quy đổi của người này = tiền ÷ đơn giá (chưa làm tròn). */
   thungVuotQuyDoi: number;
   /** Tiền ngày (chưa làm tròn). */
   tien: number;
@@ -168,91 +217,102 @@ export interface NguoiThuongVuot<T extends DongNvVuot = DongNvVuot> {
 
 export interface NhomThuongVuot<T extends DongNvVuot = DongNvVuot> {
   soNhom: number;
-  soThung: number | null;
   soCongNhan: number;
-  /** Giờ công của công nhân (đã bỏ nhóm trưởng / QL). */
+  soXuongSom: number;
+  /** Tổng giờ tính thưởng của công nhân (công + TC, đã bỏ NT / QL / xuống sớm). */
   gioCong: number;
   heSoChuyen: number;
   heSoNhom: number;
   nhomTuPhieu: boolean;
-  /** null = chưa nhập số thùng hoặc không có giờ công nhân. */
-  ketQua: KetQuaVuotNhom | null;
+  /** gio × hệ số chuyền × hệ số nhóm — phần của nhóm trong quỹ ngày. */
+  trongSo: number;
+  /** Tiền của nhóm (chưa làm tròn); 0 khi quỹ 0 / chưa có quỹ. */
+  tien: number;
   /** Tiền của một công nhân làm 7,5h (hiện nhanh trên phiếu). */
   tienMoiGio: number;
   nguoi: NguoiThuongVuot<T>[];
 }
 
-/** Thưởng vượt từng nhóm của một chuyền (bỏ người chưa chia nhóm / không tên / vị trí loại trừ). */
-export function tinhThuongVuotChuyen<T extends DongNvVuot>(
-  chuyen: { loai_chuyen: LoaiChuyen; nhanVien: readonly T[]; soThungNhom: SoThungNhom | null | undefined; heSoNhom: HeSoNhom | null | undefined },
-  mucTieu: number,
+type PhieuVuot = Pick<FarmBaoCaoNhanCong, 'ngay' | 'chi_tiet'>;
+
+export interface ChuyenThuongVuot<T extends DongNvVuot = DongNvVuot> {
+  /** Vị trí trong `chi_tiet` của phiếu (form tra theo chỉ số dòng). */
+  idx: number;
+  loai_chuyen: LoaiChuyen;
+  nhom: NhomThuongVuot<T>[];
+}
+
+export interface ThuongVuotPhieu<T extends DongNvVuot = DongNvVuot> {
+  /** null = chưa có Báo cáo sơ chế / thiếu số thu hồi → chưa tính được. */
+  quy: QuyVuotNgay | null;
+  chuyen: ChuyenThuongVuot<T>[];
+}
+
+/**
+ * Thưởng vượt của một phiếu: quỹ ngày (từ Báo cáo sơ chế) chia cho mọi nhóm của 5 chuyền sản xuất theo
+ * giờ × hệ số chuyền × hệ số nhóm, rồi trong nhóm chia theo giờ. Bỏ người chưa chia nhóm / không tên /
+ * vị trí loại trừ; dòng V và Ngoài lô không tính.
+ */
+export function thuongVuotCuaPhieu<T extends DongNvVuot>(
+  phieu: { chi_tiet?: readonly { loai_chuyen: LoaiChuyen; nhan_vien?: readonly T[] | null; he_so_nhom?: HeSoNhom | null }[] | null },
+  kpi: KpiSoCheNgay | null | undefined,
   caiDat: CaiDatThuongVuot,
   viTriLoai: ReadonlySet<string>
-): NhomThuongVuot<T>[] {
-  if (!(CHUYEN_PRODUCTION_CODES as readonly string[]).includes(chuyen.loai_chuyen)) return [];
-  const theoNhom = new Map<number, T[]>();
-  for (const r of chuyen.nhanVien) {
-    if (r.so_nhom == null || gonTen(r.ho_ten) == null || !laNguoiNhanThuongVuot(r.vi_tri, viTriLoai)) continue;
-    theoNhom.set(r.so_nhom, [...(theoNhom.get(r.so_nhom) ?? []), r]);
-  }
-  return [...theoNhom.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([soNhom, ds]) => {
-      const gioCong = ds.reduce((s, r) => s + num(r.so_gio_cong), 0);
-      const soThung = soThungCuaNhom(chuyen.soThungNhom, soNhom);
-      const hs = heSoHieuLuc(caiDat, chuyen.loai_chuyen, soNhom, chuyen.heSoNhom);
-      const ketQua = thuongVuotNhom({
-        soThung,
-        gioCong,
-        mucTieu,
-        nguongPct: caiDat.nguongPct,
-        heSoChuyen: hs.heSoChuyen,
-        heSoNhom: hs.heSoNhom,
-        donGia: caiDat.donGia,
+): ThuongVuotPhieu<T> {
+  const quy = quyVuotNgay(kpi, caiDat);
+  const chuyen = (phieu.chi_tiet ?? []).flatMap((ct, idx) => {
+    if (!(CHUYEN_PRODUCTION_CODES as readonly string[]).includes(ct.loai_chuyen)) return [];
+    const theoNhom = new Map<number, T[]>();
+    for (const r of ct.nhan_vien ?? []) {
+      if (r.so_nhom == null || gonTen(r.ho_ten) == null || !laNguoiNhanThuongVuot(r.vi_tri, viTriLoai)) continue;
+      theoNhom.set(r.so_nhom, [...(theoNhom.get(r.so_nhom) ?? []), r]);
+    }
+    if (theoNhom.size === 0) return [];
+    const nhom = [...theoNhom.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([soNhom, ds]) => {
+        const gio = gioTinhThuong(ds);
+        const gioCong = gio.reduce((s, p) => s + p.gio, 0);
+        const hs = heSoHieuLuc(caiDat, ct.loai_chuyen, soNhom, ct.he_so_nhom);
+        return { soNhom, gio, gioCong, hs, trongSo: gioCong * hs.heSoChuyen * hs.heSoNhom };
       });
-      const phan = (gio: number) => (ketQua && gioCong > 0 ? gio / gioCong : 0);
-      return {
-        soNhom,
-        soThung,
-        soCongNhan: ds.length,
-        gioCong,
-        heSoChuyen: hs.heSoChuyen,
-        heSoNhom: hs.heSoNhom,
-        nhomTuPhieu: hs.nhomTuPhieu,
-        ketQua,
-        tienMoiGio: ketQua && gioCong > 0 ? ketQua.tien / gioCong : 0,
-        nguoi: ds.map((nv) => {
-          const g = num(nv.so_gio_cong);
-          return { nv, gioCong: g, thungVuotQuyDoi: (ketQua?.thungVuotQuyDoi ?? 0) * phan(g), tien: (ketQua?.tien ?? 0) * phan(g) };
-        }),
-      };
-    });
+    return [{ idx, loai_chuyen: ct.loai_chuyen, nhom }];
+  });
+  const tongTrongSo = chuyen.reduce((s, c) => s + c.nhom.reduce((s2, g) => s2 + g.trongSo, 0), 0);
+  const tienQuy = quy?.quy ?? 0;
+  const donGia = caiDat.donGia > 0 ? caiDat.donGia : 0;
+  return {
+    quy,
+    chuyen: chuyen.map((c) => ({
+      idx: c.idx,
+      loai_chuyen: c.loai_chuyen,
+      nhom: c.nhom.map((g) => {
+        const tien = tongTrongSo > 0 ? (tienQuy * g.trongSo) / tongTrongSo : 0;
+        const phan = (h: number) => (g.gioCong > 0 ? h / g.gioCong : 0);
+        return {
+          soNhom: g.soNhom,
+          soCongNhan: g.gio.length,
+          soXuongSom: g.gio.filter((p) => p.xuongSom).length,
+          gioCong: g.gioCong,
+          heSoChuyen: g.hs.heSoChuyen,
+          heSoNhom: g.hs.heSoNhom,
+          nhomTuPhieu: g.hs.nhomTuPhieu,
+          trongSo: g.trongSo,
+          tien,
+          tienMoiGio: g.gioCong > 0 ? tien / g.gioCong : 0,
+          nguoi: g.gio.map((p) => {
+            const tienNguoi = tien * phan(p.gio);
+            return { nv: p.nv, gioCong: p.gio, xuongSom: p.xuongSom, tien: tienNguoi, thungVuotQuyDoi: donGia > 0 ? tienNguoi / donGia : 0 };
+          }),
+        };
+      }),
+    })),
+  };
 }
 
 /** Khoá gộp một người qua các ngày: id danh mục, chưa gắn danh mục thì theo tên chuẩn hoá. */
 export function khoaNguoi(nv: { id_nhan_vien?: string | number | null; ho_ten: string }): string {
   return nv.id_nhan_vien != null && String(nv.id_nhan_vien) !== '' ? `nv:${nv.id_nhan_vien}` : `ten:${khoaTen(nv.ho_ten)}`;
-}
-
-type PhieuVuot = Pick<FarmBaoCaoNhanCong, 'ngay' | 'chi_tiet' | 'muc_tieu_ns_nhom'>;
-
-export interface ChuyenThuongVuot {
-  loai_chuyen: LoaiChuyen;
-  nhom: NhomThuongVuot[];
-}
-
-/** Thưởng vượt mọi chuyền sản xuất của một phiếu (chỉ chuyền có nhóm). */
-export function thuongVuotCuaPhieu(phieu: PhieuVuot, caiDat: CaiDatThuongVuot, viTriLoai: ReadonlySet<string>): ChuyenThuongVuot[] {
-  const mucTieu = mucTieuNsNhom(phieu.muc_tieu_ns_nhom);
-  return (phieu.chi_tiet ?? []).flatMap((ct) => {
-    const nhom = tinhThuongVuotChuyen(
-      { loai_chuyen: ct.loai_chuyen, nhanVien: ct.nhan_vien ?? [], soThungNhom: ct.so_thung_nhom, heSoNhom: ct.he_so_nhom },
-      mucTieu,
-      caiDat,
-      viTriLoai
-    );
-    return nhom.length > 0 ? [{ loai_chuyen: ct.loai_chuyen, nhom }] : [];
-  });
 }
 
 export interface NgayThuongVuot {
@@ -288,13 +348,14 @@ export interface DongThuongThang {
  */
 export function tongHopThuongThang(
   phieus: readonly PhieuVuot[],
+  kpiTheoNgay: ReadonlyMap<string, KpiSoCheNgay>,
   caiDat: CaiDatThuongVuot,
   viTriLoai: ReadonlySet<string>,
   heSoLoi: Readonly<Record<string, number>> = {}
 ): DongThuongThang[] {
   const theoNguoi = new Map<string, DongThuongThang & { _ngay: Set<string>; _ngayGanNhat: string }>();
   for (const phieu of [...phieus].sort((a, b) => a.ngay.localeCompare(b.ngay))) {
-    for (const c of thuongVuotCuaPhieu(phieu, caiDat, viTriLoai)) {
+    for (const c of thuongVuotCuaPhieu(phieu, kpiTheoNgay.get(phieu.ngay), caiDat, viTriLoai).chuyen) {
       for (const g of c.nhom) {
         for (const p of g.nguoi) {
           const khoa = khoaNguoi(p.nv);
@@ -342,7 +403,7 @@ export function tongHopThuongThang(
     .sort((a, b) => thuTu(a.chuyen[0]) - thuTu(b.chuyen[0]) || a.ho_ten.localeCompare(b.ho_ten, 'vi'));
 }
 
-/** Tra nhanh kết quả vượt theo chuyền → số nhóm (bảng tổng hợp nhóm của bản in / Excel). */
+/** Tra nhanh kết quả vượt theo chuyền → số nhóm (bảng tổng hợp nhóm của bản in / Excel; phiếu đã lưu mỗi chuyền một dòng). */
 export function vuotTheoChuyenNhom(ds: readonly ChuyenThuongVuot[]): Map<LoaiChuyen, Map<number, NhomThuongVuot>> {
   return new Map(ds.map((c) => [c.loai_chuyen, new Map(c.nhom.map((g) => [g.soNhom, g]))]));
 }

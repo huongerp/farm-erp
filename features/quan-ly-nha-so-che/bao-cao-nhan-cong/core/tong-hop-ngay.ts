@@ -5,10 +5,10 @@ import type { FarmBaoCaoNhanCong, LoaiChuyen } from './types';
  * Thứ tự phần tử = thứ tự cột trên bảng.
  */
 export const NHOM_TONG_HOP_NGAY = [
-  { key: 'quanLy', loai: ['CONG_DINH_BIEN_KHONG_SAN_XUAT'] },
+  { key: 'quanLy', loai: ['KHO_HUT_CHAN_KHONG'] },
   { key: 'xanTia', loai: ['XAN_NAI', 'TIA_DANH_GIA'] },
   { key: 'canDongThung', loai: ['CAN_TEM_DONG_THUNG'] },
-  { key: 'kho', loai: ['KHO_HUT_CHAN_KHONG'] },
+  { key: 'kho', loai: ['CONG_DINH_BIEN_KHONG_SAN_XUAT'] },
   { key: 'tangCuong', loai: ['CONG_TANG_CUONG'] },
 ] as const satisfies readonly { key: string; loai: readonly LoaiChuyen[] }[];
 

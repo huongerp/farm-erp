@@ -1,7 +1,7 @@
 /**
  * Kiểu in «Danh sách theo nhóm»: mỗi chuyền chia khối Nhóm 1, Nhóm 2… (chưa chia nhóm xếp cuối),
- * mỗi khối có dòng tổng (kèm số thùng / NS / % đạt khi đã nhập); dưới cùng bảng «Tổng hợp theo nhóm»
- * để so năng suất giữa các nhóm + bảng thưởng vượt thùng của công nhân (core/thuong-vuot-thung.ts).
+ * mỗi khối có dòng tổng; dưới cùng bảng «Tổng hợp theo nhóm» (giờ tính thưởng + thưởng vượt từng nhóm,
+ * quỹ ngày lấy từ Báo cáo sơ chế) + bảng thưởng vượt thùng của công nhân (core/thuong-vuot-thung.ts).
  * Mọi bảng `<thead>` một hàng không gộp ô → paged.js lặp tiêu đề, trang in ẩn / kéo cột được.
  */
 import React from 'react';
@@ -9,9 +9,9 @@ import { useTranslation } from 'react-i18next';
 import { NGOAI_LE_CODE, type FarmBaoCaoNhanCong } from '../core/types';
 import { nhomNhanVienTheoChuyen } from '../core/danh-sach-nv';
 import { tongHopTheoNhom } from '../core/tong-hop-nhom';
-import { fmtNsNhom, fmtTyLeNs, lopMauTyLeNs, mucTieuNsNhom, nangSuatNhomCuaPhieu, phieuCoSoThungNhom } from '../core/nang-suat-nhom';
 import { dsThuongVuotPhieu, thuongVuotCuaPhieu, vuotTheoChuyenNhom } from '../core/thuong-vuot-thung';
-import { useCaiDatThuongVuot, useViTriKhongThuongVuot } from '../hooks/use-thuong-vuot';
+import { useCaiDatThuongVuot, useKpiSoCheNgay, useViTriKhongThuongVuot } from '../hooks/use-thuong-vuot';
+import { DongQuyVuot } from './BaoCaoNhanCongSanLuongNhom';
 import { formatNumberVN } from '../../../../lib/utils';
 import { DongNv, LOP_BANG_NV, SO_COT_BANG_NV, TieuDeCotNv, type LopBangNv } from './BaoCaoNhanCongNhanVienBang';
 
@@ -20,22 +20,22 @@ interface Props {
 }
 
 /**
- * Bảng «Tổng hợp theo nhóm» (người đi làm, công, giờ + số thùng / NS / % đạt / thưởng vượt khi phiếu có nhập thùng),
- * bảng «Thưởng vượt thùng» từng công nhân và ghi chú cách tính. Dùng ở trang in (`LOP_BANG_NV.print`) và chi tiết
- * phiếu (`.screen`). Trang in chờ cài đặt thưởng tải xong rồi mới dàn trang (BaoCaoNhanCongPreviewPage).
+ * Bảng «Tổng hợp theo nhóm» (người đi làm, công, giờ + giờ tính thưởng / hệ số / thưởng vượt nhóm), bảng
+ * «Thưởng vượt thùng» từng công nhân và ghi chú cách tính. Dùng ở trang in (`LOP_BANG_NV.print`) và chi tiết
+ * phiếu (`.screen`). Trang in chờ cài đặt thưởng + KPI Báo cáo sơ chế tải xong rồi mới dàn trang.
  */
 export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }> = ({ data, c }) => {
   const { t } = useTranslation();
   const { caiDat } = useCaiDatThuongVuot(data.id_chi_nhanh);
   const viTriLoai = useViTriKhongThuongVuot();
+  const { kpi, isLoading: dangTaiKpi } = useKpiSoCheNgay(data.id_chi_nhanh, data.ngay);
   const chuyen = nhomNhanVienTheoChuyen(data).map((g) => ({ ...g, nhom: tongHopTheoNhom(g.nhanVien) }));
   if (chuyen.length === 0) return null;
 
-  const nsTheoChuyen = nangSuatNhomCuaPhieu(data);
-  const coNs = phieuCoSoThungNhom(nsTheoChuyen);
-  const vuotPhieu = thuongVuotCuaPhieu(data, caiDat, viTriLoai);
-  const vuotTheoChuyen = vuotTheoChuyenNhom(vuotPhieu);
-  const dsThuong = dsThuongVuotPhieu(vuotPhieu);
+  const vuotPhieu = thuongVuotCuaPhieu(data, kpi, caiDat, viTriLoai);
+  const coVuot = vuotPhieu.chuyen.length > 0;
+  const vuotTheoChuyen = vuotTheoChuyenNhom(vuotPhieu.chuyen);
+  const dsThuong = dsThuongVuotPhieu(vuotPhieu.chuyen);
   const ttTheoLoai = new Map(chuyen.map((g) => [g.ct.loai_chuyen, g.tt]));
   const manHinh = c === LOP_BANG_NV.screen;
   const num = `${c.td} text-right tabular-nums`;
@@ -50,6 +50,14 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
 
   return (
     <>
+      {coVuot && (
+        <DongQuyVuot
+          quy={vuotPhieu.quy}
+          nguongPct={caiDat.nguongPct}
+          dangTai={dangTaiKpi}
+          className={`mb-1.5 ${manHinh ? '' : '!text-[8pt] !text-gray-700'}`}
+        />
+      )}
       <div className={c.wrap}>
         <table className={c.table}>
           <thead>
@@ -60,12 +68,10 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
               <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.preview.colCongQuyDoi')}</th>
               <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
               <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioTc')}</th>
-              {coNs && (
+              {coVuot && (
                 <>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.soThung')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.nsDonVi')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.tyLeDat')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.thungVuot')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.colGioTinh')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.heSoNhom')}</th>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.thuongVuotNhom')}</th>
                 </>
               )}
@@ -74,11 +80,8 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
           <tbody>
             {chuyen.flatMap(({ ct, tt, nhom }) => {
               const ngoaiLe = ct.loai_chuyen === NGOAI_LE_CODE;
-              const theoNhom = nsTheoChuyen.find((x) => x.tt === tt)?.theoNhom;
               return nhom.map((g) => {
-                const ns = g.soNhom == null ? undefined : theoNhom?.get(g.soNhom);
-                const coThung = ns?.soThung != null;
-                const vuot = g.soNhom == null ? undefined : vuotTheoChuyen.get(ct.loai_chuyen)?.get(g.soNhom)?.ketQua;
+                const vuot = g.soNhom == null ? undefined : vuotTheoChuyen.get(ct.loai_chuyen)?.get(g.soNhom);
                 return (
                   <tr key={`${ct.loai_chuyen}-${g.soNhom ?? 'chua-chia'}`}>
                     <td className={c.td}>{tenChuyen(tt, ct.loai_chuyen)}</td>
@@ -87,13 +90,16 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
                     <td className={num}>{formatNumberVN(g.cong)}</td>
                     <td className={num}>{gio(ngoaiLe, g.gioCong)}</td>
                     <td className={num}>{gio(ngoaiLe, g.gioTc)}</td>
-                    {coNs && (
+                    {coVuot && (
                       <>
-                        <td className={num}>{coThung ? formatNumberVN(ns.soThung) : '—'}</td>
-                        <td className={num}>{coThung ? fmtNsNhom(ns.ns) : '—'}</td>
-                        <td className={`${num} ${manHinh && coThung ? lopMauTyLeNs(ns.tyLe) : ''}`}>{coThung ? fmtTyLeNs(ns.tyLe) : '—'}</td>
-                        <td className={num}>{vuot ? formatNumberVN(vuot.thungVuot, { maxFractionDigits: 2 }) : '—'}</td>
-                        <td className={num}>{vuot ? formatNumberVN(Math.round(vuot.tien)) : '—'}</td>
+                        <td className={num}>
+                          {vuot ? formatNumberVN(vuot.gioCong, { maxFractionDigits: 2 }) : '—'}
+                          {vuot && vuot.soXuongSom > 0 && (
+                            <span className="block text-[0.85em] opacity-75">{t('baoCaoNhanCong.vuot.xuongSomNgan', { n: vuot.soXuongSom })}</span>
+                          )}
+                        </td>
+                        <td className={num}>{vuot ? formatNumberVN(vuot.heSoNhom, { maxFractionDigits: 3 }) : '—'}</td>
+                        <td className={num}>{vuot && vuotPhieu.quy ? formatNumberVN(Math.round(vuot.tien)) : '—'}</td>
                       </>
                     )}
                   </tr>
@@ -114,7 +120,7 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colHoTen')}</th>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colChuyen')}</th>
                   <th className={c.th}>{t('baoCaoNhanCong.nsNhom.colNhom')}</th>
-                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nv.gioCong')}</th>
+                  <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.vuot.colGioTinh')}</th>
                   <th className={`${c.th} text-right`}>{t('baoCaoNhanCong.nsNhom.colThuong')}</th>
                 </tr>
               </thead>
@@ -141,10 +147,9 @@ export const NsNhomTongHop: React.FC<{ data: FarmBaoCaoNhanCong; c: LopBangNv }>
         </>
       )}
 
-      {coNs && (
+      {coVuot && (
         <p className={`m-0 mt-1.5 break-inside-avoid ${manHinh ? 'text-xs text-muted-foreground' : 'text-[7.5pt] text-gray-600'}`}>
           {t('baoCaoNhanCong.vuot.ghiChuMucTieu', {
-            mucTieu: formatNumberVN(mucTieuNsNhom(data.muc_tieu_ns_nhom)),
             nguongPct: formatNumberVN(caiDat.nguongPct, { maxFractionDigits: 2 }),
             donGia: formatNumberVN(caiDat.donGia),
           })}
@@ -159,7 +164,6 @@ const BaoCaoNhanCongNhanVienTheoNhom: React.FC<Props> = ({ data }) => {
   const chuyen = nhomNhanVienTheoChuyen(data).map((g) => ({ ...g, nhom: tongHopTheoNhom(g.nhanVien) }));
   if (chuyen.length === 0) return null;
 
-  const nsTheoChuyen = nangSuatNhomCuaPhieu(data);
   const c = LOP_BANG_NV.print;
   const tenNhom = (soNhom: number | null) =>
     soNhom == null ? t('baoCaoNhanCong.preview.chuaChiaNhom') : t('baoCaoNhanCong.preview.nhomN', { n: soNhom });
@@ -176,7 +180,6 @@ const BaoCaoNhanCongNhanVienTheoNhom: React.FC<Props> = ({ data }) => {
         <tbody>
           {chuyen.map(({ ct, tt, nhanVien, nhom }) => {
             const ngoaiLe = ct.loai_chuyen === NGOAI_LE_CODE;
-            const theoNhom = nsTheoChuyen.find((x) => x.tt === tt)?.theoNhom;
             return (
               <React.Fragment key={ct.loai_chuyen}>
                 <tr>
@@ -186,7 +189,6 @@ const BaoCaoNhanCongNhanVienTheoNhom: React.FC<Props> = ({ data }) => {
                   </td>
                 </tr>
                 {nhom.map((g) => {
-                  const ns = g.soNhom == null ? undefined : theoNhom?.get(g.soNhom);
                   return (
                     <React.Fragment key={g.soNhom ?? 'chua-chia'}>
                       <tr>
@@ -206,8 +208,6 @@ const BaoCaoNhanCongNhanVienTheoNhom: React.FC<Props> = ({ data }) => {
                             gioCong: gio(ngoaiLe, g.gioCong),
                             gioTc: gio(ngoaiLe, g.gioTc),
                           })}
-                          {ns?.soThung != null &&
-                            t('baoCaoNhanCong.nsNhom.tongNhomNs', { thung: formatNumberVN(ns.soThung), nangSuat: fmtNsNhom(ns.ns), tyLe: fmtTyLeNs(ns.tyLe) })}
                         </td>
                       </tr>
                     </React.Fragment>
