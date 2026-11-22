@@ -43,6 +43,7 @@ describe('tachLoi', () => {
   it('tách theo dấu phẩy / chấm phẩy / cộng, bỏ số đi kèm, gọn khoảng trắng', () => {
     expect(tachLoi('Trầy khô 4,Nấm xanh 6')).toEqual(['Trầy khô', 'Nấm xanh']);
     expect(tachLoi('Rớt cap 3; Trầy tươi 1 + trầy khô2')).toEqual(['Rớt cap', 'Trầy tươi', 'trầy khô']);
+    expect(tachLoi('Khác (Nhọn đầu, Không BB), Dame')).toEqual(['Khác (Nhọn đầu, Không BB)', 'Dame']);
     expect(tachLoi('  Rệp   sáp  ')).toEqual(['Rệp sáp']);
   });
 
@@ -87,7 +88,7 @@ describe('tongHopNhomLoi', () => {
   });
 
   it('tên chuẩn trong danh mục có dấu phẩy («Côn trùng, sâu bọ») là MỘT lỗi, không bị tách đôi', () => {
-    const ds = [...DS_LY_DO, lyDo('Côn trùng, sâu bọ', 'danh_gia', 'csv'), lyDo('Thối trái, thối đầu trái', 'danh_gia', null)];
+    const ds = [...DS_LY_DO, lyDo('Côn trùng, sâu bọ', 'danh_gia', 'csv'), lyDo('Thối trái, thối đầu trái', 'danh_gia', 'csb')];
     const kq = tongHopNhomLoi(
       [row('danh_gia', 'côn trùng,sâu bọ', 6), row('danh_gia', 'Quá size 2, Côn trùng, sâu bọ 1', 3), row('danh_gia', 'Thối trái, thối đầu trái', 2)],
       ds,
@@ -96,7 +97,22 @@ describe('tongHopNhomLoi', () => {
     );
     expect(kq.dsNhom.find((n) => n.id === 'csv')!.soDanhGia).toBe(9);
     expect(kq.dsNhom.find((n) => n.id === 'th')!.soDanhGia).toBe(3);
-    expect(kq.chuaPhanLoai.chiTiet.map((c) => c.ten)).toEqual(['Thối trái, thối đầu trái']);
+    expect(kq.dsNhom.find((n) => n.id === 'csb')!.soDanhGia).toBe(2);
+    expect(kq.chuaPhanLoai.so).toBe(0);
+  });
+
+  it('tên ghép CHƯA gán nhóm trong danh mục thì vẫn tách; khớp không phân biệt dấu và khoảng trắng quanh «-»', () => {
+    const ds = [...DS_LY_DO, lyDo('Trầy khô 4,Rệp sáp 6', 'danh_gia', null), lyDo('4-5 nải', 'danh_gia', 'csv'), lyDo('Trầy tươi', 'danh_gia', 'th')];
+    const kq = tongHopNhomLoi(
+      [row('danh_gia', 'Trầy khô 4,Rệp sáp 6', 5), row('danh_gia', '4 - 5 nải', 2), row('danh_gia', 'trầy tuoi', 1)],
+      ds,
+      DS_NHOM,
+      100
+    );
+    expect(kq.dsNhom.find((n) => n.id === 'csb')!.soDanhGia).toBe(5);
+    expect(kq.dsNhom.find((n) => n.id === 'csv')!.soDanhGia).toBe(7);
+    expect(kq.dsNhom.find((n) => n.id === 'th')!.soDanhGia).toBe(1);
+    expect(kq.chuaPhanLoai.so).toBe(0);
   });
 
   it('lý do huỷ khớp danh mục loai khác khi cùng loai không có (Rệp sáp ở ô huỷ → nhóm của Rệp sáp đánh giá)', () => {

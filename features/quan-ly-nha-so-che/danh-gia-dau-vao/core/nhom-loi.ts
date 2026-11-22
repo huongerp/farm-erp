@@ -57,13 +57,30 @@ export const MAU_CHUA_PHAN_LOAI = '#9CA3AF';
 /** Số / «x2» dính ở đuôi mỗi phần («trầy khô2», «Rớt cap 3», «Rệp sáp x2») — bỏ khi tách. */
 const SO_DUOI_RE = /[\s\-–—:]*\(?\s*[xX×]?\s*\d+(?:[.,]\d+)?\s*\)?\s*$/;
 
+/** Cắt theo `,` `;` `+` nhưng KHÔNG cắt trong ngoặc: «Khác (Nhọn đầu, Không BB)» là một phần. */
+function catNgoaiNgoac(text: string): string[] {
+  const kq: string[] = [];
+  let sau = 0;
+  let cur = '';
+  for (const c of text) {
+    if (c === '(') sau += 1;
+    else if (c === ')' && sau > 0) sau -= 1;
+    if (sau === 0 && (c === ',' || c === ';' || c === '+')) {
+      kq.push(cur);
+      cur = '';
+    } else cur += c;
+  }
+  kq.push(cur);
+  return kq;
+}
+
 /**
  * Tách chuỗi lỗi ghép thành từng tên lỗi: cắt `,` `;` `+`, bỏ số / «x2» ở đuôi mỗi phần, gọn khoảng
  * trắng. Rỗng → []. Trùng nhau trong cùng một ô chỉ tính một lần.
  */
 export function tachLoi(text: string | null | undefined): string[] {
   const m = new Map<string, string>();
-  for (const phan of (text ?? '').split(/[,;+]/)) {
+  for (const phan of catNgoaiNgoac(text ?? '')) {
     let s = phan.trim();
     // Bỏ số đuôi lặp lại («Trầy khô 4 5» hiếm, nhưng bỏ cho chắc).
     let truoc = '';
@@ -91,13 +108,25 @@ export interface MapNhomTheoTen {
  * Dùng cho cả danh mục lẫn chữ đã tách, để tên chuẩn có dấu phẩy («Trầy, dập tươi») khớp được.
  */
 export function khoaLoi(s: string | null | undefined): string {
-  return khoaTen(s).replace(/\s*[,;+]\s*/g, ', ');
+  return (
+    khoaTen(s)
+      // Không phân biệt dấu: dữ liệu gõ tay hay sót / sai dấu («trầy tuoi», «Đỗ mới» = «Đổ mới»).
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/\s*-\s*/g, '-') // «4 - 5 nải» = «4-5 nải»
+      .replace(/\s*[,;+]\s*/g, ', ')
+  );
 }
 
-/** Tập khoá mọi tên trong danh mục (đã gán nhóm hay chưa), đã bỏ số đuôi giống `tachLoi`. */
+/**
+ * Tập khoá các tên danh mục ĐÃ GÁN NHÓM, đã bỏ số đuôi giống `tachLoi`. Tên ghép chưa gán (thường là
+ * lỗi thuộc nhiều nhóm, «Trầy khô 4,Nấm xanh 6») không vào tập → bị tách để từng phần tính đúng nhóm.
+ */
 function taoTapTen(dsLyDo: readonly VarDgdvLyDo[]): Set<string> {
   const tap = new Set<string>();
   for (const l of dsLyDo) {
+    if (!l.id_nhom_loi) continue;
     const k = khoaLoi(tachLoi(l.ten).join(', '));
     if (k) tap.add(k);
   }
