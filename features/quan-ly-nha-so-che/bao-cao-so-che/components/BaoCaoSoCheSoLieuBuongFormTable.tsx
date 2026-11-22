@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Controller, useWatch, type Control, type FieldErrors } from 'react-hook-form';
 import NumberInput from '../../../../components/ui/NumberInput';
@@ -26,6 +26,8 @@ import {
   SO_LIEU_ROW_KEYS,
   laSoLieuRowTuDgdv,
   laSoLieuRowTuGscl,
+  laSoLieuRowTuTinh,
+  tinhTonCuoiNgay,
   type SoLieuRowKeyTuDgdv,
 } from '../core/so-lieu-row-meta';
 import { cn, formatNumberVN } from '../../../../lib/utils';
@@ -47,6 +49,17 @@ interface Props {
   gsclLoi?: boolean;
 }
 
+/**
+ * Đồng bộ giá trị tự tính vào form. Không gọi hook trong render-prop inline của Controller
+ * → tách component con ở module-level, effect chỉ chạy khi `value` đổi.
+ */
+const DongBoTonCuoi: React.FC<{ value: number; onChange: (v: number) => void }> = ({ value, onChange }) => {
+  useEffect(() => {
+    onChange(value);
+  }, [value, onChange]);
+  return null;
+};
+
 const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   control,
   errors,
@@ -58,6 +71,13 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const rowMeta = useWatch({ control, name: 'so_lieu_row_meta' });
+  // Mục 10 tự tính = mục 7 − mục 8 − mục 9 (mục 7/8 khoá theo ĐGĐV, mục 9 nhập tay).
+  const soChe = useWatch({ control, name: 'tong_buong_so_che' });
+  const tonCuoi = tinhTonCuoiNgay(
+    giaTriTuDgdv.tong_buong_thu_hoach,
+    giaTriTuDgdv.tong_buong_khong_so_che,
+    soChe
+  );
 
   const dvtComboboxOptions = useMemo(() => {
     const set = new Set<string>([...SO_LIEU_DVT_PRESET_OPTIONS]);
@@ -110,6 +130,11 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                   </td>
                   <td className={`${bcscSoLieuTdChiSo} text-muted-foreground text-xs leading-snug`}>
                     {t(def.labelKey)}
+                    {laSoLieuRowTuTinh(def.key) && (
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {t('baoCaoSoChe.form.tonCuoiTuTinh')}
+                      </span>
+                    )}
                     {tuDgdv && (
                       <>
                         <a
@@ -155,7 +180,24 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                     )}
                   </td>
                   <td className={bcscSoLieuTdGiaTri}>
-                    {laSoLieuRowTuDgdv(def.key) ? (
+                    {laSoLieuRowTuTinh(def.key) ? (
+                      // Ô tự tính: mục 7 − mục 8 − mục 9, không cho nhập tay; vẫn đồng bộ vào form khi lưu.
+                      <>
+                        <span
+                          className={cn(
+                            'block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground',
+                            tonCuoi < 0 && 'text-destructive'
+                          )}
+                        >
+                          {formatNumberVN(tonCuoi)}
+                        </span>
+                        <Controller
+                          name={def.key}
+                          control={control}
+                          render={({ field }) => <DongBoTonCuoi value={tonCuoi} onChange={field.onChange} />}
+                        />
+                      </>
+                    ) : laSoLieuRowTuDgdv(def.key) ? (
                       // Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay.
                       <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
                         {formatNumberVN(giaTriTuDgdv[def.key])}

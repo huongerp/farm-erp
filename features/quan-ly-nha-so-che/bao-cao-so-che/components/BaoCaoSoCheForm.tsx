@@ -321,6 +321,8 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           phieuNhapRefLoading={phieuNhapRefLoading}
           setValue={setValue}
           autoFillHeSo={!isEdit}
+          idChiNhanh={idChiNhanh ?? ''}
+          canAdmin={canAdmin}
         />
 
         <FormSection title={t('baoCaoSoChe.form.sectionNsLuongTitle')} icon={<Calculator size={14} />} variant="primary">

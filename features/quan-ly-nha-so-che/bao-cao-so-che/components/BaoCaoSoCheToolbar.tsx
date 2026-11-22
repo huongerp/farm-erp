@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { BaoCaoSoCheTomTat } from '../services/bao-cao-so-che-service';
 import { useTranslation } from 'react-i18next';
-import { Plus, Building2, Calendar, Hash, ToggleLeft, Ruler, Download } from 'lucide-react';
+import { Plus, Building2, Calendar, Hash, ToggleLeft, Ruler, Download, Settings } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -27,6 +27,9 @@ interface Props {
   onExport: () => void;
   canCreate?: boolean;
   canDelete?: boolean;
+  /** Chỉ quản trị: mở dialog cài đặt hệ số quy đổi theo farm × phẩm cấp. */
+  canAdmin?: boolean;
+  onOpenCaiDat?: () => void;
   /** Nút bulk riêng của module (khóa/mở khóa hàng loạt), hiện cạnh nút Xóa khi có dòng được chọn. */
   bulkActions?: React.ReactNode;
 }
@@ -48,6 +51,8 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
   onExport,
   canCreate = true,
   canDelete = true,
+  canAdmin = false,
+  onOpenCaiDat,
   bulkActions,
 }) => {
   const { t } = useTranslation();
@@ -207,6 +212,17 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
 
   const mobileActions = useMemo(
     () => [
+      ...(canAdmin && onOpenCaiDat
+        ? [
+            {
+              key: 'cai-dat',
+              label: t('baoCaoSoChe.caiDatHeSo.nutMo'),
+              icon: Settings,
+              onClick: onOpenCaiDat,
+              description: '',
+            },
+          ]
+        : []),
       {
         key: 'export',
         label: t('common.export'),
@@ -215,12 +231,25 @@ const BaoCaoSoCheToolbar: React.FC<Props> = ({
         description: '',
       },
     ],
-    [onExport, t]
+    [onExport, onOpenCaiDat, canAdmin, t]
   );
 
   const renderActions = (
     <>
       <div className="hidden sm:flex items-center gap-2">
+        {canAdmin && onOpenCaiDat ? (
+          <Tooltip content={t('baoCaoSoChe.caiDatHeSo.nutMo')} placement="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenCaiDat}
+              aria-label={t('baoCaoSoChe.caiDatHeSo.nutMo')}
+              className="inline-flex min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 h-9 w-9 p-0 items-center justify-center border-border text-muted-foreground hover:bg-muted/50"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </Tooltip>
+        ) : null}
         <Tooltip content={t('common.export')} placement="bottom">
           <Button
             variant="outline"

@@ -26,7 +26,8 @@ import {
   type PhamCapRowFormValues,
 } from '../core/pham-cap';
 import { parseHeSo } from '../core/he-so-quy-doi';
-import { useHeSoQuyDoiGoiY } from '../hooks/use-he-so-quy-doi';
+import { heSoTheoCaiDat } from '../core/he-so-cai-dat';
+import { useCaiDatHeSo, useHeSoQuyDoiGoiY } from '../hooks/use-he-so-quy-doi';
 import { enrichPhamCapRowsWithDerived } from '../core/pham-cap-derived';
 import { formatNumberVN, cn } from '../../../../lib/utils';
 import { useIsMobile } from '../../../../lib/hooks/use-is-mobile';
@@ -127,6 +128,10 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   setValue: UseFormSetValue<BaoCaoSoCheFormValues>;
   /** Phiếu mới: tự điền hệ số lần gần nhất theo tên phẩm cấp khi mở form. */
   autoFillHeSo?: boolean;
+  /** Chi nhánh của phiếu — tra cài đặt hệ số theo farm × phẩm cấp. */
+  idChiNhanh?: string;
+  /** Quản trị: được sửa tay ô hệ số; ngược lại ô hệ số chỉ đọc khi farm đã cài. */
+  canAdmin?: boolean;
 }> = ({
   control,
   errors,
@@ -135,31 +140,99 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   phieuNhapRefLoading = false,
   setValue,
   autoFillHeSo = false,
+  idChiNhanh = '',
+  canAdmin = false,
 }) => {
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({ control, name: 'pham_cap' });
   const pham = useWatch({ control, name: 'pham_cap' });
   const { data: heSoGoiY } = useHeSoQuyDoiGoiY(!disabled);
-  const heSoOptions = useMemo(
-    () => (heSoGoiY?.options ?? []).map((v) => ({ value: v, label: heSoDisplay(v) })),
-    [heSoGoiY]
-  );
+  // Luôn tải cài đặt kể cả section đang disabled — farm thường vẫn phải được tự điền hệ số.
+  const { data: caiDat } = useCaiDatHeSo(!!idChiNhanh);
 
-  /** Gán hệ số gần nhất của phẩm cấp `ten` vào dòng `idx` nếu dòng đó chưa có hệ số. */
-  const fillHeSoForRow = (idx: number, ten: string | null | undefined, shouldDirty: boolean) => {
+  /** Hệ số đã cài cho farm × phẩm cấp, `null` = farm chưa cài. */
+  const heSoCaiDat = (ten: string | null | undefined) =>
+    heSoTheoCaiDat(caiDat, idChiNhanh, ten);
+
+  /** Đang có cài đặt cho dòng này không (để khoá ô hoặc hiện gợi ý). */
+  const coCaiDat = (ten: string | null | undefined) => heSoCaiDat(ten) != null;
+
+  const heSoOptions = useMemo(() => {
+    const set = new Set<number>(heSoGoiY?.options ?? []);
+    // Giá trị đang có trên dòng (vd. cài đặt của farm) phải có trong danh sách — nếu không
+    // Combobox sẽ không khớp option và hiện placeholder thay vì số.
+    for (const r of pham ?? []) {
+      const v = r?.he_so_quy_doi;
+      if (v != null && Number.isFinite(Number(v))) set.add(Number(v));
+    }
+    return [...set].sort((a, b) => a - b).map((v) => ({ value: v, label: heSoDisplay(v) }));
+  }, [heSoGoiY, pham]);
+
+  /**
+   * Điền hệ số cho dòng `idx` theo tên phẩm cấp: ưu tiên cài đặt farm × phẩm cấp,
+   * không có mới rơi về gợi ý lịch sử (chỉ khi dòng đang trống).
+   * `overwrite` = true cho ca «đổi tên phẩm cấp» — ghi đè cả hệ số đã có.
+   */
+  const fillHeSoForRow = (
+    idx: number,
+    ten: string | null | undefined,
+    shouldDirty: boolean,
+    overwrite = false
+  ) => {
+    const tuCaiDat = heSoCaiDat(ten);
+    if (tuCaiDat != null) {
+      if (!overwrite && !canAutoFillHeSo(pham?.[idx])) return;
+      setValue(`pham_cap.${idx}.he_so_quy_doi`, tuCaiDat, { shouldDirty });
+      return;
+    }
     const heSo = heSoGoiY?.ganNhatTheoPhamCap[normalizePhamCapKey(ten)];
     if (heSo == null || !canAutoFillHeSo(pham?.[idx])) return;
     setValue(`pham_cap.${idx}.he_so_quy_doi`, heSo, { shouldDirty });
   };
 
-  // Phiếu mới: điền một lần khi lịch sử hệ số tải xong (không đánh dấu form «đã sửa»).
+  // Điền theo cài đặt một lần khi dữ liệu cài đặt tải xong (phiếu mới + phiếu sửa: chỉ dòng trống).
+  // KHÔNG chặn theo `disabled` — farm thường nhập phiếu vẫn cần hệ số tự điền.
+  const caiDatFilledRef = useRef(false);
+  useEffect(() => {
+    if (!caiDat || caiDatFilledRef.current) return;
+    caiDatFilledRef.current = true;
+    (pham ?? []).forEach((r, idx) => {
+      const heSo = heSoTheoCaiDat(caiDat, idChiNhanh, r.ten_pham_cap);
+      if (heSo == null || !canAutoFillHeSo(r)) return;
+      setValue(`pham_cap.${idx}.he_so_quy_doi`, heSo, { shouldDirty: false });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi cài đặt tải xong
+  }, [caiDat, idChiNhanh]);
+
+  // Phiếu mới đổi chi nhánh: điền lại toàn bộ theo cài đặt của farm mới (dòng không khớp để nguyên).
+  const prevChiNhanhRef = useRef<string | null>(null);
+  useEffect(() => {
+    const cur = idChiNhanh ? String(idChiNhanh) : '';
+    const prev = prevChiNhanhRef.current;
+    prevChiNhanhRef.current = cur;
+    // prev == null = lần render đầu (đã có effect điền ban đầu lo); chưa chọn farm thì không làm gì.
+    if (!autoFillHeSo || !caiDat || prev == null || !cur || prev === cur) return;
+    (pham ?? []).forEach((r, idx) => {
+      const heSo = heSoTheoCaiDat(caiDat, cur, r.ten_pham_cap);
+      if (heSo != null) setValue(`pham_cap.${idx}.he_so_quy_doi`, heSo, { shouldDirty: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ phản ứng khi đổi chi nhánh / cài đặt
+  }, [idChiNhanh, caiDat, autoFillHeSo]);
+
+  // Phiếu mới: điền một lần khi lịch sử hệ số tải xong (dòng nào farm đã cài thì không đè).
+  // Chờ cài đặt tải xong trước (tránh điền gợi ý lịch sử đè lên hệ số admin đã cài — hai
+  // request về không theo thứ tự).
   const autoFilledRef = useRef(false);
   useEffect(() => {
-    if (!autoFillHeSo || disabled || autoFilledRef.current || !heSoGoiY) return;
+    if (!autoFillHeSo || autoFilledRef.current || !heSoGoiY) return;
+    if (idChiNhanh && caiDat === undefined) return;
     autoFilledRef.current = true;
-    (pham ?? []).forEach((r, idx) => fillHeSoForRow(idx, r.ten_pham_cap, false));
+    (pham ?? []).forEach((r, idx) => {
+      if (coCaiDat(r.ten_pham_cap)) return;
+      fillHeSoForRow(idx, r.ten_pham_cap, false);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần khi có dữ liệu gợi ý
-  }, [autoFillHeSo, disabled, heSoGoiY]);
+  }, [autoFillHeSo, heSoGoiY, caiDat, idChiNhanh]);
   const derived = useMemo(() => enrichPhamCapRowsWithDerived(pham ?? []), [pham]);
   const totals = useMemo(() => sumPhamCapTotals(pham ?? []), [pham]);
   const phieuNhapRefTotal = useMemo(
@@ -266,6 +339,8 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                 const soThungVal = Number(pham?.[idx]?.so_thung) || 0;
                 const soThungMismatch =
                   slPhieuNhap !== undefined && soThungVal > 0 && slPhieuNhap > 0 && soThungVal !== slPhieuNhap;
+                // Farm đã cài hệ số cho phẩm cấp này → người không phải admin không sửa được ô.
+                const khoaHeSoTheoCaiDat = coCaiDat(pham?.[idx]?.ten_pham_cap) && !canAdmin;
                 return (
                   <tr key={field.id} className="border-b border-border/80">
                     <td className="px-2 py-1.5 text-center text-xs text-muted-foreground tabular-nums align-top border-r border-border/60">
@@ -281,7 +356,8 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                             value={f.value ?? ''}
                             onBlur={() => {
                               f.onBlur();
-                              if (!disabled) fillHeSoForRow(idx, f.value, true);
+                              // Đổi tên phẩm cấp: điền lại theo cài đặt của tên mới (ghi đè).
+                              if (!disabled) fillHeSoForRow(idx, f.value, true, true);
                             }}
                             placeholder={t('baoCaoSoChe.phamCap.tenPlaceholder')}
                             className="text-xs h-8"
@@ -344,29 +420,41 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                       <Controller
                         name={`${base}.he_so_quy_doi`}
                         control={control}
-                        render={({ field }) => (
-                          <Combobox
-                            options={heSoOptions}
-                            value={field.value ?? null}
-                            onChange={(v: string | number) => {
-                              if (v === '' || v == null) {
-                                field.onChange(null);
-                                return;
-                              }
-                              const heSo = parseHeSo(v);
-                              if (heSo != null) field.onChange(heSo);
-                            }}
-                            renderValue={(o) => heSoDisplay(Number(o.value))}
-                            placeholder={t('baoCaoSoChe.phamCap.heSoPlaceholder')}
-                            searchPlaceholder={t('baoCaoSoChe.phamCap.heSoSearchPlaceholder')}
-                            creatable
-                            creatableLabel={t('baoCaoSoChe.phamCap.heSoCreatable')}
-                            dropdownAutoHeight
-                            triggerClassName="h-8 px-2 text-xs tabular-nums"
-                            error={errHeSo}
-                            disabled={disabled}
-                          />
-                        )}
+                        render={({ field }) =>
+                          khoaHeSoTheoCaiDat ? (
+                            <Input
+                              type="text"
+                              readOnly
+                              value={heSoDisplay(field.value)}
+                              title={t('baoCaoSoChe.phamCap.heSoTheoCaiDat')}
+                              className="h-8 px-2 text-right text-xs tabular-nums"
+                              disabled={disabled}
+                              aria-label={t('baoCaoSoChe.phamCap.colHeSoQuyDoi')}
+                            />
+                          ) : (
+                            <Combobox
+                              options={heSoOptions}
+                              value={field.value ?? null}
+                              onChange={(v: string | number) => {
+                                if (v === '' || v == null) {
+                                  field.onChange(null);
+                                  return;
+                                }
+                                const heSo = parseHeSo(v);
+                                if (heSo != null) field.onChange(heSo);
+                              }}
+                              renderValue={(o) => heSoDisplay(Number(o.value))}
+                              placeholder={t('baoCaoSoChe.phamCap.heSoPlaceholder')}
+                              searchPlaceholder={t('baoCaoSoChe.phamCap.heSoSearchPlaceholder')}
+                              creatable
+                              creatableLabel={t('baoCaoSoChe.phamCap.heSoCreatable')}
+                              dropdownAutoHeight
+                              triggerClassName="h-8 px-2 text-xs tabular-nums"
+                              error={errHeSo}
+                              disabled={disabled}
+                            />
+                          )
+                        }
                       />
                     </td>
                     <td className="px-2 py-1.5 align-top border-r border-border/80 text-right">

@@ -30,6 +30,7 @@ import BaoCaoSoCheToolbar from './BaoCaoSoCheToolbar';
 import BaoCaoSoCheList from './BaoCaoSoCheList';
 import BaoCaoSoCheForm from './BaoCaoSoCheForm';
 import BaoCaoSoCheDetail from './BaoCaoSoCheDetail';
+import HeSoQuyDoiDialog from './cai-dat/HeSoQuyDoiDialog';
 
 import {
   mapFarmBaoCaoSoCheListRow,
@@ -73,6 +74,7 @@ const DanhSachTab: React.FC = () => {
   const [viewingItem, setViewingItem] = useState<FarmBaoCaoSoChe | null>(null);
   const [openedFormFromDetailId, setOpenedFormFromDetailId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showCaiDat, setShowCaiDat] = useState(false);
 
   /**
    * Bộ lọc gửi thẳng xuống PostgREST: màn này chỉ tải ĐÚNG một trang thay vì cả
@@ -351,6 +353,8 @@ const DanhSachTab: React.FC = () => {
         bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
+        canAdmin={canAdmin}
+        onOpenCaiDat={() => setShowCaiDat(true)}
       />
       <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
         <BaoCaoSoCheList
@@ -376,6 +380,12 @@ const DanhSachTab: React.FC = () => {
           canDeleteRow={canDeleteRow}
         />
       </div>
+
+      <AnimatePresence>
+        {showCaiDat && canAdmin && (
+          <HeSoQuyDoiDialog canAdmin={canAdmin} onClose={() => setShowCaiDat(false)} />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showExport && (

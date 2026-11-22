@@ -105,8 +105,15 @@ const BaoCaoSoCheList: React.FC<Props> = ({
         return <span className="text-sm tabular-nums">{formatNumberVN(item.tong_buong_khong_so_che)}</span>;
       case 'tong_buong_so_che':
         return <span className="text-sm tabular-nums">{formatNumberVN(item.tong_buong_so_che)}</span>;
-      case 'sl_buong_ton_cuoi_ngay':
-        return <span className="text-sm tabular-nums">{formatNumberVN(item.sl_buong_ton_cuoi_ngay)}</span>;
+      case 'sl_buong_ton_cuoi_ngay': {
+        // Tự tính = mục 7 − mục 8 − mục 9 (migration 090); âm thì tô đỏ.
+        const tonCuoi = Number(item.sl_buong_ton_cuoi_ngay);
+        return (
+          <span className={cn('text-sm tabular-nums', tonCuoi < 0 && 'text-destructive')}>
+            {formatNumberVN(item.sl_buong_ton_cuoi_ngay)}
+          </span>
+        );
+      }
       case 'danh_gia_loi_qc_pct': {
         const qc = item.danh_gia_loi_qc_pct;
         if (qc == null) {

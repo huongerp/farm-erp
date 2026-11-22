@@ -37,6 +37,34 @@ export function laSoLieuRowTuGscl(k: SoLieuRowKey): k is SoLieuRowKeyTuGscl {
   return (SO_LIEU_ROW_KEYS_TU_GSCL as readonly string[]).includes(k);
 }
 
+/**
+ * Chỉ tiêu tự tính trên form (migration 090): mục 10 = mục 7 − mục 8 − mục 9.
+ * Ô chỉ hiển thị, không cho nhập tay; DB trigger ghi đè cùng công thức.
+ */
+export const SO_LIEU_ROW_KEYS_TU_TINH = ['sl_buong_ton_cuoi_ngay'] as const;
+export type SoLieuRowKeyTuTinh = (typeof SO_LIEU_ROW_KEYS_TU_TINH)[number];
+
+export function laSoLieuRowTuTinh(k: SoLieuRowKey): k is SoLieuRowKeyTuTinh {
+  return (SO_LIEU_ROW_KEYS_TU_TINH as readonly string[]).includes(k);
+}
+
+/** Ô số trên form có thể là number / chuỗi / rỗng → quy về 0 khi không phải số hữu hạn. */
+function soHoacKhong(v: unknown): number {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s) return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+/** mục 10 = mục 7 − mục 8 − mục 9; null/undefined/''/không phải số → 0; cho phép âm. */
+export function tinhTonCuoiNgay(thu: unknown, ksc: unknown, soChe: unknown): number {
+  return soHoacKhong(thu) - soHoacKhong(ksc) - soHoacKhong(soChe);
+}
+
 export interface SoLieuRowMetaEntry {
   ghi_chu?: string | null;
   don_vi_tinh_phu?: string | null;
