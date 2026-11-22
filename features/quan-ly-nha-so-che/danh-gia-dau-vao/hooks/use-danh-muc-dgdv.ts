@@ -3,20 +3,24 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from '../../../../lib/i18n';
 import {
+  ganNhomLyDoDb,
   getLyDoDb,
   getMauDayDb,
+  getNhomLoiDb,
   luuLoThuHoachDb,
   luuLyDoDb,
   luuMauDayDb,
+  luuNhomLoiDb,
   themLyDoNeuChuaCoDb,
   xoaLoThuHoachDb,
   xoaLyDoDb,
   xoaMauDayDb,
+  xoaNhomLoiDb,
 } from '../services/danh-muc-dgdv.service';
 import { getLoThuHoach } from '../services/danh-gia-dau-vao-service';
 import { getEmployeesRef } from '../../../he-thong/nhan-vien/services/nhan-vien-service';
 import { taoMapMau } from '../core/bang-tinh';
-import type { DgdvLyDoFormValues, LoThuHoachFormValues, MauDayFormValues } from '../core/schema';
+import type { DgdvLyDoFormValues, LoThuHoachFormValues, MauDayFormValues, NhomLoiFormValues } from '../core/schema';
 import type { LoaiLyDoDgdv } from '../core/types';
 import { laTenMoi } from '../core/chuan-hoa-ten';
 import { QUERY_KEY_DGDV } from './use-danh-gia-dau-vao';
@@ -24,6 +28,7 @@ import { QUERY_KEY_DGDV } from './use-danh-gia-dau-vao';
 const QK_MAU = [...QUERY_KEY_DGDV, 'dm', 'mau'] as const;
 const QK_LO = [...QUERY_KEY_DGDV, 'dm', 'lo'] as const;
 const QK_LY_DO = [...QUERY_KEY_DGDV, 'dm', 'lyDo'] as const;
+const QK_NHOM_LOI = [...QUERY_KEY_DGDV, 'dm', 'nhomLoi'] as const;
 
 const DM_STALE = 1000 * 60 * 10;
 
@@ -45,6 +50,11 @@ export function useNhanVienRef() {
 
 export function useLyDoDgdv() {
   return useQuery({ queryKey: QK_LY_DO, queryFn: getLyDoDb, staleTime: DM_STALE });
+}
+
+/** Nhóm nguyên nhân lỗi (migration 094) — đủ cả nhóm đã ngừng dùng để lý do cũ vẫn hiện đúng nhóm. */
+export function useNhomLoiDgdv() {
+  return useQuery({ queryKey: QK_NHOM_LOI, queryFn: getNhomLoiDb, staleTime: DM_STALE });
 }
 
 function useLuuDanhMuc<V>(
@@ -86,6 +96,37 @@ export const useLuuLoThuHoach = (onDone?: () => void) =>
 export const useXoaLoThuHoach = () => useXoaDanhMuc(QK_LO, xoaLoThuHoachDb);
 export const useLuuLyDo = (onDone?: () => void) => useLuuDanhMuc<DgdvLyDoFormValues>(QK_LY_DO, luuLyDoDb, onDone);
 export const useXoaLyDo = () => useXoaDanhMuc(QK_LY_DO, xoaLyDoDb);
+export const useLuuNhomLoi = (onDone?: () => void) => useLuuDanhMuc<NhomLoiFormValues>(QK_NHOM_LOI, luuNhomLoiDb, onDone);
+
+/** Xoá nhóm: lý do đang trỏ tới nhóm tự thành «Chưa gán» (FK ON DELETE SET NULL) → tải lại cả danh mục lý do. */
+export function useXoaNhomLoi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: xoaNhomLoiDb,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK_NHOM_LOI });
+      qc.invalidateQueries({ queryKey: QK_LY_DO });
+      toast.success(i18n.t('danhGiaDauVao.caiDat.daXoa'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+/**
+ * Gán / bỏ gán nhóm cho một lý do (ô chọn ở tab Lý do, lưu ngay). Chỉ cần tải lại danh mục lý do — báo cáo
+ * «Tỷ lệ lỗi» cộng nhóm ở app từ danh mục này nên tự tính lại theo.
+ */
+export function useGanNhomLyDo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, idNhom }: { id: string; idNhom: string | null }) => ganNhomLyDoDb(id, idNhom),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK_LY_DO });
+      toast.success(i18n.t('danhGiaDauVao.caiDat.daLuu'));
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+}
 
 /**
  * Ô lưới vừa lưu một lý do chưa có trong danh sách chọn nhanh → thêm vào danh sách (im lặng, không toast:

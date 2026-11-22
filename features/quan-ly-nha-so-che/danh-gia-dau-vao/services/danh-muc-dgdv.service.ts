@@ -3,12 +3,13 @@
  * Số dòng nhỏ → tải cả bảng. Đọc: ai có quyền module; ghi: cấp cao / admin module (RLS migration 052).
  */
 import { db, throwDbError } from '../../../../lib/db';
-import type { LoaiLyDoDgdv, VarDgdvLyDo, VarLoThuHoach, VarMauDay } from '../core/types';
-import type { DgdvLyDoFormValues, LoThuHoachFormValues, MauDayFormValues } from '../core/schema';
+import type { LoaiLyDoDgdv, VarDgdvLyDo, VarDgdvNhomLoi, VarLoThuHoach, VarMauDay } from '../core/types';
+import type { DgdvLyDoFormValues, LoThuHoachFormValues, MauDayFormValues, NhomLoiFormValues } from '../core/schema';
 
 const T_MAU = 'fp_var_mau_day';
 const T_LO = 'fp_var_lo_thu_hoach';
 const T_LY_DO = 'fp_var_dgdv_ly_do';
+const T_NHOM_LOI = 'fp_var_dgdv_nhom_loi';
 
 type Id = number | string;
 
@@ -106,16 +107,54 @@ export async function xoaLoThuHoachDb(id: string): Promise<void> {
 export async function getLyDoDb(): Promise<VarDgdvLyDo[]> {
   const { data, error } = await db
     .from(T_LY_DO)
-    .select('id,ten,loai,thu_tu,tg_tao,tg_cap_nhat')
+    .select('id,ten,loai,id_nhom_loi,thu_tu,la_loi,tg_tao,tg_cap_nhat')
     .order('loai')
     .order('thu_tu')
     .order('ten');
   if (error) throwDbError(error, { resource: T_LY_DO });
-  return ((data ?? []) as (Omit<VarDgdvLyDo, 'id' | 'loai'> & { id: Id; loai: string })[]).map((r) => ({
-    ...r,
-    id: String(r.id),
-    loai: (r.loai === 'loi' ? 'loi' : 'danh_gia') as LoaiLyDoDgdv,
-  }));
+  return ((data ?? []) as (Omit<VarDgdvLyDo, 'id' | 'loai' | 'id_nhom_loi'> & { id: Id; loai: string; id_nhom_loi: Id | null })[]).map(
+    (r) => ({
+      ...r,
+      id: String(r.id),
+      loai: (r.loai === 'loi' ? 'loi' : 'danh_gia') as LoaiLyDoDgdv,
+      la_loi: r.la_loi === true,
+      id_nhom_loi: r.id_nhom_loi == null || r.id_nhom_loi === '' ? null : String(r.id_nhom_loi),
+    })
+  );
+}
+
+/** Gán / bỏ gán nhóm cho MỘT lý do (ô chọn ở tab Lý do, lưu ngay). */
+export async function ganNhomLyDoDb(id: string, idNhom: string | null): Promise<void> {
+  const { error } = await db
+    .from(T_LY_DO)
+    .update({ id_nhom_loi: toInt8(idNhom) })
+    .eq('id', toInt8(id) ?? -1);
+  if (error) throwDbError(error, { resource: `${T_LY_DO}.nhom_loi` });
+}
+
+// ---- Nhóm nguyên nhân lỗi (migration 094) -------------------------------------------
+
+export async function getNhomLoiDb(): Promise<VarDgdvNhomLoi[]> {
+  const { data, error } = await db
+    .from(T_NHOM_LOI)
+    .select('id,ten,ma_mau,thu_tu,dang_dung,tg_tao,tg_cap_nhat')
+    .order('thu_tu')
+    .order('id');
+  if (error) throwDbError(error, { resource: T_NHOM_LOI });
+  return ((data ?? []) as (Omit<VarDgdvNhomLoi, 'id'> & { id: Id })[]).map((r) => ({ ...r, id: String(r.id) }));
+}
+
+export async function luuNhomLoiDb(id: string | null, v: NhomLoiFormValues): Promise<void> {
+  const body = { ten: v.ten.trim(), ma_mau: v.ma_mau.toUpperCase(), thu_tu: v.thu_tu, dang_dung: v.dang_dung };
+  const { error } = id
+    ? await db.from(T_NHOM_LOI).update(body).eq('id', toInt8(id) ?? -1)
+    : await db.from(T_NHOM_LOI).insert(body);
+  if (error) throwDbError(error, { resource: T_NHOM_LOI });
+}
+
+export async function xoaNhomLoiDb(id: string): Promise<void> {
+  const { error } = await db.from(T_NHOM_LOI).delete().eq('id', toInt8(id) ?? -1);
+  if (error) throwDbError(error, { resource: `${T_NHOM_LOI}.delete` });
 }
 
 /**
@@ -128,7 +167,9 @@ export async function themLyDoNeuChuaCoDb(ten: string, loai: LoaiLyDoDgdv): Prom
 }
 
 export async function luuLyDoDb(id: string | null, v: DgdvLyDoFormValues): Promise<void> {
-  const body = { ten: v.ten.trim(), loai: v.loai, thu_tu: v.thu_tu };
+  // Nhóm «Lý do huỷ (KSC)» không có cờ «Lỗi» — luôn ghi false.
+  const laLoi = v.loai === 'loi' ? false : v.la_loi === true;
+  const body = { ten: v.ten.trim(), loai: v.loai, thu_tu: v.thu_tu, la_loi: laLoi };
   const { error } = id
     ? await db.from(T_LY_DO).update(body).eq('id', toInt8(id) ?? -1)
     : await db.from(T_LY_DO).insert(body);

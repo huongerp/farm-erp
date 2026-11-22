@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getBcscSoCheDb,
+  getDgdvCanMauNgayDb,
+  getDgdvLoiNgayDb,
   getDgdvTenToTruongDb,
   getDgdvTongChuyenDb,
   getDgdvTongNgayDayDb,
@@ -24,6 +26,21 @@ export function useDgdvTongNgay(ngay: string | null | undefined, idChiNhanh: str
   return useQuery({
     queryKey: [...QUERY_KEY_DGDV, 'tongNgay', ngayIso, cn],
     queryFn: () => getDgdvTongNgayDb(ngayIso, cn!),
+    enabled: !!ngayIso && cn != null,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Σ cân mẫu buồng mọi chuyến của ngày + chi nhánh (RPC `fn_dgdv_can_mau_ngay`, migration 091).
+ * Dự báo SL đóng thùng dùng để khoá dòng 1–2 khi `ap_dung`. Key dưới `QUERY_KEY_DGDV` → lưu phiếu là tự tải lại.
+ */
+export function useDgdvCanMauNgay(ngay: string | null | undefined, idChiNhanh: string | number | null | undefined) {
+  const ngayIso = ngay ? ngay.slice(0, 10) : '';
+  const cn = idChiNhanhChoRpc(idChiNhanh);
+  return useQuery({
+    queryKey: [...QUERY_KEY_DGDV, 'canMauNgay', ngayIso, cn],
+    queryFn: () => getDgdvCanMauNgayDb(ngayIso, cn!),
     enabled: !!ngayIso && cn != null,
     staleTime: 1000 * 30,
   });
@@ -58,6 +75,19 @@ export function useDgdvTongChuyen(tu: string, den: string, pv: DgdvPhamViTong, e
     queryKey: [...QUERY_KEY_DGDV, 'tongChuyen', tu, den, ...khoaPhamVi(pv)],
     queryFn: () => getDgdvTongChuyenDb(tu, den, pv),
     enabled,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Chữ lỗi theo (ngày, chi nhánh, lô, ô) trong khoảng ngày — view `v_fp_farm_dgdv_loi_ngay` (migration 094).
+ * Dùng cho tab «Tỷ lệ lỗi»; gom nhóm / tách chuỗi ghép làm ở `core/nhom-loi`.
+ */
+export function useDgdvLoiNgay(tu: string, den: string, pv: DgdvPhamViTong, enabled = true) {
+  return useQuery({
+    queryKey: [...QUERY_KEY_DGDV, 'loiNgay', tu, den, ...khoaPhamVi(pv)],
+    queryFn: () => getDgdvLoiNgayDb(tu, den, pv),
+    enabled: enabled && (!!tu && !!den),
     staleTime: 1000 * 30,
   });
 }

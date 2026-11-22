@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apTongThuDgdvVaoDuBaoForm, computeKpiFromForm, defaultFormValues } from './form-mappers';
+import { apCanMauDgdvVaoDuBaoForm, apTongThuDgdvVaoDuBaoForm, computeKpiFromForm, defaultFormValues } from './form-mappers';
 
 const base = {
   ...defaultFormValues(),
@@ -13,6 +13,23 @@ const base = {
 };
 
 const khongTon = { ton_dau: 0, ton_cuoi: 0 };
+
+describe('apCanMauDgdvVaoDuBaoForm', () => {
+  it('qua mốc (ap_dung) → đè dòng 1–2 bằng Σ cân mẫu các chuyến', () => {
+    const v = apCanMauDgdvVaoDuBaoForm(base, { so_buong: 12, tong_kg: 218.4, ap_dung: true });
+    expect([v.so_buong_can_mau, v.tong_can_nang_mau]).toEqual([12, 218.4]);
+    // KPI tính lại theo số mới: 218,4 / 12 = 18,2 kg/buồng × 40 buồng = 728 kg
+    const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(v, null, khongTon));
+    expect(kpi.can_nang_binh_quan_buong).toBeCloseTo(18.2, 4);
+    expect(kpi.tong_khoi_luong_thuc_te).toBeCloseTo(728, 4);
+  });
+
+  it('trước mốc (ap_dung false) / chưa tải (undefined) → giữ số nhập tay', () => {
+    const v = apCanMauDgdvVaoDuBaoForm(base, { so_buong: 12, tong_kg: 218.4, ap_dung: false });
+    expect(v).toBe(base);
+    expect(apCanMauDgdvVaoDuBaoForm(base, undefined)).toBe(base);
+  });
+});
 
 describe('apTongThuDgdvVaoDuBaoForm', () => {
   it('dòng 10 = tồn đầu + Tổng thu ĐGĐV − tồn cuối, dòng 11/13/15 tính lại theo số này', () => {

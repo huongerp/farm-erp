@@ -7,6 +7,8 @@ const reqMsg = (key: string) => i18n.t(key);
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 const MA_MAU_RE = /^#[0-9A-F]{6}$/;
+/** Giờ cân mẫu nhập từ input type="time" — HH:mm (24 giờ). */
+const GIO_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /** '' / null / undefined → null; còn lại → chuỗi đã trim. */
 const rongThanhNull = (v: unknown) => {
@@ -75,6 +77,24 @@ export const dgdvFormSchema = z
       .max(99, reqMsg('danhGiaDauVao.validation.chuyenKhongHopLe')),
     id_chi_nhanh: idBatBuoc('danhGiaDauVao.validation.branchRequired'),
     ghi_chu: ghiChuTuyChon(8000),
+    /** Giờ cân mẫu buồng của chuyến; '' → null. Base là pipe → không gọi `.max()` sau. */
+    gio_can_mau: z.preprocess(
+      rongThanhNull,
+      z
+        .string()
+        .regex(GIO_RE, reqMsg('danhGiaDauVao.validation.gioKhongHopLe'))
+        .nullable()
+    ),
+    /** Số buồng cân mẫu; '' / null → 0. */
+    so_buong_can_mau: z.preprocess(
+      (v) => (v === '' || v == null ? 0 : v),
+      z.coerce.number({ message: reqMsg('danhGiaDauVao.validation.soNguyenKhongAm') }).int(reqMsg('danhGiaDauVao.validation.soNguyenKhongAm')).min(0, reqMsg('danhGiaDauVao.validation.soNguyenKhongAm'))
+    ),
+    /** Tổng trọng lượng cân mẫu (kg); '' / null → 0. */
+    tong_can_nang_mau: z.preprocess(
+      (v) => (v === '' || v == null ? 0 : v),
+      z.coerce.number({ message: reqMsg('danhGiaDauVao.validation.soKhongAm') }).min(0, reqMsg('danhGiaDauVao.validation.soKhongAm'))
+    ),
     /** Thứ tự mảng = stt khi lưu. */
     cot: z.array(dgdvCotFormSchema).default([]),
     lo: z.array(dgdvLoFormSchema).default([]),
@@ -89,6 +109,14 @@ export const dgdvFormSchema = z
       }
       daGap.add(k);
     });
+    // Có kg cân mẫu mà không có buồng → không tính được bình quân; báo ở ô số buồng.
+    if (f.tong_can_nang_mau > 0 && f.so_buong_can_mau === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['so_buong_can_mau'],
+        message: reqMsg('danhGiaDauVao.validation.buongCanMauRequired'),
+      });
+    }
   });
 
 export type DgdvCotFormValues = z.infer<typeof dgdvCotFormSchema>;
@@ -118,11 +146,17 @@ export const dgdvLyDoFormSchema = z.object({
   ten: z.string().trim().min(1, reqMsg('danhGiaDauVao.validation.tenRequired')).max(200),
   loai: z.enum(['danh_gia', 'loi']),
   thu_tu: z.coerce.number().int().min(0).default(0),
+  /** Checkbox «Lỗi» — chỉ nhóm đánh giá; optional để form cũ thiếu field không vỡ. */
+  la_loi: z.boolean().optional().default(false),
 });
+
+/** Nhóm nguyên nhân lỗi (migration 094) — tên + màu như màu dây. */
+export const nhomLoiFormSchema = mauDayFormSchema;
 
 export type MauDayFormValues = z.infer<typeof mauDayFormSchema>;
 export type LoThuHoachFormValues = z.infer<typeof loThuHoachFormSchema>;
 export type DgdvLyDoFormValues = z.infer<typeof dgdvLyDoFormSchema>;
+export type NhomLoiFormValues = z.infer<typeof nhomLoiFormSchema>;
 
 // ---- Dòng chi tiết đánh giá (Detail phiếu) ----------------------------------------
 

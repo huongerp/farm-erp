@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Service gọi db thật — chỉ test phần đọc/kiểm tham số thuần, không dựng PostgREST client.
 vi.mock('../../../../lib/db', () => ({ db: {}, fetchAllRows: vi.fn(), throwDbError: vi.fn() }));
 
-import { docDgdvTongNgay, idChiNhanhChoRpc } from './danh-gia-dau-vao-tong-ngay.service';
+import { docDgdvCanMauNgay, docDgdvTongNgay, idChiNhanhChoRpc } from './danh-gia-dau-vao-tong-ngay.service';
 
 describe('docDgdvTongNgay', () => {
   it('đọc mảng 1 dòng, bigint dạng chuỗi', () => {
@@ -18,6 +18,24 @@ describe('docDgdvTongNgay', () => {
     expect(docDgdvTongNgay([])).toEqual({ tong_thu: 0, ksc: 0 });
     expect(docDgdvTongNgay(null)).toEqual({ tong_thu: 0, ksc: 0 });
     expect(docDgdvTongNgay([{ tong_thu: 'abc', ksc: null }])).toEqual({ tong_thu: 0, ksc: 0 });
+  });
+});
+
+describe('docDgdvCanMauNgay', () => {
+  it('mảng rỗng → 0, 0, không áp dụng', () => {
+    expect(docDgdvCanMauNgay([])).toEqual({ so_buong: 0, tong_kg: 0, ap_dung: false });
+  });
+
+  it('đọc 1 dòng, bigint / numeric dạng chuỗi', () => {
+    expect(docDgdvCanMauNgay([{ so_buong: '12', tong_kg: '218.4', ap_dung: true }])).toEqual({
+      so_buong: 12,
+      tong_kg: 218.4,
+      ap_dung: true,
+    });
+  });
+
+  it('null → 0, 0, không áp dụng', () => {
+    expect(docDgdvCanMauNgay(null)).toEqual({ so_buong: 0, tong_kg: 0, ap_dung: false });
   });
 });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPinned, MessageSquareText, Palette, Settings } from 'lucide-react';
+import { Layers, MapPinned, MessageSquareText, Palette, Settings } from 'lucide-react';
 import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import TabGroup from '../../../../../components/ui/TabGroup';
 import Button from '../../../../../components/ui/Button';
@@ -8,8 +8,9 @@ import { DIALOG_SIZE } from '../../../../../lib/dialog-sizes';
 import MauDayTab from './MauDayTab';
 import LoThuHoachTab from './LoThuHoachTab';
 import LyDoTab from './LyDoTab';
+import NhomLoiTab from './NhomLoiTab';
 
-export type TabCaiDatDgdv = 'mau-day' | 'lo' | 'ly-do';
+export type TabCaiDatDgdv = 'mau-day' | 'lo' | 'ly-do' | 'nhom-loi';
 
 interface Props {
   initialTab?: TabCaiDatDgdv;
@@ -43,6 +44,7 @@ const CaiDatDialog: React.FC<Props> = ({ initialTab = 'mau-day', onClose }) => {
             { id: 'mau-day', label: t('danhGiaDauVao.caiDat.tabMauDay'), icon: Palette },
             { id: 'lo', label: t('danhGiaDauVao.caiDat.tabLo'), icon: MapPinned },
             { id: 'ly-do', label: t('danhGiaDauVao.caiDat.tabLyDo'), icon: MessageSquareText },
+            { id: 'nhom-loi', label: t('danhGiaDauVao.caiDat.tabNhomLoi'), icon: Layers },
           ]}
           activeTab={tab}
           onChange={(id) => setTab(id as TabCaiDatDgdv)}
@@ -50,6 +52,7 @@ const CaiDatDialog: React.FC<Props> = ({ initialTab = 'mau-day', onClose }) => {
         {tab === 'mau-day' && <MauDayTab />}
         {tab === 'lo' && <LoThuHoachTab />}
         {tab === 'ly-do' && <LyDoTab />}
+        {tab === 'nhom-loi' && <NhomLoiTab />}
       </div>
     </GenericDrawer>
   );

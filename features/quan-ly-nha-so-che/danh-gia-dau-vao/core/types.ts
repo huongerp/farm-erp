@@ -45,12 +45,28 @@ export interface VarLoThuHoach {
   tg_cap_nhat: string;
 }
 
-/** fp_var_dgdv_ly_do */
+/** fp_var_dgdv_nhom_loi (migration 094) — nhóm nguyên nhân lỗi (Thu hoạch / Chăm sóc vườn / Chăm sóc buồng…). */
+export interface VarDgdvNhomLoi {
+  id: string;
+  ten: string;
+  /** HEX viết hoa #RRGGBB */
+  ma_mau: string;
+  thu_tu: number;
+  dang_dung: boolean;
+  tg_tao: string;
+  tg_cap_nhat: string;
+}
+
+/** fp_var_dgdv_ly_do — `la_loi` chỉ dùng cho loai = danh_gia (nhóm Lý do huỷ luôn false). */
 export interface VarDgdvLyDo {
   id: string;
   ten: string;
   loai: LoaiLyDoDgdv;
+  /** nhóm nguyên nhân (migration 094); null = chưa gán */
+  id_nhom_loi: string | null;
   thu_tu: number;
+  /** Lý do đánh giá này là lỗi (vd «Chuột phá» = lỗi, «Căng trái» = không). */
+  la_loi: boolean;
   tg_tao: string;
   tg_cap_nhat: string;
 }
@@ -72,6 +88,12 @@ export interface FarmDgdv {
   id_chi_nhanh: string;
   ten_chi_nhanh?: string | null;
   ghi_chu: string | null;
+  /** Giờ cân mẫu buồng của chuyến — 'HH:mm', null = không ghi (migration 091). */
+  gio_can_mau: string | null;
+  /** Số buồng cân mẫu của chuyến (0 = chưa cân). */
+  so_buong_can_mau: number;
+  /** Tổng trọng lượng cân mẫu của chuyến (kg). */
+  tong_can_nang_mau: number;
   trang_thai: TrangThaiDgdvPhieu;
   id_nguoi_tao: string | null;
   ten_nguoi_tao?: string | null;

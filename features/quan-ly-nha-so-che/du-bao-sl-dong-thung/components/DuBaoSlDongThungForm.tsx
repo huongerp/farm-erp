@@ -11,13 +11,14 @@ import { duBaoSlDongThungFormSchema, type DuBaoSlDongThungFormValues } from '../
 import type { FarmDuBaoSlDongThung } from '../core/types';
 import { cn, formatNumberVN } from '../../../../lib/utils';
 import {
+  apCanMauDgdvVaoDuBaoForm,
   apTongThuDgdvVaoDuBaoForm,
   tinhBuongNhapThucTe,
   defaultFormValues,
   farmDuBaoSlDongThungToForm,
   computeKpiFromForm,
 } from '../core/form-mappers';
-import { DGDV_BANG_DANH_GIA_URL, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
+import { DGDV_BANG_DANH_GIA_URL, useDgdvCanMauNgay, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 import { useCreateDuBaoSlDongThung, useDuBaoTonNgay, useUpdateDuBaoSlDongThung } from '../hooks/use-du-bao-sl-dong-thung';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
@@ -100,10 +101,15 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   // dòng 11, 13, 15 tính lại theo số này.
   const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
   const { data: tonNgay, isError: tonLoi } = useDuBaoTonNgay(ngay, idChiNhanh);
+  // Dòng 1–2: từ mốc áp dụng (cột ap_dung) lấy Σ cân mẫu mọi chuyến trong ngày, DB trigger ghi đè khi lưu.
+  const { data: canMauDgdv, isError: canMauLoi } = useDgdvCanMauNgay(ngay, idChiNhanh);
+  const canMauKhoa = canMauDgdv?.ap_dung === true;
   const tongThuDgdv = tongDgdv?.tong_thu ?? null;
   const kscDgdv = tongDgdv?.ksc ?? 0;
   const buongNhapThucTe = tongThuDgdv != null && tonNgay ? tinhBuongNhapThucTe(tongThuDgdv, tonNgay, kscDgdv) : null;
-  const kpi = computeKpiFromForm(apTongThuDgdvVaoDuBaoForm(watched, tongThuDgdv, tonNgay, kscDgdv));
+  const kpi = computeKpiFromForm(
+    apTongThuDgdvVaoDuBaoForm(apCanMauDgdvVaoDuBaoForm(watched, canMauDgdv), tongThuDgdv, tonNgay, kscDgdv)
+  );
 
   useEffect(() => {
     // Không reset nếu người dùng đã bắt đầu sửa — cùng lý do đã sửa ở BaoCaoSoCheForm.
@@ -121,8 +127,9 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   }, [idChiNhanh, branches, setValue]);
 
   const onSubmit: SubmitHandler<DuBaoSlDongThungFormValues> = (raw) => {
-    // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo ĐGĐV + Báo cáo sơ chế dù gửi gì).
-    const data = apTongThuDgdvVaoDuBaoForm(raw, tongThuDgdv, tonNgay, kscDgdv);
+    // Gửi đúng số đang hiện ở dòng 10 (DB trigger vẫn ghi đè theo ĐGĐV + Báo cáo sơ chế dù gửi gì);
+    // dòng 1–2 từ mốc áp dụng cũng theo ĐGĐV (trigger ghi đè).
+    const data = apTongThuDgdvVaoDuBaoForm(apCanMauDgdvVaoDuBaoForm(raw, canMauDgdv), tongThuDgdv, tonNgay, kscDgdv);
     if (isEdit && initialData) {
       updateMutation.mutate({ id: initialData.id, data });
       return;
@@ -226,44 +233,81 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">1</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row1')}</td>
-                  <td className={cn('px-1 py-1', inputCell)}>
-                    <Controller
-                      name="so_buong_can_mau"
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          compact
-                          value={field.value}
-                          onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
-                          maxFractionDigits={0}
-                          className="border-0 bg-transparent shadow-none"
-                        />
-                      )}
-                    />
+                  <td className={cn('px-1 py-1', !canMauKhoa && inputCell)}>
+                    {canMauKhoa ? (
+                      readOnlyNum(canMauDgdv?.so_buong ?? 0)
+                    ) : (
+                      <Controller
+                        name="so_buong_can_mau"
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value}
+                            onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
+                            maxFractionDigits={0}
+                            className="border-0 bg-transparent shadow-none"
+                          />
+                        )}
+                      />
+                    )}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitBuong')}</td>
-                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row1Note')}</td>
+                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">
+                    {canMauKhoa ? (
+                      <a
+                        href={DGDV_BANG_DANH_GIA_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={t('duBaoSlDongThung.form.row1NoteKhoaTitle')}
+                        className="text-primary hover:underline"
+                      >
+                        {t('duBaoSlDongThung.form.row1NoteKhoa')}
+                      </a>
+                    ) : (
+                      t('duBaoSlDongThung.form.row1Note')
+                    )}
+                    {canMauLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.dgdvLoi')}</span>}
+                  </td>
                 </tr>
                 <tr className="border-b border-border/80">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">2</td>
                   <td className="px-3 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.row2')}</td>
-                  <td className={cn('px-1 py-1', inputCell)}>
-                    <Controller
-                      name="tong_can_nang_mau"
-                      control={control}
-                      render={({ field }) => (
-                        <NumberInput
-                          compact
-                          value={field.value}
-                          onChange={field.onChange}
-                          maxFractionDigits={4}
-                          className="border-0 bg-transparent shadow-none"
-                        />
-                      )}
-                    />
+                  <td className={cn('px-1 py-1', !canMauKhoa && inputCell)}>
+                    {canMauKhoa ? (
+                      readOnlyNum(canMauDgdv?.tong_kg ?? 0)
+                    ) : (
+                      <Controller
+                        name="tong_can_nang_mau"
+                        control={control}
+                        render={({ field }) => (
+                          <NumberInput
+                            compact
+                            value={field.value}
+                            onChange={field.onChange}
+                            maxFractionDigits={4}
+                            className="border-0 bg-transparent shadow-none"
+                          />
+                        )}
+                      />
+                    )}
                   </td>
                   <td className="px-2 py-2 text-muted-foreground">{t('duBaoSlDongThung.form.unitKg')}</td>
-                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">{t('duBaoSlDongThung.form.row2Note')}</td>
+                  <td className="px-2 py-2 text-xs text-muted-foreground leading-snug">
+                    {canMauKhoa ? (
+                      <a
+                        href={DGDV_BANG_DANH_GIA_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={t('duBaoSlDongThung.form.row2NoteKhoaTitle')}
+                        className="text-primary hover:underline"
+                      >
+                        {t('duBaoSlDongThung.form.row2NoteKhoa')}
+                      </a>
+                    ) : (
+                      t('duBaoSlDongThung.form.row2Note')
+                    )}
+                  </td>
                 </tr>
                 <tr className="border-b border-border/80 bg-muted/20">
                   <td className="px-2 py-2 text-center tabular-nums text-muted-foreground">3</td>

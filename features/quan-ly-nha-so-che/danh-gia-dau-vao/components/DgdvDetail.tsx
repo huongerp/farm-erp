@@ -165,6 +165,29 @@ const DgdvDetail: React.FC<Props> = ({
                 </span>
               }
             />
+            {data.gio_can_mau && (
+              <DetailField label={t('danhGiaDauVao.form.gioCanMau')} value={<span className="tabular-nums">{data.gio_can_mau}</span>} />
+            )}
+            {data.so_buong_can_mau > 0 && (
+              <DetailField
+                label={t('danhGiaDauVao.form.soBuongCanMau')}
+                value={<span className="tabular-nums">{formatNumberVN(data.so_buong_can_mau)}</span>}
+              />
+            )}
+            {data.so_buong_can_mau > 0 && (
+              <DetailField
+                label={t('danhGiaDauVao.form.tongCanNangMau')}
+                value={<span className="tabular-nums">{formatNumberVN(data.tong_can_nang_mau)} kg</span>}
+              />
+            )}
+            {data.so_buong_can_mau > 0 && (
+              <DetailField
+                label={t('danhGiaDauVao.form.binhQuanBuong')}
+                value={
+                  <span className="tabular-nums">{formatNumberVN(data.tong_can_nang_mau / data.so_buong_can_mau, { maxFractionDigits: 2 })} kg</span>
+                }
+              />
+            )}
             {data.ghi_chu?.trim() && (
               <DetailField
                 label={t('danhGiaDauVao.form.ghiChu')}

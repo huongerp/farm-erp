@@ -307,6 +307,10 @@ function congMotNgay(dsGoc: DgdvPhieuDayDu[]): DgdvPhieuTongNgay {
     id_chi_nhanh: dau.id_chi_nhanh,
     ten_chi_nhanh: dau.ten_chi_nhanh ?? null,
     ghi_chu: null,
+    // Cân mẫu: tổng dòng của cả ngày (chi tiết từng chuyến ở dòng «Nhật ký cân mẫu»).
+    gio_can_mau: null,
+    so_buong_can_mau: ds.reduce((s, p) => s + (p.so_buong_can_mau || 0), 0),
+    tong_can_nang_mau: ds.reduce((s, p) => s + (p.tong_can_nang_mau || 0), 0),
     trang_thai: tatCaKhoa ? TRANG_THAI_DGDV.KHOA : TRANG_THAI_DGDV.MO,
     id_nguoi_tao: null,
     ten_nguoi_tao: null,
@@ -534,6 +538,10 @@ export function dungPhieuSaoChep(
     chuyen: dich.chuyen,
     id_chi_nhanh: phieu.id_chi_nhanh,
     ghi_chu: null,
+    // Cân mẫu buồng là số của đúng chuyến đó — không chép sang chuyến mới (migration 091).
+    gio_can_mau: null,
+    so_buong_can_mau: 0,
+    tong_can_nang_mau: 0,
     cot: loTheoStt(phieu.cot).map((c) => ({
       th_nam: c.th_nam,
       th_tuan: c.th_tuan,

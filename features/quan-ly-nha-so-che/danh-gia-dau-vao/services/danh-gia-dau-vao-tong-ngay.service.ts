@@ -6,6 +6,7 @@
  * - View `v_fp_farm_dgdv_tong_chuyen`: tổng từng chuyến (1 dòng / phiếu).
  */
 import { db, fetchAllRows, throwDbError } from '../../../../lib/db';
+import type { DgdvLoiNgayRow } from '../core/nhom-loi';
 
 export interface DgdvTongNgay {
   /** Σ số lượng các dây + Σ đứt dây. */
@@ -42,6 +43,33 @@ export async function getDgdvTongNgayDb(ngay: string, idChiNhanh: number): Promi
   const { data, error } = await db.rpc(RPC_TONG_NGAY, { p_ngay: ngay, p_id_chi_nhanh: idChiNhanh });
   if (error) throwDbError(error);
   return docDgdvTongNgay(data);
+}
+
+// ---- Cân mẫu buồng cộng dồn (ngày + chi nhánh) ---------------------------------------
+
+/**
+ * Σ cân mẫu mọi chuyến trong ngày + chi nhánh (migration 091). `ap_dung` = ngày đã qua
+ * NGAY_AP_DUNG → Dự báo SL đóng thùng khoá dòng 1–2 theo số này (DB trigger ghi đè).
+ */
+export interface DgdvCanMauNgay {
+  so_buong: number;
+  tong_kg: number;
+  ap_dung: boolean;
+}
+
+const RPC_CAN_MAU_NGAY = 'fn_dgdv_can_mau_ngay';
+
+/** RPC trả TABLE (luôn 1 dòng) → PostgREST trả mảng; không có dòng / null → 0, 0, không áp dụng. */
+export function docDgdvCanMauNgay(data: unknown): DgdvCanMauNgay {
+  const dong = Array.isArray(data) ? data[0] : data;
+  const o = dong && typeof dong === 'object' ? (dong as Record<string, unknown>) : {};
+  return { so_buong: soKhongAm(o.so_buong), tong_kg: soKhongAm(o.tong_kg), ap_dung: o.ap_dung === true };
+}
+
+export async function getDgdvCanMauNgayDb(ngay: string, idChiNhanh: number): Promise<DgdvCanMauNgay> {
+  const { data, error } = await db.rpc(RPC_CAN_MAU_NGAY, { p_ngay: ngay, p_id_chi_nhanh: idChiNhanh });
+  if (error) throwDbError(error);
+  return docDgdvCanMauNgay(data);
 }
 
 // ---- Tổng ngày × lô × dây (mọi chuyến) ---------------------------------------------
@@ -149,6 +177,10 @@ export interface DgdvTongChuyen {
   tong_thu: number;
   ksc: number;
   trang_thai: string;
+  /** Cân mẫu buồng của chuyến (migration 091). */
+  gio_can_mau: string | null;
+  so_buong_can_mau: number;
+  tong_can_nang_mau: number;
 }
 
 export function mapTongChuyen(r: Record<string, unknown>): DgdvTongChuyen {
@@ -162,6 +194,9 @@ export function mapTongChuyen(r: Record<string, unknown>): DgdvTongChuyen {
     tong_thu: soKhongAm(r.tong_thu),
     ksc: soKhongAm(r.ksc),
     trang_thai: String(r.trang_thai ?? ''),
+    gio_can_mau: r.gio_can_mau == null || r.gio_can_mau === '' ? null : String(r.gio_can_mau).slice(0, 5),
+    so_buong_can_mau: soKhongAm(r.so_buong_can_mau),
+    tong_can_nang_mau: soKhongAm(r.tong_can_nang_mau),
   };
 }
 
@@ -170,7 +205,15 @@ export async function getDgdvTongChuyenDb(tu: string, den: string, pv: DgdvPhamV
   if (!khoangHopLe(tu, den)) return [];
   const rows = await fetchAllRows<Record<string, unknown>>((from, to) =>
     locChiNhanh(
-      locKhoang(db.from(VIEW_TONG_CHUYEN).select('id,ngay,chuyen,id_chi_nhanh,tong_so_luong,tong_dut_day,tong_thu,ksc,trang_thai'), tu, den),
+      locKhoang(
+        db
+          .from(VIEW_TONG_CHUYEN)
+          .select(
+            'id,ngay,chuyen,id_chi_nhanh,tong_so_luong,tong_dut_day,tong_thu,ksc,trang_thai,gio_can_mau,so_buong_can_mau,tong_can_nang_mau'
+          ),
+        tu,
+        den
+      ),
       pv
     )
       .order('ngay')
@@ -179,6 +222,38 @@ export async function getDgdvTongChuyenDb(tu: string, den: string, pv: DgdvPhamV
       .range(from, to)
   );
   return rows.map(mapTongChuyen);
+}
+
+// ---- Lỗi theo ngày × lô (báo cáo tỷ lệ lỗi theo nhóm) --------------------------------
+
+const VIEW_LOI_NGAY = 'v_fp_farm_dgdv_loi_ngay';
+
+export function mapLoiNgay(r: Record<string, unknown>): DgdvLoiNgayRow {
+  return {
+    ngay: String(r.ngay ?? '').slice(0, 10),
+    id_chi_nhanh: String(r.id_chi_nhanh),
+    id_lo: String(r.id_lo),
+    loai: r.loai === 'huy' ? 'huy' : 'danh_gia',
+    ten: String(r.ten ?? ''),
+    so_buong: soKhongAm(r.so_buong),
+  };
+}
+
+/**
+ * Chữ lỗi đã gom theo (ngày, chi nhánh, lô, ô) từ view `v_fp_farm_dgdv_loi_ngay` (migration 094) —
+ * `danh_gia` = Σ số lượng theo ô Đánh giá, `huy` = Σ số huỷ theo Lý do huỷ. Khoảng [tu, den] như các view
+ * tổng khác (đầu rỗng = không giới hạn).
+ */
+export async function getDgdvLoiNgayDb(tu: string, den: string, pv: DgdvPhamViTong): Promise<DgdvLoiNgayRow[]> {
+  if (!khoangHopLe(tu, den)) return [];
+  const rows = await fetchAllRows<Record<string, unknown>>((from, to) =>
+    locChiNhanh(locKhoang(db.from(VIEW_LOI_NGAY).select('ngay,id_chi_nhanh,id_lo,loai,ten,so_buong'), tu, den), pv)
+      .order('ngay')
+      .order('id_chi_nhanh')
+      .order('id_lo')
+      .range(from, to)
+  );
+  return rows.map(mapLoiNgay);
 }
 
 // ---- Số sơ chế của Báo cáo sơ chế (cột «% BC cuối ngày») --------------------------------------

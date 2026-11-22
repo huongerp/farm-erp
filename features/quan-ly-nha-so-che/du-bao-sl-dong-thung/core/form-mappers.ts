@@ -1,5 +1,6 @@
 import type { DuBaoTonNgay, FarmDuBaoSlDongThung } from './types';
 import type { DuBaoSlDongThungFormValues } from './schema';
+import type { DgdvCanMauNgay } from '../../danh-gia-dau-vao/services/danh-gia-dau-vao-tong-ngay.service';
 import { computeDuBaoSlDongThungKpi, type DuBaoSlDongThungKpiInput } from './kpi';
 
 export function defaultFormValues(): DuBaoSlDongThungFormValues {
@@ -46,6 +47,19 @@ export function farmDuBaoSlDongThungToForm(row: FarmDuBaoSlDongThung): DuBaoSlDo
  */
 export function tinhBuongNhapThucTe(tongThu: number, ton: DuBaoTonNgay, ksc = 0): number {
   return Math.max(0, Math.floor(ton.ton_dau + tongThu + (Number(ksc) || 0) - ton.ton_cuoi));
+}
+
+/**
+ * Dòng 1–2 «Số buồng cân mẫu» / «Tổng cân nặng mẫu» theo Đánh giá đầu vào (Σ mọi chuyến trong ngày).
+ * `ap_dung` (ngày >= mốc, RPC `fn_dgdv_can_mau_ngay`) → đè bằng số cộng dồn — DB trigger cũng ghi đè.
+ * Chưa tới mốc / chưa tải được → giữ nguyên số nhập tay.
+ */
+export function apCanMauDgdvVaoDuBaoForm(
+  values: DuBaoSlDongThungFormValues,
+  canMau: DgdvCanMauNgay | undefined
+): DuBaoSlDongThungFormValues {
+  if (!canMau?.ap_dung) return values;
+  return { ...values, so_buong_can_mau: canMau.so_buong, tong_can_nang_mau: canMau.tong_kg };
 }
 
 export function apTongThuDgdvVaoDuBaoForm(

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Controller, useForm, type Resolver, type SubmitHandler } from 'react-hook-form';
+import { Controller, useForm, useWatch, type Resolver, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Edit, Plus, Trash2 } from 'lucide-react';
 import Button from '../../../../../components/ui/Button';
@@ -10,7 +10,7 @@ import { useConfirmStore } from '../../../../../store/useConfirmStore';
 import { cn } from '../../../../../lib/utils';
 import { dgdvLyDoFormSchema, type DgdvLyDoFormValues } from '../../core/schema';
 import { LOAI_LY_DO_DGDV, type LoaiLyDoDgdv, type VarDgdvLyDo } from '../../core/types';
-import { useLuuLyDo, useLyDoDgdv, useXoaLyDo } from '../../hooks/use-danh-muc-dgdv';
+import { useGanNhomLyDo, useLuuLyDo, useLyDoDgdv, useNhomLoiDgdv, useXoaLyDo } from '../../hooks/use-danh-muc-dgdv';
 
 const LOAI: LoaiLyDoDgdv[] = [LOAI_LY_DO_DGDV.DANH_GIA, LOAI_LY_DO_DGDV.LOI];
 
@@ -27,9 +27,14 @@ const LyDoForm: React.FC<{ initial: VarDgdvLyDo | null; loaiMacDinh: LoaiLyDoDgd
     formState: { errors },
   } = useForm<DgdvLyDoFormValues>({
     resolver: zodResolver(dgdvLyDoFormSchema) as Resolver<DgdvLyDoFormValues>,
-    defaultValues: initial ? { ten: initial.ten, loai: initial.loai, thu_tu: initial.thu_tu } : { ten: '', loai: loaiMacDinh, thu_tu: 0 },
+    defaultValues: initial
+      ? { ten: initial.ten, loai: initial.loai, thu_tu: initial.thu_tu, la_loi: initial.la_loi }
+      : { ten: '', loai: loaiMacDinh, thu_tu: 0, la_loi: false },
   });
-  const onSubmit: SubmitHandler<DgdvLyDoFormValues> = (data) => luu.mutate({ id: initial?.id ?? null, data });
+  const loaiDangChon = useWatch({ control, name: 'loai' });
+  const onSubmit: SubmitHandler<DgdvLyDoFormValues> = (data) =>
+    // Nhóm «Lý do huỷ (KSC)» không có cờ «Lỗi» — ép false khi submit.
+    luu.mutate({ id: initial?.id ?? null, data: { ...data, la_loi: data.loai === 'loi' ? false : data.la_loi === true } });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
@@ -65,6 +70,24 @@ const LyDoForm: React.FC<{ initial: VarDgdvLyDo | null; loaiMacDinh: LoaiLyDoDgd
           )}
         />
       </div>
+      {loaiDangChon === LOAI_LY_DO_DGDV.DANH_GIA && (
+        <Controller
+          name="la_loi"
+          control={control}
+          render={({ field }) => (
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-primary"
+                checked={!!field.value}
+                onChange={(e) => field.onChange(e.target.checked)}
+              />
+              {t('danhGiaDauVao.caiDat.laLoi')}
+              <span className="text-xs text-muted-foreground">{t('danhGiaDauVao.caiDat.laLoiHint')}</span>
+            </label>
+          )}
+        />
+      )}
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}
@@ -77,22 +100,46 @@ const LyDoForm: React.FC<{ initial: VarDgdvLyDo | null; loaiMacDinh: LoaiLyDoDgd
   );
 };
 
-/** Tab «Lý do»: gợi ý chọn nhanh cho ô Đánh giá và ô Lý do lỗi (ô vẫn gõ tự do được). */
+/** Giá trị ô chọn nhóm cho lý do «chưa gán». */
+const CHUA_GAN = '';
+
+/**
+ * Tab «Lý do»: gợi ý chọn nhanh cho ô Đánh giá và ô Lý do lỗi (ô vẫn gõ tự do được). Cột «Nhóm lỗi» gán
+ * từng lý do vào nhóm nguyên nhân (migration 094) — lưu ngay khi đổi, dùng cho báo cáo «Tỷ lệ lỗi».
+ */
 const LyDoTab: React.FC = () => {
   const { t } = useTranslation();
   const confirm = useConfirmStore((s) => s.confirm);
   const { data: dsLyDo = [], isLoading } = useLyDoDgdv();
+  const { data: dsNhom = [] } = useNhomLoiDgdv();
   const xoa = useXoaLyDo();
+  /** Bấm checkbox «Lỗi» là lưu ngay — lưu xong hook tự làm mới danh sách + toast. */
+  const luuLaLoi = useLuuLyDo();
+  const ganNhom = useGanNhomLyDo();
   const [dangSua, setDangSua] = useState<VarDgdvLyDo | LoaiLyDoDgdv | null>(null);
+  const [chiChuaGan, setChiChuaGan] = useState(false);
   const iconBtn = 'p-1.5 rounded-md hover:bg-muted';
+
+  /** Nhóm đang dùng hiện trong ô chọn; nhóm đã ngừng vẫn hiện nếu lý do đang trỏ tới (giữ nguyên nhãn cũ). */
+  const nhomCuaLyDo = (x: VarDgdvLyDo) => dsNhom.filter((n) => n.dang_dung || n.id === x.id_nhom_loi);
+  const soChuaGan = dsLyDo.filter((x) => !x.id_nhom_loi).length;
 
   if (isLoading) return <p className="text-sm text-muted-foreground">{t('danhGiaDauVao.loading')}</p>;
 
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground m-0">{t('danhGiaDauVao.caiDat.lyDoGioiThieu')}</p>
+      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={chiChuaGan}
+          onChange={(e) => setChiChuaGan(e.target.checked)}
+        />
+        {t('danhGiaDauVao.caiDat.chiChuaGanNhom', { n: soChuaGan })}
+      </label>
       {LOAI.map((loai) => {
-        const ds = dsLyDo.filter((x) => x.loai === loai);
+        const ds = dsLyDo.filter((x) => x.loai === loai && (!chiChuaGan || !x.id_nhom_loi));
         return (
           <section key={loai} className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -113,13 +160,49 @@ const LyDoTab: React.FC = () => {
                     <LyDoForm initial={x} loaiMacDinh={loai} onDone={() => setDangSua(null)} />
                   </li>
                 ) : (
-                  <li key={x.id} className="flex items-center gap-3 px-3 py-2">
+                  <li key={x.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+                    {loai === LOAI_LY_DO_DGDV.DANH_GIA && (
+                      <label className="flex items-center gap-1.5 shrink-0 text-xs text-muted-foreground cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-primary"
+                          checked={x.la_loi}
+                          disabled={luuLaLoi.isPending && luuLaLoi.variables?.id === x.id}
+                          onChange={(e) =>
+                            luuLaLoi.mutate({
+                              id: x.id,
+                              data: { ten: x.ten, loai: x.loai, thu_tu: x.thu_tu, la_loi: e.target.checked },
+                            })
+                          }
+                        />
+                        {t('danhGiaDauVao.caiDat.laLoi')}
+                      </label>
+                    )}
                     <div className="min-w-0 flex-1 text-sm">
                       {x.ten}
+                      {loai === LOAI_LY_DO_DGDV.DANH_GIA && x.la_loi && (
+                        <span className="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs font-medium text-rose-600">
+                          {t('danhGiaDauVao.caiDat.laLoiNhan')}
+                        </span>
+                      )}
                       <span className="ml-2 text-xs text-muted-foreground tabular-nums">
                         {t('danhGiaDauVao.caiDat.thuTu')} {x.thu_tu}
                       </span>
                     </div>
+                    <select
+                      className="h-8 max-w-[10rem] shrink-0 rounded-lg border border-border bg-background px-2 text-xs"
+                      value={x.id_nhom_loi ?? CHUA_GAN}
+                      aria-label={t('danhGiaDauVao.caiDat.nhomLoi')}
+                      disabled={ganNhom.isPending}
+                      onChange={(e) => ganNhom.mutate({ id: x.id, idNhom: e.target.value === CHUA_GAN ? null : e.target.value })}
+                    >
+                      <option value={CHUA_GAN}>{t('danhGiaDauVao.caiDat.chuaGanNhom')}</option>
+                      {nhomCuaLyDo(x).map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.ten}
+                        </option>
+                      ))}
+                    </select>
                     <button type="button" className={cn(iconBtn, 'text-primary')} onClick={() => setDangSua(x)} aria-label={t('common.edit')}>
                       <Edit size={14} />
                     </button>

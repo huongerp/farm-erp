@@ -1,20 +1,22 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { List, Grid3x3, CalendarRange, BarChart3 } from 'lucide-react';
+import { List, Grid3x3, CalendarRange, BarChart3, PieChart } from 'lucide-react';
 import TabGroup from '../../../components/ui/TabGroup';
 import { useIsMobile } from '../../../lib/hooks/use-is-mobile';
 import DanhSachTab from './components/DanhSachTab';
 import BangDanhGiaTab from './components/BangDanhGiaTab';
 import TongHopTuanTab from './components/TongHopTuanTab';
 import SoSanhThangTab from './components/SoSanhThangTab';
+import TiLeLoiTab from './components/TiLeLoiTab';
 
-const VALID_TABS = ['danh-sach', 'bang', 'tuan', 'thang'] as const;
+const VALID_TABS = ['danh-sach', 'bang', 'tuan', 'thang', 'nhom-loi'] as const;
 type TabId = (typeof VALID_TABS)[number];
 
 /**
  * Đánh giá đầu vào: «Phiếu chuyến» (id `danh-sach`), «Tổng hợp ngày» (id `bang` — giữ cho link cũ từ Báo cáo
- * sơ chế / Dự báo), «Tổng hợp tuần», «So sánh tháng». Cả trang nằm trong ModulePermissionGuard của route.
+ * sơ chế / Dự báo), «Tổng hợp tuần», «So sánh tháng», «Tỷ lệ lỗi» (id `nhom-loi` — tỷ lệ lỗi theo nhóm
+ * nguyên nhân). Cả trang nằm trong ModulePermissionGuard của route.
  */
 const DanhGiaDauVaoPage: React.FC = () => {
   const { t } = useTranslation();
@@ -48,6 +50,7 @@ const DanhGiaDauVaoPage: React.FC = () => {
       { id: 'bang', label: t(isMobile ? 'danhGiaDauVao.tabs.tongHopNgayNgan' : 'danhGiaDauVao.tabs.tongHopNgay'), icon: Grid3x3 },
       { id: 'tuan', label: t(isMobile ? 'danhGiaDauVao.tabs.tongHopTuanNgan' : 'danhGiaDauVao.tabs.tongHopTuan'), icon: CalendarRange },
       { id: 'thang', label: t(isMobile ? 'danhGiaDauVao.tabs.soSanhThangNgan' : 'danhGiaDauVao.tabs.soSanhThang'), icon: BarChart3 },
+      { id: 'nhom-loi', label: t(isMobile ? 'danhGiaDauVao.tabs.tiLeLoiNgan' : 'danhGiaDauVao.tabs.tiLeLoi'), icon: PieChart },
     ],
     [t, isMobile]
   );
@@ -62,6 +65,7 @@ const DanhGiaDauVaoPage: React.FC = () => {
         {activeTab === 'bang' && <BangDanhGiaTab />}
         {activeTab === 'tuan' && <TongHopTuanTab />}
         {activeTab === 'thang' && <SoSanhThangTab />}
+        {activeTab === 'nhom-loi' && <TiLeLoiTab />}
       </div>
     </div>
   );

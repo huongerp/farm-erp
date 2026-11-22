@@ -7,7 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { CalendarDays, FileSpreadsheet, ListOrdered, Printer } from 'lucide-react';
+import { CalendarDays, FileSpreadsheet, ListOrdered, Printer, Scale } from 'lucide-react';
 import GenericDrawer from '../../../../../components/shared/GenericDrawer';
 import DetailSection from '../../../../../components/shared/DetailSection';
 import DetailField from '../../../../../components/shared/DetailField';
@@ -65,6 +65,17 @@ const TongNgayDetail: React.FC<Props> = ({ dong, dsPhieu, dsPhieuGoc, tenToTruon
     [dsPhieu]
   );
   const phieuMo = moPhieuId ? dsPhieuGoc.find((p) => p.id === moPhieuId) : undefined;
+
+  /**
+   * Chuyến có cân mẫu buồng trong ngày + dòng tổng cộng (Σ buồng, Σ kg, bình quân = Σkg / Σbuồng).
+   * Lấy phiếu GỐC: cân mẫu là số của cả chuyến, không chia được theo tổ trưởng đang lọc.
+   */
+  const canMau = useMemo(() => {
+    const ds = [...dsPhieuGoc].filter((p) => p.so_buong_can_mau > 0).sort((a, b) => a.chuyen - b.chuyen);
+    const tongBuong = ds.reduce((s, p) => s + p.so_buong_can_mau, 0);
+    const tongKg = ds.reduce((s, p) => s + p.tong_can_nang_mau, 0);
+    return { ds, tongBuong, tongKg, binhQuan: tongBuong > 0 ? tongKg / tongBuong : null };
+  }, [dsPhieuGoc]);
 
   const xuatExcel = async () => {
     setDangXuat(true);
@@ -180,6 +191,56 @@ const TongNgayDetail: React.FC<Props> = ({ dong, dsPhieu, dsPhieuGoc, tenToTruon
             maxHeight="280px"
           />
         </GenericSubTableSection>
+
+        {canMau.ds.length > 0 && (
+          <GenericSubTableSection
+            title={t('danhGiaDauVao.tongHop.sectionCanMau')}
+            icon={<Scale size={14} className="text-primary" />}
+            count={canMau.ds.length}
+            contentMode="raw"
+          >
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm min-w-[36rem]">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="px-3 py-2 text-left font-medium">{t('danhGiaDauVao.store.colChuyen')}</th>
+                    <th className="px-3 py-2 text-left font-medium">{t('danhGiaDauVao.tongHop.colGioCan')}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t('danhGiaDauVao.form.soBuongCanMau')}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t('danhGiaDauVao.form.tongCanNangMau')}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t('danhGiaDauVao.form.binhQuanBuong')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {canMau.ds.map((p) => (
+                    <tr key={p.id} className="border-b border-border/80 last:border-0">
+                      <td className="px-3 py-2 text-sm font-medium">{t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: p.chuyen })}</td>
+                      <td className="px-3 py-2 text-sm tabular-nums text-muted-foreground">{p.gio_can_mau ?? '—'}</td>
+                      <td className="px-3 py-2 text-right text-sm tabular-nums">{formatNumberVN(p.so_buong_can_mau)}</td>
+                      <td className="px-3 py-2 text-right text-sm tabular-nums">{formatNumberVN(p.tong_can_nang_mau)}</td>
+                      <td className="px-3 py-2 text-right text-sm tabular-nums">
+                        {formatNumberVN(p.tong_can_nang_mau / p.so_buong_can_mau, { maxFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="border-t border-border bg-muted/20">
+                    <td className="px-3 py-2 text-sm font-semibold text-primary" colSpan={2}>
+                      {t('danhGiaDauVao.tongHop.tongCongCanMau')}
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-primary">
+                      {formatNumberVN(canMau.tongBuong)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-primary">
+                      {formatNumberVN(canMau.tongKg)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-primary">
+                      {formatNumberVN(canMau.binhQuan, { maxFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </GenericSubTableSection>
+        )}
 
         <DetailSection title={t('danhGiaDauVao.tongHop.sectionLuoi')} variant="primary">
           {luoi ? <DgdvLuoiNgayTable luoi={luoi} canhBao={canhBao} /> : <p className="m-0 text-sm text-muted-foreground">{t('danhGiaDauVao.bang.khongCoDuLieu')}</p>}

@@ -33,7 +33,8 @@ const TABLE_LO_NGAY = 'fp_farm_dgdv_lo_ngay';
 const TABLE_DONG = 'fp_farm_dgdv_dong';
 const T_DM_LO = 'fp_var_lo_thu_hoach';
 
-const PHIEU_COLUMNS = 'id,ngay,chuyen,nam,tuan,id_chi_nhanh,ghi_chu,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
+const PHIEU_COLUMNS =
+  'id,ngay,chuyen,nam,tuan,id_chi_nhanh,ghi_chu,gio_can_mau,so_buong_can_mau,tong_can_nang_mau,trang_thai,id_nguoi_tao,tg_tao,tg_cap_nhat';
 const COT_COLUMNS =
   'id,id_phieu,stt,th_nam,th_tuan,chich_bap_tu,chich_bap_den,thu_hoach_tu,thu_hoach_den,id_mau_1,id_mau_2,xe_doi,ghi_chu';
 const DONG_COLUMNS = 'id,id_phieu_lo,id_cot,ngay,stt_dong,so_luong,danh_gia,so_luong_huy,ly_do_huy';
@@ -59,6 +60,10 @@ interface DbPhieuRow {
   tuan: number;
   id_chi_nhanh: Id;
   ghi_chu: string | null;
+  /** PostgREST trả `time` dạng 'HH:mm:ss'. */
+  gio_can_mau: string | null;
+  so_buong_can_mau: number | string | null;
+  tong_can_nang_mau: number | string | null;
   trang_thai: string | null;
   id_nguoi_tao: Id | null;
   tg_tao: string;
@@ -144,6 +149,12 @@ const so = (v: number | string | null | undefined): number => {
   return Number.isFinite(n) ? n : 0;
 };
 const ymd = (v: string) => (typeof v === 'string' ? v.slice(0, 10) : String(v));
+/** `time` của Postgres về dạng 'HH:mm:ss' → 'HH:mm'; rỗng / null → null. */
+const hhmm = (v: string | null | undefined): string | null => {
+  if (v == null || v === '') return null;
+  const s = String(v);
+  return /^\d{2}:\d{2}/.test(s) ? s.slice(0, 5) : s;
+};
 const toInt8 = (id: string | null | undefined): number | null => {
   if (id == null || id === '') return null;
   const n = Number(id);
@@ -165,6 +176,9 @@ function mapPhieu(r: DbPhieuRow): FarmDgdv {
     id_chi_nhanh: String(r.id_chi_nhanh),
     ten_chi_nhanh: r.ten_chi_nhanh ?? r.chi_nhanh?.ten_chi_nhanh ?? null,
     ghi_chu: r.ghi_chu ?? null,
+    gio_can_mau: hhmm(r.gio_can_mau),
+    so_buong_can_mau: so(r.so_buong_can_mau),
+    tong_can_nang_mau: so(r.tong_can_nang_mau),
     trang_thai: trangThai(r.trang_thai),
     id_nguoi_tao: str(r.id_nguoi_tao),
     ten_nguoi_tao: null,
@@ -562,6 +576,9 @@ export async function createDgdvDb(values: DgdvFormValues): Promise<string> {
       chuyen: values.chuyen,
       id_chi_nhanh: idChiNhanh,
       ghi_chu: values.ghi_chu?.trim() || null,
+      gio_can_mau: values.gio_can_mau || null,
+      so_buong_can_mau: values.so_buong_can_mau ?? 0,
+      tong_can_nang_mau: values.tong_can_nang_mau ?? 0,
       trang_thai: TRANG_THAI_DGDV.MO,
     })
     .select('id')
@@ -593,6 +610,9 @@ export async function updateDgdvDb(id: string, values: DgdvFormValues): Promise<
       chuyen: values.chuyen,
       id_chi_nhanh: idChiNhanh,
       ghi_chu: values.ghi_chu?.trim() || null,
+      gio_can_mau: values.gio_can_mau || null,
+      so_buong_can_mau: values.so_buong_can_mau ?? 0,
+      tong_can_nang_mau: values.tong_can_nang_mau ?? 0,
     })
     .eq('id', idPhieu);
   if (error) throw loiGhiPhieu(error, values);

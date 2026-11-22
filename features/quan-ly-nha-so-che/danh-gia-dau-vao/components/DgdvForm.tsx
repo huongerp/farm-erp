@@ -14,13 +14,14 @@ import { Controller, useFieldArray, useForm, useWatch, type Resolver, type Submi
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardPen, CopyPlus } from 'lucide-react';
 import Input from '../../../../components/ui/Input';
+import NumberInput from '../../../../components/ui/NumberInput';
 import Combobox from '../../../../components/ui/Combobox';
 import Button from '../../../../components/ui/Button';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import { DRAWER_WIDTH_BAO_CAO_SO_CHE } from '../../../../lib/dialog-sizes';
 import FormSection from '../../../../components/shared/FormSection';
 import FormDrawerFooter from '../../../../components/shared/FormDrawerFooter';
-import { formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
+import { formatNumberVN, formatYmdToDisplay, getTodayISO } from '../../../../lib/utils';
 import { useConfirmStore } from '../../../../store/useConfirmStore';
 import { CONFIRM_YES } from '../../../../lib/button-labels';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
@@ -54,6 +55,9 @@ function phieuSangForm(p: DgdvPhieuDayDu): DgdvFormValues {
     chuyen: p.chuyen,
     id_chi_nhanh: p.id_chi_nhanh,
     ghi_chu: p.ghi_chu ?? '',
+    gio_can_mau: p.gio_can_mau ?? null,
+    so_buong_can_mau: p.so_buong_can_mau ?? 0,
+    tong_can_nang_mau: p.tong_can_nang_mau ?? 0,
     cot: theoStt(p.cot).map((c) => ({
       id: c.id,
       th_nam: c.th_nam,
@@ -98,7 +102,18 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
 
   const defaultValues = useMemo<DgdvFormValues>(() => {
     if (initial) return phieuSangForm(initial);
-    return { ngay: getTodayISO(), chuyen: 1, id_chi_nhanh: '', ghi_chu: '', cot: [], lo: [], ...giaTriMacDinh };
+    return {
+      ngay: getTodayISO(),
+      chuyen: 1,
+      id_chi_nhanh: '',
+      ghi_chu: '',
+      gio_can_mau: null,
+      so_buong_can_mau: 0,
+      tong_can_nang_mau: 0,
+      cot: [],
+      lo: [],
+      ...giaTriMacDinh,
+    };
   }, [initial, giaTriMacDinh]);
 
   const {
@@ -119,6 +134,14 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
   const idChiNhanh = useWatch({ control, name: 'id_chi_nhanh' });
   const cotWatch = useWatch({ control, name: 'cot' });
   const loWatch = useWatch({ control, name: 'lo' });
+  const soBuongCanMau = useWatch({ control, name: 'so_buong_can_mau' });
+  const tongCanNangMau = useWatch({ control, name: 'tong_can_nang_mau' });
+  /** Bình quân/buồng = kg ÷ buồng (chỉ đọc); chưa có buồng → null (ô trống, không hiện 0). */
+  const binhQuanBuong = useMemo(() => {
+    const soBuong = Number(soBuongCanMau) || 0;
+    const kg = Number(tongCanNangMau) || 0;
+    return soBuong > 0 ? kg / soBuong : null;
+  }, [soBuongCanMau, tongCanNangMau]);
   const tuanCuaNgay = useMemo(() => tuanFarmCuaNgay(YMD_RE.test(ngay ?? '') ? ngay : getTodayISO()), [ngay]);
 
   // Tạo mới: gợi ý chuyến kế tiếp của (ngày, chi nhánh) — không đè số người dùng đã gõ.
@@ -299,6 +322,65 @@ const DgdvForm: React.FC<Props> = ({ branches, initial, giaTriMacDinh, onClose, 
                   control={control}
                   render={({ field }) => <Input {...field} value={field.value ?? ''} label={t('danhGiaDauVao.form.ghiChu')} />}
                 />
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+              <p className="m-0 mb-2 text-caption font-medium text-muted-foreground">{t('danhGiaDauVao.form.sectionCanMau')}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-3">
+                  <Controller
+                    name="gio_can_mau"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        label={t('danhGiaDauVao.form.gioCanMau')}
+                        type="time"
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        error={errors.gio_can_mau?.message}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Controller
+                    name="so_buong_can_mau"
+                    control={control}
+                    render={({ field }) => (
+                      <NumberInput
+                        label={t('danhGiaDauVao.form.soBuongCanMau')}
+                        value={field.value ?? 0}
+                        onChange={(n) => field.onChange(Math.max(0, Math.floor(n)))}
+                        maxFractionDigits={0}
+                        error={errors.so_buong_can_mau?.message}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Controller
+                    name="tong_can_nang_mau"
+                    control={control}
+                    render={({ field }) => (
+                      <NumberInput
+                        label={t('danhGiaDauVao.form.tongCanNangMau')}
+                        value={field.value ?? 0}
+                        onChange={field.onChange}
+                        maxFractionDigits={4}
+                        error={errors.tong_can_nang_mau?.message}
+                      />
+                    )}
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Input
+                    label={t('danhGiaDauVao.form.binhQuanBuong')}
+                    value={binhQuanBuong == null ? '' : formatNumberVN(binhQuanBuong)}
+                    readOnly
+                    disabled
+                  />
+                </div>
               </div>
             </div>
           </FormSection>
