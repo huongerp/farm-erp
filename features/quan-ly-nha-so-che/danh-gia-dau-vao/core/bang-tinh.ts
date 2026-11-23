@@ -215,6 +215,34 @@ export interface DgdvPhieuTongNgay extends DgdvPhieuDayDu {
   ds_chuyen: DgdvTongMotChuyen[];
   /** ghi chú phiếu từng chuyến (đã trim, bỏ chuyến trống), theo số chuyến */
   ghi_chu_chuyen: DgdvGhiChuChuyen[];
+  /** cân mẫu buồng từng chuyến (bỏ chuyến chưa cân), theo số chuyến */
+  can_mau_chuyen: DgdvCanMauChuyen[];
+}
+
+/** Cân mẫu buồng của một chuyến (in trên phiếu). */
+export interface DgdvCanMauChuyen {
+  chuyen: number;
+  gio_can_mau: string | null;
+  so_buong_can_mau: number;
+  tong_can_nang_mau: number;
+}
+
+/** Cân mẫu của các phiếu theo thứ tự truyền vào; bỏ phiếu chưa cân (0 buồng). */
+function canMauTheoChuyen(
+  ds: Pick<DgdvPhieuDayDu, 'chuyen' | 'gio_can_mau' | 'so_buong_can_mau' | 'tong_can_nang_mau'>[]
+): DgdvCanMauChuyen[] {
+  return ds.flatMap((p) =>
+    p.so_buong_can_mau > 0
+      ? [
+          {
+            chuyen: p.chuyen,
+            gio_can_mau: p.gio_can_mau ?? null,
+            so_buong_can_mau: p.so_buong_can_mau,
+            tong_can_nang_mau: p.tong_can_nang_mau || 0,
+          },
+        ]
+      : []
+  );
 }
 
 /** Ghi chú phiếu của một chuyến (in dưới lưới). */
@@ -322,6 +350,7 @@ function congMotNgay(dsGoc: DgdvPhieuDayDu[]): DgdvPhieuTongNgay {
     so_chuyen: ds.length,
     ds_chuyen: ds.map((p) => ({ id_phieu: p.id, chuyen: p.chuyen, ...tongPhieu(p) })),
     ghi_chu_chuyen: ghiChuTheoChuyen(ds),
+    can_mau_chuyen: canMauTheoChuyen(ds),
   };
 }
 
@@ -370,6 +399,8 @@ export interface DgdvLuoiNgay extends DgdvTongNgay, DgdvSoTheoCot {
   dsChuyen: DgdvTongMotChuyen[];
   /** ghi chú phiếu từng chuyến có chữ (đã trim), theo số chuyến — in dưới lưới */
   ghiChuChuyen: DgdvGhiChuChuyen[];
+  /** cân mẫu buồng từng chuyến (bỏ chuyến chưa cân), theo số chuyến — in đầu phiếu */
+  canMauChuyen: DgdvCanMauChuyen[];
   id_chi_nhanh: string;
   ten_chi_nhanh: string | null;
   nam: number;
@@ -474,6 +505,7 @@ export function dungLuoiNgay(
     ids_phieu: 'ids_phieu' in phieu ? phieu.ids_phieu : [phieu.id],
     dsChuyen: 'ds_chuyen' in phieu ? phieu.ds_chuyen : [{ id_phieu: phieu.id, chuyen: phieu.chuyen, ...tong }],
     ghiChuChuyen: 'ghi_chu_chuyen' in phieu ? phieu.ghi_chu_chuyen : ghiChuTheoChuyen([phieu]),
+    canMauChuyen: 'can_mau_chuyen' in phieu ? phieu.can_mau_chuyen : canMauTheoChuyen([phieu]),
     id_chi_nhanh: phieu.id_chi_nhanh,
     ten_chi_nhanh: phieu.ten_chi_nhanh ?? null,
     nam: phieu.nam,

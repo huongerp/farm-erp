@@ -106,7 +106,7 @@ const BaoCaoSoCheList: React.FC<Props> = ({
       case 'tong_buong_so_che':
         return <span className="text-sm tabular-nums">{formatNumberVN(item.tong_buong_so_che)}</span>;
       case 'sl_buong_ton_cuoi_ngay': {
-        // Tự tính = mục 7 − mục 8 − mục 9 (migration 090); âm thì tô đỏ.
+        // Tự tính = mục 6 + mục 7 − mục 8 − mục 9 (migration 096); âm thì tô đỏ.
         const tonCuoi = Number(item.sl_buong_ton_cuoi_ngay);
         return (
           <span className={cn('text-sm tabular-nums', tonCuoi < 0 && 'text-destructive')}>

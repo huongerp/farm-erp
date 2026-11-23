@@ -103,7 +103,7 @@
   "baoCaoSoChe.form.tongKhongSoChe": "Tổng số buồng không sơ chế",
   "baoCaoSoChe.form.tongSoChe": "Tổng số buồng sơ chế",
   "baoCaoSoChe.form.slTonCuoi": "Số buồng tồn cuối ngày",
-  "baoCaoSoChe.form.tonCuoiTuTinh": "= mục 7 − mục 8 − mục 9",
+  "baoCaoSoChe.form.tonCuoiTuTinh": "= mục 6 + mục 7 − mục 8 − mục 9",
   "baoCaoSoChe.form.danhGiaLoiQcPct": "Đánh giá lỗi QC (%)",
   "baoCaoSoChe.form.ghiChuPhieu": "Ghi chú phiếu",
   "baoCaoSoChe.form.layTuDgdv": "Lấy từ Đánh giá đầu vào",

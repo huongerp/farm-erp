@@ -139,6 +139,42 @@ const LuoiIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
   );
 };
 
+/**
+ * Dòng cân mẫu buồng dưới tiêu đề: phiếu một chuyến «6 buồng · 198,6 kg · bình quân 33,1 kg/buồng · lúc 07:30»;
+ * lưới tổng ngày liệt kê từng chuyến rồi tổng. Chưa cân chuyến nào thì không hiện.
+ */
+const CanMauIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
+  const { t } = useTranslation();
+  const ds = luoi.canMauChuyen;
+  if (ds.length === 0) return null;
+  const so = (soBuong: number, kg: number) =>
+    t('danhGiaDauVao.preview.canMauSo', {
+      soBuong: formatNumberVN(soBuong),
+      kg: formatNumberVN(kg, { maxFractionDigits: 2 }),
+      bq: formatNumberVN(kg / soBuong, { maxFractionDigits: 2 }),
+    });
+  const gio = (g: string | null) => (g ? ` · ${t('danhGiaDauVao.preview.canMauGio', { gio: g })}` : '');
+  const nhieuChuyen = luoi.chuyen === 0 && luoi.dsChuyen.length > 1;
+  let noiDung: string;
+  if (!nhieuChuyen) {
+    const c = ds[0];
+    noiDung = so(c.so_buong_can_mau, c.tong_can_nang_mau) + gio(c.gio_can_mau);
+  } else {
+    const tungChuyen = ds.map(
+      (c) =>
+        `${t('danhGiaDauVao.detail.tieuDeChuyen', { chuyen: c.chuyen })}: ${so(c.so_buong_can_mau, c.tong_can_nang_mau)}${gio(c.gio_can_mau)}`
+    );
+    const tongBuong = ds.reduce((s, c) => s + c.so_buong_can_mau, 0);
+    const tongKg = ds.reduce((s, c) => s + c.tong_can_nang_mau, 0);
+    noiDung = [...tungChuyen, `${t('danhGiaDauVao.preview.canMauTong')} ${so(tongBuong, tongKg)}`].join(' | ');
+  }
+  return (
+    <p className="text-center m-0 mb-2">
+      <span className="font-semibold">{t('danhGiaDauVao.preview.canMau')}</span> {noiDung}
+    </p>
+  );
+};
+
 /** Ghi chú phiếu (theo chuyến) + ghi chú dây dưới lưới; không có chữ thì không hiện. */
 const GhiChuIn: React.FC<{ luoi: DgdvLuoiNgay }> = ({ luoi }) => {
   const { t } = useTranslation();
@@ -201,6 +237,7 @@ const DgdvPreviewContent: React.FC<{ dsKhoi: DgdvKhoiNgay[]; chuyen?: number }> 
                 {!tomTat && <> · {t('danhGiaDauVao.bang.tiLeKsc', { tiLe: nhanTiLeKsc(luoi.ksc, luoi.tongThu) })}</>}
               </p>
               {tomTat && <p className="text-center m-0 mb-2">{tomTat}</p>}
+              <CanMauIn luoi={luoi} />
               <LuoiIn luoi={luoi} />
               <GhiChuIn luoi={luoi} />
               <HangKyTen

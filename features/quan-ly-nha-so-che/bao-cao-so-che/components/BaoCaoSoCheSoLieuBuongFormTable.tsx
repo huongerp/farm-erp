@@ -71,9 +71,11 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
 }) => {
   const { t } = useTranslation();
   const rowMeta = useWatch({ control, name: 'so_lieu_row_meta' });
-  // Mục 10 tự tính = mục 7 − mục 8 − mục 9 (mục 7/8 khoá theo ĐGĐV, mục 9 nhập tay).
+  // Mục 10 tự tính = mục 6 + mục 7 − mục 8 − mục 9 (mục 7/8 khoá theo ĐGĐV, mục 6/9 nhập tay).
+  const tonDau = useWatch({ control, name: 'sl_buong_ton_dau_ngay' });
   const soChe = useWatch({ control, name: 'tong_buong_so_che' });
   const tonCuoi = tinhTonCuoiNgay(
+    tonDau,
     giaTriTuDgdv.tong_buong_thu_hoach,
     giaTriTuDgdv.tong_buong_khong_so_che,
     soChe
@@ -181,7 +183,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                   </td>
                   <td className={bcscSoLieuTdGiaTri}>
                     {laSoLieuRowTuTinh(def.key) ? (
-                      // Ô tự tính: mục 7 − mục 8 − mục 9, không cho nhập tay; vẫn đồng bộ vào form khi lưu.
+                      // Ô tự tính: mục 6 + mục 7 − mục 8 − mục 9, không cho nhập tay; vẫn đồng bộ vào form khi lưu.
                       <>
                         <span
                           className={cn(

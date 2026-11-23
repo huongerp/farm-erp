@@ -75,7 +75,7 @@ export const baoCaoSoCheFormSchema = z.object({
   tong_buong_thu_hoach: z.coerce.number().min(0).default(0),
   tong_buong_khong_so_che: z.coerce.number().min(0).default(0),
   tong_buong_so_che: z.coerce.number().min(0).default(0),
-  /** Mục 10 tự tính = mục 7 − mục 8 − mục 9 (có thể âm, migration 090). */
+  /** Mục 10 tự tính = mục 6 + mục 7 − mục 8 − mục 9 (có thể âm, migration 090, 096). */
   sl_buong_ton_cuoi_ngay: z.coerce.number().default(0),
   danh_gia_loi_qc_pct: z.coerce.number().min(0).max(100).default(0),
   tong_luong: z.coerce.number().min(0).default(0),
