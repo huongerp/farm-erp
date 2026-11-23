@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import vi from '../locales/vi.json';
 import i18n from '../../../../lib/i18n';
+import { matchKey } from '../../../../lib/import-common';
 import { planBaoCaoNhanCongImport } from './import-bao-cao-nhan-cong';
 
 i18n.addResourceBundle('vi', 'translation', vi, true, true);
@@ -69,6 +70,16 @@ describe('planBaoCaoNhanCongImport', () => {
     for (const bad of [{ so_nhom: 10 }, { so_nhom: 'abc' }, { ho_ten: '', so_luong: 2, so_nhom: 1 }]) {
       expect(plan([{ ...row, ...bad }]).errors[0].msg).toContain('Nhóm phải là');
     }
+  });
+
+  it('có danh sách nhân viên của chi nhánh: tên có trong danh sách thì qua, tên lạ báo lỗi kèm tên', () => {
+    const hopLe = new Map([['1', new Set([matchKey('Nguyễn Văn An')])]]);
+    const ok = planBaoCaoNhanCongImport([row], branches, [], hopLe);
+    expect(ok.errors).toEqual([]);
+    expect(ok.phieu).toHaveLength(1);
+    const la = planBaoCaoNhanCongImport([{ ...row, ho_ten: 'Người Lạ' }], branches, [], hopLe);
+    expect(la.phieu).toEqual([]);
+    expect(la.errors[0].msg).toContain('Người Lạ');
   });
 
   it('người nghỉ không sinh công hoặc tăng ca; chặn giờ nghỉ khác 0', () => {

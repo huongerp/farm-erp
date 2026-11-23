@@ -1,6 +1,6 @@
 # Roadmap
 
-Cập nhật lần cuối: 22/11/2026
+Cập nhật lần cuối: 23/11/2026
 
 Ký hiệu: ✅ xong · 🔄 đang làm · ⏳ chưa làm
 
@@ -29,6 +29,7 @@ React 19 + Vite + TypeScript (PWA) · PostgREST self-host + auth-service (JWT, m
 | Báo cáo nhân công: đổi thưởng vượt (chốt 21/11/2026) — thùng vượt lấy từ KPI «Tỷ lệ thu hồi» của Báo cáo sơ chế, chỉ khi NS sơ chế ≥ 90%; chia theo giờ công + TC × hệ số, bỏ người xuống sớm; bỏ NS nhóm / số thùng nhóm | 🔨 code xong, chờ soát trên phiếu thật |
 | Báo cáo sơ chế: hệ số quy đổi cho từng phẩm cấp / loại thùng (Tổng quy đổi = số thùng × hệ số, hệ số gõ một lần rồi bấm chọn, phiếu mới tự điền theo phẩm cấp) | ✅ xong (migration 086 đã chạy 20/11/2026) |
 | Báo cáo nhân công: dòng II đổi tên «QL, nhóm trưởng» (vẫn cộng vào IV), dòng V thành «Công định biên không sản xuất, chuyền kho» | ✅ xong 22/11/2026 (chỉ đổi nhãn) |
+| Báo cáo nhân công dùng chung Danh sách nhân viên: tên / trạng thái lấy từ `fp_var_nhan_vien`, bảng `fp_var_nhan_vien_so_che` còn là thiết lập vị trí / nhóm / chuyền theo chi nhánh; nhân viên có thể không có email / SĐT (không tài khoản đăng nhập); nhập Excel chỉ nhận tên có trong danh sách | ✅ xong 23/11/2026 (migration 099 đã chạy: +172 nhân viên, 301 thiết lập đã gắn) |
 | Báo cáo sơ chế: tồn cuối ngày (mục 10) tự tính = mục 7 − 8 − 9, khoá ô, âm tô đỏ; tính lại toàn bộ phiếu cũ | ✅ xong (migration 090 đã chạy 22/11/2026) |
 | Báo cáo sơ chế: quản trị cài hệ số quy đổi theo farm × phẩm cấp (⚙ Cài đặt), form phiếu tự điền | ✅ xong (migration 092 đã chạy 22/11/2026) |
 | Phiếu kho Sơ chế/Phân thuốc — tab Theo hạng mục: suy giá như NXT, luân chuyển farm đi → farm đến, theo farm, hàng chưa có giá | ✅ xong (migration 082 đã chạy 17/11/2026) |

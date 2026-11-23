@@ -206,7 +206,7 @@ export const useUpdateEmployee = (onSuccess?: () => void) => {
       queryClient.invalidateQueries({ queryKey: EMPLOYEES_REF_QUERY_KEY });
       invalidateRefCache('employees');
       toast.success(i18n.t('employee.toast.updateSuccess'));
-      if (emp._passwordSet) {
+      if (emp.email && emp._passwordSet) {
         toast.info(i18n.t('employee.toast.passwordSet', { email: emp.email }));
       }
       if (emp._passwordError) {

@@ -16,8 +16,8 @@ import { useImportEmployees } from './use-nhan-vien';
 
 const COLUMNS: { key: string; col: string; hint: string; required?: boolean; requiredWhen?: string }[] = [
   { key: 'ho_ten', col: 'colHoTen', hint: 'hintHoTen', required: true },
-  { key: 'email', col: 'colEmail', hint: 'hintEmail', required: true },
-  { key: 'so_dien_thoai', col: 'colSdt', hint: 'hintSdt', required: true },
+  { key: 'email', col: 'colEmail', hint: 'hintEmail' },
+  { key: 'so_dien_thoai', col: 'colSdt', hint: 'hintSdt' },
   { key: 'gioi_tinh', col: 'colGioiTinh', hint: 'hintGioiTinh', required: true },
   { key: 'ngay_vao_lam', col: 'colNgayVaoLam', hint: 'hintNgay', required: true },
   { key: 'chi_nhanh', col: 'colChiNhanh', hint: 'hintChiNhanh', required: true },

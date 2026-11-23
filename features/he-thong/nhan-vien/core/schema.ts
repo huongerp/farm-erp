@@ -16,6 +16,21 @@ const CCCD_REGEX = /^\d{12}$/;
 /** Mã số thuế cá nhân: 10 hoặc 13 chữ số */
 const MST_REGEX = /^\d{10}(\d{3})?$/;
 
+/**
+ * Email không bắt buộc: bỏ trống = công nhân không có tài khoản đăng nhập.
+ * Có giá trị thì vẫn phải đúng định dạng. null/undefined quy về '' cho form và import dùng chung.
+ */
+const emailTuyChon = z.preprocess(
+  (v) => (typeof v === 'string' ? v.trim() : v == null ? '' : v),
+  z.union([z.literal(''), z.string().email({ message: i18n.t('employee.validation.emailInvalid') })])
+);
+
+/** SĐT không bắt buộc (công nhân có thể không có điện thoại); có giá trị thì kiểm định dạng. */
+const sdtTuyChon = z.preprocess(
+  (v) => (typeof v === 'string' ? v.trim() : v == null ? '' : v),
+  z.union([z.literal(''), z.string().regex(PHONE_REGEX, { message: i18n.t('employee.validation.phoneInvalid') })])
+);
+
 /** Kiểm tra tuổi ≥ 16 (tuổi lao động tối thiểu) */
 const isWorkingAge = (dateStr: string): boolean => {
   const dob = new Date(dateStr);
@@ -29,10 +44,8 @@ const isWorkingAge = (dateStr: string): boolean => {
 
 export const employeeSchema = z.object({
   ho_ten: z.string().min(2, { message: i18n.t('employee.validation.nameMin') }),
-  email: z.string().email({ message: i18n.t('employee.validation.emailInvalid') }),
-  so_dien_thoai: z.string()
-    .min(1, { message: i18n.t('employee.validation.phoneRequired') })
-    .regex(PHONE_REGEX, { message: i18n.t('employee.validation.phoneInvalid') }),
+  email: emailTuyChon,
+  so_dien_thoai: sdtTuyChon,
   id_chuc_vu: z.string().min(1, { message: i18n.t('employee.validation.positionRequired') }),
   id_phong_ban: z.string().min(1, { message: i18n.t('employee.validation.departmentRequired') }),
   id_chi_nhanh: z.array(z.string()).min(1, { message: i18n.t('employee.validation.branchRequired') }),

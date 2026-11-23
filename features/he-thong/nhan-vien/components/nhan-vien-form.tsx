@@ -449,18 +449,19 @@ const EmployeeForm: React.FC<Props> = ({ initialData, prefillData, onClose }) =>
              {/* ===== SECTION 3: Thông tin liên hệ ===== */}
              <FormSection title={t('employee.form.contactInfo')} icon={<Phone size={14} />}>
                 <FormGrid cols={2}>
-                    <Input
-                        label={t('employee.form.workEmail')}
-                        type="email"
-                        required
-                        placeholder={t('employee.form.workEmailPlaceholder')}
-                        icon={<Mail className="w-4 h-4 text-muted-foreground" />}
-                        {...register('email')}
-                        error={errors.email?.message}
-                    />
+                    <div>
+                        <Input
+                            label={t('employee.form.workEmail')}
+                            type="email"
+                            placeholder={t('employee.form.workEmailPlaceholder')}
+                            icon={<Mail className="w-4 h-4 text-muted-foreground" />}
+                            {...register('email')}
+                            error={errors.email?.message}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">{t('employee.form.emailOptionalHint')}</p>
+                    </div>
                     <Input
                         label={t('employee.form.phoneNumber')}
-                        required
                         placeholder={t('employee.form.phonePlaceholder')}
                         icon={<Phone className="w-4 h-4 text-muted-foreground" />}
                         {...register('so_dien_thoai')}

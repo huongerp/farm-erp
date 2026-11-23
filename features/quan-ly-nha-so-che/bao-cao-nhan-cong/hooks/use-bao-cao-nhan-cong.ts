@@ -17,6 +17,7 @@ import {
   updateBaoCaoNhanCongTrangThaiMany,
   getNhanVienSoChe,
   updateNhanVienSoChe,
+  type LuuThietLapNhanVienInput,
   getViTriSoChe,
   luuViTriSoChe,
   xoaViTriSoChe,
@@ -28,7 +29,7 @@ import {
   type PhieuTomTatTrung,
 } from '../core/form-mappers';
 import type { BaoCaoNhanCongFormValues } from '../core/schema';
-import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu, VarNhanVienSoChe } from '../core/types';
+import type { FarmBaoCaoNhanCong, TrangThaiBaoCaoNhanCongPhieu } from '../core/types';
 import { laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useBaoCaoNhanCongPermissions } from './use-bao-cao-nhan-cong-permissions';
 
@@ -226,11 +227,11 @@ export function useNhanVienSoChe(idChiNhanh: string | null | undefined) {
   });
 }
 
+/** Lưu thiết lập sơ chế của một người (insert khi chưa có dòng thiết lập: `id` null). */
 export function useUpdateNhanVienSoChe() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, patch }: { id: string; patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>> }) =>
-      updateNhanVienSoChe(id, patch),
+    mutationFn: (input: LuuThietLapNhanVienInput) => updateNhanVienSoChe(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...QUERY_KEY_BAO_CAO_NHAN_CONG, 'nhanVienSoChe'] });
     },

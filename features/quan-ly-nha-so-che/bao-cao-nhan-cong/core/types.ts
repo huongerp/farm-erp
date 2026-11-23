@@ -68,9 +68,16 @@ export interface FarmBaoCaoNhanCongNv {
   thu_tu: number;
 }
 
-/** Danh mục nhân viên sơ chế theo chi nhánh — fp_var_nhan_vien_so_che */
+/**
+ * Một người trong danh sách chọn tên của Báo cáo nhân công — ghép Danh sách nhân viên
+ * (tên, trạng thái) với thiết lập sơ chế theo chi nhánh `fp_var_nhan_vien_so_che`
+ * (vị trí / nhóm / chuyền / thứ tự). Xem `core/ghep-danh-muc-nv.ts`.
+ */
 export interface VarNhanVienSoChe {
-  id: string;
+  /** id dòng thiết lập; null = người chưa có dòng thiết lập (chưa có gì để sửa). */
+  id: string | null;
+  /** id trong `fp_var_nhan_vien` — người trong Danh sách nhân viên. */
+  id_nv?: string | null;
   id_chi_nhanh: string;
   ho_ten: string;
   vi_tri: string | null;

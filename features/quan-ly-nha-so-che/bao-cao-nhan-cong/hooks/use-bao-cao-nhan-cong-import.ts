@@ -9,7 +9,9 @@ import { useAuthStore } from '../../../../store/useStore';
 import { useBranches } from '../../../he-thong/chi-nhanh/hooks/use-chi-nhanh';
 import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES } from '../core/types';
 import { COT_IMPORT_BCNC, planBaoCaoNhanCongImport } from '../utils/import-bao-cao-nhan-cong';
-import { getBaoCaoNhanCongTomTat } from '../services/bao-cao-nhan-cong-service';
+import { getBaoCaoNhanCongTomTat, getNhanVienSoChe } from '../services/bao-cao-nhan-cong-service';
+import { khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { matchKey } from '../../../../lib/import-common';
 import { createBaoCaoNhanCongDb } from '../services/bao-cao-nhan-cong-db.service';
 import { QUERY_KEY_BAO_CAO_NHAN_CONG } from './use-bao-cao-nhan-cong';
 import { useBaoCaoNhanCongPermissions } from './use-bao-cao-nhan-cong-permissions';
@@ -52,7 +54,21 @@ export function useBaoCaoNhanCongImport() {
     if (!canCreate || scope.isLoading || !user?.id) throw new Error(t('baoCaoNhanCong.toast.createNotAllowed'));
     // Đọc mới lúc nhập, không dùng danh sách phân trang hay cache để chặn trùng.
     const existing = await getBaoCaoNhanCongTomTat(scope.viewAll, scope.allowedBranchIds);
-    const plan = planBaoCaoNhanCongImport(rows, chiNhanh, existing);
+    // Tên phải có trong Danh sách nhân viên của chi nhánh (migration 099) — chỉ tải chi nhánh có
+    // trong file, và chỉ giữ người đang dùng làm gợi ý hợp lệ.
+    const idCnTrongFile = new Set(
+      chiNhanh
+        .filter((b) => rows.some((r) => matchKey(r.chi_nhanh) === matchKey(b.ma) || matchKey(r.chi_nhanh) === matchKey(b.ten)))
+        .map((b) => b.id)
+    );
+    const tenHopLeTheoChiNhanh = new Map<string, Set<string>>();
+    await Promise.all(
+      [...idCnTrongFile].map(async (idCn) => {
+        const ds = await getNhanVienSoChe(idCn);
+        tenHopLeTheoChiNhanh.set(idCn, new Set(ds.filter((nv) => nv.dang_dung).map((nv) => khoaTen(nv.ho_ten))));
+      })
+    );
+    const plan = planBaoCaoNhanCongImport(rows, chiNhanh, existing, tenHopLeTheoChiNhanh);
     if (plan.errors.length) {
       setImportErrors(plan.errors);
       return { created: 0, skipped: rows.length };

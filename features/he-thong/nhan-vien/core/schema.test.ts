@@ -50,9 +50,10 @@ describe('employeeSchema', () => {
       expect(r.success).toBe(false);
     });
 
-    it('từ chối rỗng', () => {
+    it('chấp nhận rỗng (công nhân không có điện thoại)', () => {
       const r = parse({ so_dien_thoai: '' });
-      expect(r.success).toBe(false);
+      expect(r.success).toBe(true);
+      expect(r.success ? r.data.so_dien_thoai : null).toBe('');
     });
   });
 
@@ -189,6 +190,27 @@ describe('employeeSchema', () => {
 
     it('từ chối email không hợp lệ', () => {
       expect(parse({ email: 'not-email' }).success).toBe(false);
+    });
+
+    it('chấp nhận rỗng: công nhân không có tài khoản đăng nhập', () => {
+      expect(parse({ email: '' }).success).toBe(true);
+      expect(parse({ email: undefined }).success).toBe(true);
+      expect(parse({ email: null }).success).toBe(true);
+      const r = parse({ email: '' });
+      expect(r.success ? r.data?.email : null).toBe('');
+    });
+  });
+
+  /* ────── Trống cả email lẫn SĐT vẫn hợp lệ (công nhân không tài khoản) ────── */
+  describe('trống email + SĐT', () => {
+    it('hồ sơ chỉ có họ tên vẫn lưu được', () => {
+      const r = parse({ email: '', so_dien_thoai: '' });
+      expect(r.success).toBe(true);
+      expect(r.data?.so_dien_thoai).toBe('');
+    });
+
+    it('SĐT sai định dạng vẫn lỗi', () => {
+      expect(parse({ so_dien_thoai: '090abc1234' }).success).toBe(false);
     });
   });
 

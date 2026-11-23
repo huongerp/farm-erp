@@ -5,7 +5,6 @@ import {
   canCopyBaoCaoNhanCongToNextDay,
   canMutateBaoCaoNhanCong,
   canToggleTrangThaiBaoCaoNhanCong,
-  coQuyenThemNhanVien,
   coQuyenThemViTri,
 } from '../core/permissions';
 import { useAuthStore } from '../../../../store/useStore';
@@ -32,8 +31,6 @@ export function useBaoCaoNhanCongPermissions() {
       canCopyNextDay: () => canCopyBaoCaoNhanCongToNextDay(canCreate || canAdmin),
       /** Thêm vị trí công việc mới vào danh mục dùng chung — chỉ tài khoản super admin. */
       canThemViTri: coQuyenThemViTri({ isSuperAdmin }),
-      /** Thêm tên nhân viên mới vào danh mục nhân viên sơ chế — chỉ tài khoản super admin. */
-      canThemNhanVien: coQuyenThemNhanVien({ isSuperAdmin }),
       /** Chốt thưởng vượt tháng — khớp rpc_bcnc_chot_thang (approve/admin/all, migration 089). */
       canChotThuongThang: canApprove || canAdmin,
       /** Mở chốt — khớp rpc_bcnc_mo_chot_thang (admin/all). */

@@ -29,12 +29,16 @@ import { applySubTotalsToChiTietForm } from '../core/form-mappers';
 import { chuanHoaSoThungNhom, mucTieuNsNhom } from '../core/nang-suat-nhom';
 import { chuanHoaHeSoNhom } from '../core/thuong-vuot-thung';
 import { gonTen, khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { ghepDanhMucNv, type NvChinhRef } from '../core/ghep-danh-muc-nv';
 
 const TABLE_CHA = 'fp_farm_bao_cao_nhan_cong';
 const TABLE_CT = 'fp_farm_bao_cao_nhan_cong_ct';
 const TABLE_CT_SUB = 'fp_farm_bao_cao_nhan_cong_ct_sub';
 const TABLE_NV = 'fp_farm_bao_cao_nhan_cong_nv';
+/** Thiết lập sơ chế theo (chi nhánh, nhân viên) — tên / trạng thái lấy từ bảng chính. */
 const TABLE_DM_NV = 'fp_var_nhan_vien_so_che';
+/** Danh sách nhân viên dùng chung (module he-thong/nhan-vien). */
+const TABLE_NV_CHINH = 'fp_var_nhan_vien';
 const TABLE_DM_VT = 'fp_var_vi_tri_so_che';
 
 /** List — bỏ hinh_anh_urls (~1.8MB/dòng base64). Ảnh chỉ load khi mở chi tiết (ROW_CHA_DETAIL). */
@@ -53,7 +57,7 @@ const ROW_CT_SUB =
 
 const ROW_NV = 'id,id_bcnc_ct,id_nhan_vien,ho_ten,vi_tri,so_nhom,cham_cong,so_gio_cong,so_gio_tc,ghi_chu,thu_tu';
 
-const ROW_DM_NV = 'id,id_chi_nhanh,ho_ten,vi_tri,so_nhom,loai_chuyen,dang_dung,thu_tu';
+const ROW_DM_NV = 'id,id_nv,id_chi_nhanh,ho_ten,vi_tri,so_nhom,loai_chuyen,dang_dung,thu_tu';
 
 const ROW_DM_VT = 'id,ten,dang_dung,thu_tu,khong_thuong_vuot';
 
@@ -147,6 +151,7 @@ interface DbRowNv {
 
 interface DbRowDmNv {
   id: number;
+  id_nv: number | null;
   id_chi_nhanh: number;
   ho_ten: string;
   vi_tri: string | null;
@@ -180,9 +185,14 @@ function nvRowToModel(row: DbRowNv): FarmBaoCaoNhanCongNv {
   };
 }
 
+/**
+ * Dòng thiết lập còn sót (không ghép được với ai trong Danh sách nhân viên) hoặc dữ liệu thô của
+ * bảng thiết lập. Danh sách hiển thị đi qua `ghepDanhMucNv`, không gọi trực tiếp hàm này.
+ */
 function dmNvRowToModel(row: DbRowDmNv): VarNhanVienSoChe {
   return {
     id: String(row.id),
+    id_nv: row.id_nv != null ? String(row.id_nv) : null,
     id_chi_nhanh: String(row.id_chi_nhanh),
     ho_ten: row.ho_ten,
     vi_tri: row.vi_tri ?? null,
@@ -573,18 +583,35 @@ async function ganNhanVienVaoChiTiet(ct: FarmBaoCaoNhanCongCt[]): Promise<FarmBa
   return ct.map((c) => ({ ...c, nhan_vien: theoCt.get(c.id) ?? [] }));
 }
 
-/** Danh mục nhân viên sơ chế của một chi nhánh (cả người đã bỏ «Đang dùng» — để hiện đúng phiếu cũ). */
+/**
+ * Danh sách chọn tên của một chi nhánh sau migration 099: TÊN + trạng thái lấy từ Danh sách nhân
+ * viên (`fp_var_nhan_vien` theo `chi_nhanh_ids`), phần vị trí / nhóm / chuyền lấy từ bảng thiết lập
+ * `fp_var_nhan_vien_so_che`. Người đã nghỉ / dòng thiết lập không còn khớp vẫn được giữ để phiếu cũ
+ * hiện đúng tên — xem `ghepDanhMucNv`.
+ */
 export async function getNhanVienSoCheDb(idChiNhanh: string): Promise<VarNhanVienSoChe[]> {
   const idCn = parseIdToInt8(idChiNhanh);
   if (idCn == null) return [];
-  const { data, error } = await db
-    .from(TABLE_DM_NV)
-    .select(ROW_DM_NV)
-    .eq('id_chi_nhanh', idCn)
-    .order('thu_tu')
-    .order('ho_ten');
-  if (error) throwDbError(error, { resource: TABLE_DM_NV });
-  return ((data ?? []) as DbRowDmNv[]).map(dmNvRowToModel);
+  const [nvChinhRes, thietLapRes] = await Promise.all([
+    db
+      .from(TABLE_NV_CHINH)
+      .select('id,ho_va_ten,trang_thai')
+      .contains('chi_nhanh_ids', [String(idCn)])
+      .order('ho_va_ten'),
+    db
+      .from(TABLE_DM_NV)
+      .select(ROW_DM_NV)
+      .eq('id_chi_nhanh', idCn)
+      .order('thu_tu')
+      .order('ho_ten'),
+  ]);
+  if (nvChinhRes.error) throwDbError(nvChinhRes.error, { resource: TABLE_NV_CHINH });
+  if (thietLapRes.error) throwDbError(thietLapRes.error, { resource: TABLE_DM_NV });
+  const nvChinh: NvChinhRef[] = ((nvChinhRes.data ?? []) as { id: number; ho_va_ten: string | null; trang_thai: string | null }[]).map(
+    (r) => ({ id: String(r.id), ho_ten: r.ho_va_ten ?? '', trang_thai: r.trang_thai ?? null })
+  );
+  const thietLap = ((thietLapRes.data ?? []) as DbRowDmNv[]).map(dmNvRowToModel);
+  return ghepDanhMucNv(String(idCn), nvChinh, thietLap);
 }
 
 /** Danh mục vị trí công việc dùng chung — sắp theo thu_tu rồi tên (vị trí mới thêm cuối). */
@@ -643,53 +670,119 @@ export async function themViTriNeuChuaCoDb(ten: string): Promise<void> {
   if (error && !isUniqueViolation(error)) throwDbError(error, { resource: `${TABLE_DM_VT}.insert` });
 }
 
-export async function updateNhanVienSoCheDb(
-  id: string,
-  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>>
-): Promise<void> {
-  const body: Record<string, unknown> = { ...patch };
-  if (patch.ho_ten !== undefined) body.ho_ten = gonTen(patch.ho_ten) ?? '';
-  if (patch.vi_tri !== undefined) body.vi_tri = gonTen(patch.vi_tri);
-  const { error } = await db.from(TABLE_DM_NV).update(body).eq('id', Number(id));
-  if (error) throwDbError(error, { resource: `${TABLE_DM_NV}.update` });
+export interface LuuThietLapNhanVienInput {
+  /** id dòng thiết lập; null = người chưa có thiết lập ở chi nhánh này → insert. */
+  id: string | null;
+  /** id trong Danh sách nhân viên (`fp_var_nhan_vien`) — bắt buộc khi insert (`id` null). */
+  id_nv: string | null;
+  id_chi_nhanh: string;
+  patch: { vi_tri: string | null; so_nhom: number | null; loai_chuyen: LoaiChuyen | null };
+}
+
+/**
+ * Lưu THIẾT LẬP sơ chế (vị trí / nhóm / chuyền mặc định). Tên và trạng thái KHÔNG sửa ở đây —
+ * chúng thuộc Danh sách nhân viên (trigger migration 099 tự đồng bộ tên sang bảng thiết lập).
+ * `id` null = người chưa có dòng thiết lập → insert kèm tên hiện tại của nhân viên chính.
+ */
+export async function updateNhanVienSoCheDb(input: LuuThietLapNhanVienInput): Promise<void> {
+  const { id, id_nv, id_chi_nhanh, patch } = input;
+  const idNv = parseIdToInt8(id_nv);
+  const idCn = parseIdToInt8(id_chi_nhanh);
+  const body = {
+    vi_tri: gonTen(patch.vi_tri),
+    so_nhom: patch.so_nhom ?? null,
+    loai_chuyen: patch.loai_chuyen ?? null,
+  };
+
+  if (id) {
+    const { error } = await db.from(TABLE_DM_NV).update(body).eq('id', Number(id));
+    if (error) throwDbError(error, { resource: `${TABLE_DM_NV}.update` });
+    return;
+  }
+  if (idNv == null || idCn == null) {
+    throw new Error(i18n.t('baoCaoNhanCong.dmNv.nvKhongTonTai'));
+  }
+
+  // Chưa có thiết lập: cần tên hiện tại của nhân viên để ghi kèm (cột ho_ten NOT NULL, phiếu cũ
+  // đọc tên từ đây khi dòng không còn khớp ai).
+  const { data: nv, error: nvErr } = await db
+    .from(TABLE_NV_CHINH)
+    .select('id,ho_va_ten')
+    .eq('id', idNv)
+    .maybeSingle();
+  if (nvErr) throwDbError(nvErr, { resource: TABLE_NV_CHINH });
+  const hoTen = gonTen((nv as { ho_va_ten: string | null } | null)?.ho_va_ten);
+  if (!nv || !hoTen) throw new Error(i18n.t('baoCaoNhanCong.dmNv.nvKhongTonTai'));
+
+  const { error } = await db.from(TABLE_DM_NV).insert({
+    id_chi_nhanh: idCn,
+    id_nv: idNv,
+    ho_ten: hoTen,
+    ...body,
+  });
+  if (isUniqueViolation(error)) throw new Error(i18n.t('baoCaoNhanCong.dmNv.daCoThietLap'));
+  if (error) throwDbError(error, { resource: `${TABLE_DM_NV}.insert` });
 }
 
 type NvTheoChuyen = BaoCaoNhanCongFormValues['chi_tiet'][number];
 
 /**
- * Tên trong phiếu → id danh mục của chi nhánh (không phân biệt hoa thường); tên chưa có thì thêm vào
- * danh mục với vị trí + chuyền của lần gặp đầu (khuôn ganIdLo của Đánh giá đầu vào).
+ * Tên trong phiếu → id dòng THIẾT LẬP của chi nhánh (không phân biệt hoa thường). Tên chưa có
+ * thiết lập mà CÓ trong Danh sách nhân viên của chi nhánh → insert thiết lập kèm `id_nv` + tên hiện
+ * tại + vị trí / nhóm / chuyền của lần gặp đầu (khuôn ganIdLo của Đánh giá đầu vào). Tên không có
+ * trong danh sách chính → bỏ qua (phiếu lưu với `id_nhan_vien` null, không chặn lưu phiếu).
  */
 async function ganIdNhanVien(idChiNhanh: number | null, chiTiet: NvTheoChuyen[]): Promise<Map<string, number>> {
   const idTheoTen = new Map<string, number>();
   const ds = chiTiet.flatMap((ct) => ct.nhan_vien.map((nv) => ({ nv, loai: ct.loai_chuyen })));
   if (idChiNhanh == null || ds.length === 0) return idTheoTen;
 
-  const docDanhMuc = async () => {
-    const { data, error } = await db.from(TABLE_DM_NV).select('id,ho_ten').eq('id_chi_nhanh', idChiNhanh);
+  const docThietLap = async () => {
+    const { data, error } = await db.from(TABLE_DM_NV).select('id,id_nv,ho_ten').eq('id_chi_nhanh', idChiNhanh);
     if (error) throwDbError(error, { resource: TABLE_DM_NV });
-    for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
+    for (const r of (data ?? []) as { id: number; id_nv: number | null; ho_ten: string }[]) {
+      idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
+    }
   };
-  await docDanhMuc();
+  const [nvChinhRes] = await Promise.all([
+    db.from(TABLE_NV_CHINH).select('id,ho_va_ten').contains('chi_nhanh_ids', [String(idChiNhanh)]),
+    docThietLap(),
+  ]);
+  if (nvChinhRes.error) throwDbError(nvChinhRes.error, { resource: TABLE_NV_CHINH });
+  const nvChinhTheoTen = new Map<string, { id: number; ho_ten: string }>();
+  for (const r of (nvChinhRes.data ?? []) as { id: number; ho_va_ten: string | null }[]) {
+    const ten = gonTen(r.ho_va_ten);
+    if (ten) nvChinhTheoTen.set(khoaTen(ten), { id: Number(r.id), ho_ten: ten });
+  }
 
-  const thieu = new Map<string, { id_chi_nhanh: number; ho_ten: string; vi_tri: string | null; so_nhom: number | null; loai_chuyen: string }>();
+  const thieu = new Map<
+    string,
+    { id_chi_nhanh: number; id_nv: number; ho_ten: string; vi_tri: string | null; so_nhom: number | null; loai_chuyen: string }
+  >();
   for (const { nv, loai } of ds) {
     const k = khoaTen(nv.ho_ten);
-    if (k && !idTheoTen.has(k) && !thieu.has(k)) {
-      thieu.set(k, { id_chi_nhanh: idChiNhanh, ho_ten: gonTen(nv.ho_ten) ?? nv.ho_ten, vi_tri: gonTen(nv.vi_tri), so_nhom: nv.so_nhom ?? null, loai_chuyen: loai });
-    }
+    if (!k || idTheoTen.has(k) || thieu.has(k)) continue;
+    const chinh = nvChinhTheoTen.get(k);
+    if (!chinh) continue;
+    thieu.set(k, {
+      id_chi_nhanh: idChiNhanh,
+      id_nv: chinh.id,
+      ho_ten: chinh.ho_ten,
+      vi_tri: gonTen(nv.vi_tri),
+      so_nhom: nv.so_nhom ?? null,
+      loai_chuyen: loai,
+    });
   }
   if (thieu.size > 0) {
     const { data, error } = await db.from(TABLE_DM_NV).insert([...thieu.values()]).select('id,ho_ten');
     // Người khác vừa thêm cùng tên (UNIQUE chi nhánh + tên) → đọc lại danh mục là đủ.
-    // 42501 (RLS từ chối): người không phải super admin lưu phiếu có tên đã bị đổi/xoá trong
-    // danh mục (migration 098 chỉ cho super admin insert) → bỏ qua, tên đó lưu phiếu với
-    // id_nhan_vien null, không chặn việc lưu phiếu.
+    // 42501 (RLS từ chối) và 23505 (unique id_nv — người khác vừa tạo thiết lập cho đúng nhân viên
+    // đó) → bỏ qua, đọc lại danh mục để gắn được id vừa có; không chặn việc lưu phiếu.
     if (error && error.code !== '42501' && !isUniqueViolation(error)) {
       throwDbError(error, { resource: `${TABLE_DM_NV}.insert` });
     }
-    if (error) await docDanhMuc();
-    for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
+    if (error) await docThietLap();
+    else for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
   }
   return idTheoTen;
 }

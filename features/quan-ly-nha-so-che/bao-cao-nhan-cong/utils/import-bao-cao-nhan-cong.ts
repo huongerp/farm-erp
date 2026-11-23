@@ -5,6 +5,7 @@ import { baoCaoNhanCongFormSchema, type BaoCaoNhanCongFormValues } from '../core
 import { defaultChiTietRows, applySubTotalsToChiTietForm, findBaoCaoDuplicateByBranchAndDate, type PhieuTomTatTrung } from '../core/form-mappers';
 import { CHAM_CONG_CODES, LOAI_CHUYEN_CODES, NGOAI_LE_CODE } from '../core/types';
 import { GIO_CONG_MAC_DINH } from '../core/danh-sach-nv';
+import { khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { docSoNhom } from '../core/tong-hop-nhom';
 import { emptySubFormByLoai } from '../core/ct-sub';
 
@@ -18,11 +19,18 @@ export interface PhieuImportBcnc {
 
 const tr = (key: string) => i18n.t(`baoCaoNhanCong.import.${key}`);
 
-/** Mỗi dòng là một người hoặc một nhóm cùng mức giờ; chỉ tạo phiếu mới. */
+/**
+ * Mỗi dòng là một người hoặc một nhóm cùng mức giờ; chỉ tạo phiếu mới.
+ *
+ * `tenHopLeTheoChiNhanh`: id chi nhánh → Set `khoaTen` của người CÓ trong Danh sách nhân viên
+ * (đang dùng). Có map cho chi nhánh của dòng thì họ tên phải nằm trong Set — sai thì báo lỗi dòng
+ * (migration 099: tên lấy từ Danh sách nhân viên, không gõ tự do). Bỏ trống = không kiểm tra.
+ */
 export function planBaoCaoNhanCongImport(
   rows: Record<string, unknown>[],
   chiNhanh: ChiNhanhImportBcnc[],
-  existing: PhieuTomTatTrung[]
+  existing: PhieuTomTatTrung[],
+  tenHopLeTheoChiNhanh?: Map<string, Set<string>>
 ): { phieu: PhieuImportBcnc[]; errors: ImportErrorRow[] } {
   const errors: ImportErrorRow[] = [];
   const groups = new Map<string, PhieuImportBcnc>();
@@ -59,6 +67,10 @@ export function planBaoCaoNhanCongImport(
     if (ngoaiLe && (!ten || !normalizeText(r.vi_tri) || soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNgoaiLe'));
     if (cc === 'NGHI' && (soGio !== 0 || soTc !== 0)) msgs.push(tr('loiNghi'));
     if (!ten && normalizeText(r.vi_tri)) msgs.push(tr('loiViTri'));
+    const tenHopLe = cn ? tenHopLeTheoChiNhanh?.get(cn.id) : undefined;
+    if (ten && tenHopLe && !tenHopLe.has(khoaTen(ten))) {
+      msgs.push(i18n.t('baoCaoNhanCong.import.loiTenKhongCo', { ten }));
+    }
     const soNhom = docSoNhom(r.so_nhom);
     if (soNhom === undefined || (!ten && soNhom != null)) msgs.push(tr('loiSoNhom'));
     if (ngay && cn && findBaoCaoDuplicateByBranchAndDate(existing, ngay, cn.id)) msgs.push(i18n.t('baoCaoNhanCong.validation.duplicateNgayChiNhanh'));

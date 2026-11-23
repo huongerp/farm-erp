@@ -16,7 +16,7 @@ import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { buoiCuaChamCong, chamChieuCaChuyen, nvCoTen, doiBuoi, doiNghi, nhomCuaChuyenChuaCo, nvFormRowMoi, nvKhongTinhGio, tongHopNgoaiLe, subTuDanhSachNv, type NvFormRow } from '../core/danh-sach-nv';
 import type { HeSoNhom } from '../core/thuong-vuot-thung';
 import BaoCaoNhanCongSanLuongNhom from './BaoCaoNhanCongSanLuongNhom';
-import { khoaTen, laTenMoi } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
+import { khoaTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { useThemViTriNeuMoi } from '../hooks/use-bao-cao-nhan-cong';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 
@@ -40,7 +40,8 @@ interface Props {
 }
 
 /**
- * Danh sách tên của một chuyền — chọn tên có sẵn hoặc gõ tên mới (giống ô lô ở Đánh giá đầu vào).
+ * Danh sách tên của một chuyền — chỉ CHỌN từ Danh sách nhân viên của chi nhánh (migration 099 thêm
+ * người mới ở module Nhân viên, không gõ tên tự do tại đây).
  * Có ít nhất một tên thì số công của chuyền đếm từ danh sách (subTuDanhSachNv), không gõ tay.
  */
 const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
@@ -57,7 +58,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const themViTriNeuMoi = useThemViTriNeuMoi();
-  const { canThemViTri, canThemNhanVien } = useBaoCaoNhanCongPermissions();
+  const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
   /**
    * Cột hẹp có bề rộng cố định (không dùng `auto`): mỗi dòng là một grid riêng, `auto` khiến dòng
@@ -85,6 +86,16 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     () => dangDung.map((nv) => ({ value: nv.ho_ten, label: nv.ho_ten, subLabel: nv.vi_tri ?? '' })),
     [dangDung]
   );
+  /**
+   * Combobox chỉ hiện nhãn của option khớp đúng `value` — người đã nghỉ / tên cũ trên phiếu không
+   * có trong gợi ý nên phải bổ sung chính tên đó để ô không trống. Chỉ để hiển thị, không thêm vào
+   * danh sách chọn mới.
+   */
+  const tenOptionsTheoDong = (ten: string | null | undefined) => {
+    const v = ten?.trim() ?? '';
+    if (!v || tenOptions.some((o) => o.value === v)) return tenOptions;
+    return [...tenOptions, { value: v, label: v }];
+  };
   const viTriOptions = useMemo(
     () =>
       gopViTriOptions(viTriDanhMuc, [...danhMuc.map((nv) => nv.vi_tri), ...ds.map((r) => r.vi_tri)]).map((v) => ({
@@ -101,7 +112,12 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
     ],
     [t]
   );
-  const dsTenDanhMuc = useMemo(() => danhMuc.map((nv) => nv.ho_ten), [danhMuc]);
+  /** Khoá tên của danh mục — dòng có tên ngoài danh mục thì nhắc thêm ở Danh sách nhân viên. */
+  const khoaTenDanhMuc = useMemo(() => new Set(danhMuc.map((nv) => khoaTen(nv.ho_ten))), [danhMuc]);
+  const tenNgoaiDanhMuc = (ten: string | null | undefined) => {
+    const k = khoaTen(ten);
+    return k !== '' && !khoaTenDanhMuc.has(k);
+  };
 
   /** Ghi danh sách + đếm lại số công của chuyền. */
   const apply = useCallback(
@@ -173,7 +189,13 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
           {t('baoCaoNhanCong.nv.title', { n: ds.length })}
         </span>
         <span className="text-caption text-muted-foreground flex-1 min-w-[12rem]">
-          {ngoaiLe ? t('baoCaoNhanCong.ngoaiLe.hint') : ds.length > 0 ? t('baoCaoNhanCong.nv.dangDem') : t('baoCaoNhanCong.nv.hint')}
+          {ngoaiLe
+            ? t('baoCaoNhanCong.ngoaiLe.hint')
+            : !chuaChonChiNhanh && danhMuc.length === 0
+              ? t('baoCaoNhanCong.nv.themODanhSachNhanVien')
+              : ds.length > 0
+                ? t('baoCaoNhanCong.nv.dangDem')
+                : t('baoCaoNhanCong.nv.hint')}
         </span>
         {coDongSang && (
           <Button type="button" variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={chamChieu}>
@@ -205,7 +227,6 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
 
           {ds.map((row, idx) => {
             const err = nvErrors?.[idx];
-            const moi = laTenMoi(row.ho_ten, dsTenDanhMuc);
             const nhanXoa = row.ho_ten?.trim() ? t('baoCaoNhanCong.nv.xoaKhoiChuyen', { ten: row.ho_ten.trim() }) : t('common.delete');
             return (
               <div
@@ -215,16 +236,16 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                 <span className="hidden sm:block h-9 leading-9 text-right text-caption tabular-nums text-muted-foreground">{idx + 1}</span>
                 <div className="col-span-2 sm:col-span-1 min-w-0">
                   <Combobox
-                    options={tenOptions}
+                    options={tenOptionsTheoDong(row.ho_ten)}
                     value={row.ho_ten}
                     onChange={(x) => chonTen(idx, x)}
                     placeholder={t('baoCaoNhanCong.nv.chonTen')}
-                    creatable={canThemNhanVien}
-                    creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
                     dropdownInPortal
                     error={err?.ho_ten?.message as string | undefined}
                   />
-                  {canThemNhanVien && !err?.ho_ten && moi && <p className="text-caption text-primary m-0 mt-0.5">{t('baoCaoNhanCong.nv.tenMoiSeThem')}</p>}
+                  {!err?.ho_ten && tenNgoaiDanhMuc(row.ho_ten) && (
+                    <p className="text-caption text-muted-foreground m-0 mt-0.5">{t('baoCaoNhanCong.nv.themODanhSachNhanVien')}</p>
+                  )}
                 </div>
                 <div className="col-span-2 sm:col-span-1 min-w-0">
                   <Combobox

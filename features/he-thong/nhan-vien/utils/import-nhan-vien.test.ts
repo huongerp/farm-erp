@@ -58,6 +58,14 @@ describe('planNhanVienImport', () => {
     });
   });
 
+  it('dòng không email / không SĐT vẫn tạo được (công nhân không tài khoản)', () => {
+    const plan = planNhanVienImport([row({ email: '', so_dien_thoai: '' })], input);
+    expect(plan.errors).toEqual([]);
+    expect(plan.toCreate).toHaveLength(1);
+    expect(plan.toCreate[0].data.email).toBe('');
+    expect(plan.toCreate[0].data.so_dien_thoai).toBe('');
+  });
+
   it('email đã có hoặc trùng trong file → lỗi', () => {
     const plan = planNhanVienImport([row({ email: 'da.co@farm.vn' }), row({ email: 'x@farm.vn' }), row({ email: 'X@farm.vn' })], input);
     expect(plan.toCreate).toHaveLength(1);

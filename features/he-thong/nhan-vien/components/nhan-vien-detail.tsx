@@ -136,24 +136,25 @@ const EmployeeDetail: React.FC<Props> = ({ data, onClose, onEdit, onDelete, canU
       onClick: () => window.open(`${window.location.origin}/ho-so-nhan-vien/${encodeURIComponent(data.id)}`, '_blank', 'noopener,noreferrer'),
       variant: "secondary"
     },
-    ...(canResetPassword ? [{
+    // Không có email = không có tài khoản đăng nhập → không có mật khẩu để đặt lại.
+    ...(canResetPassword && data.email ? [{
       label: t('employee.detail.changePassword'),
       icon: <Key />,
       onClick: handleResetPassword,
       variant: "warning"
     } as DetailToolbarAction] : []),
-    {
+    ...(data.email ? [{
       label: t('employee.detail.sendEmail'),
       icon: <Mail />,
       onClick: () => window.location.href = `mailto:${data.email}`,
       variant: "primary"
-    },
-    {
+    } as DetailToolbarAction] : []),
+    ...(data.so_dien_thoai ? [{
       label: t('employee.detail.callPhone'),
       icon: <Phone />,
       onClick: () => window.location.href = `tel:${data.so_dien_thoai}`,
       variant: "success"
-    },
+    } as DetailToolbarAction] : []),
   ];
 
   const renderFooter = (

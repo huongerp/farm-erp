@@ -56,23 +56,25 @@ const EmployeeTable: React.FC<Props> = ({ data, totalRecordsOverride, isLoading,
                                 <span className="font-semibold text-foreground text-sm truncate">{item.ho_ten}</span>
                                 {item.is_super_admin && <SuperAdminBadge />}
                             </span>
-                            <span className="text-xs text-muted-foreground truncate">{item.so_dien_thoai}</span>
+                            <span className="text-xs text-muted-foreground truncate">{item.so_dien_thoai || '—'}</span>
                         </div>
                     </div>
                 );
             case 'gioi_tinh':
                 return <EnumBadge value={item.gioi_tinh} config={GENDER_BADGE_CONFIG} />;
             case 'email':
-                return (
-                    <a href={`mailto:${item.email}`} className="flex items-center gap-1.5 text-body-sm text-foreground hover:text-primary transition-colors truncate" onClick={e => e.stopPropagation()}>
-                        <Mail size={12} className="text-primary/60 shrink-0" />
-                        <span className="truncate">{item.email}</span>
-                    </a>
-                );
+                return item.email
+                    ? (
+                        <a href={`mailto:${item.email}`} className="flex items-center gap-1.5 text-body-sm text-foreground hover:text-primary transition-colors truncate" onClick={e => e.stopPropagation()}>
+                            <Mail size={12} className="text-primary/60 shrink-0" />
+                            <span className="truncate">{item.email}</span>
+                        </a>
+                    )
+                    : <span className="text-xs text-muted-foreground italic">—</span>;
             case 'lien_he':
                 return (
                     <div className="flex items-center gap-1.5 text-body-sm text-foreground">
-                        <Phone size={12} className="text-primary/60 shrink-0" /> {item.so_dien_thoai}
+                        <Phone size={12} className="text-primary/60 shrink-0" /> {item.so_dien_thoai || '—'}
                     </div>
                 );
             case 'ten_chuc_vu':

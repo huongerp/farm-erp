@@ -44,12 +44,3 @@ export interface QuyenThemViTriInput {
 export function coQuyenThemViTri(input: QuyenThemViTriInput | null | undefined): boolean {
   return input?.isSuperAdmin === true;
 }
-
-/**
- * Thêm tên nhân viên MỚI vào danh mục `fp_var_nhan_vien_so_che` — chỉ super admin (`is_super_admin`).
- * Người khác chỉ chọn tên có sẵn; sửa tên/vị trí/chuyền trong dialog danh mục vẫn giữ nguyên.
- * Khớp policy INSERT ở migration 098.
- */
-export function coQuyenThemNhanVien(input: QuyenThemViTriInput | null | undefined): boolean {
-  return input?.isSuperAdmin === true;
-}

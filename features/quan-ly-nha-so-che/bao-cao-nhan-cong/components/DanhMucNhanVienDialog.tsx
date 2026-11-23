@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Info, Search, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit, Info, Search, UserRoundPlus, Users } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
@@ -12,12 +13,12 @@ import { matchesSearch } from '../../../../lib/search-text';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { LOAI_CHUYEN_CODES, type LoaiChuyen, type VarNhanVienSoChe } from '../core/types';
 import { useNhanVienSoChe, useUpdateNhanVienSoChe, useThemViTriNeuMoi, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
-import { gonTen } from '../../danh-gia-dau-vao/core/chuan-hoa-ten';
 import { gopViTriOptions } from '../core/vi-tri-danh-muc';
 import { SO_NHOM_TOI_DA } from '../core/tong-hop-nhom';
 import { useBaoCaoNhanCongPermissions } from '../hooks/use-bao-cao-nhan-cong-permissions';
 
-type Patch = Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>;
+/** Phần sửa được của thiết lập — tên / trạng thái thuộc Danh sách nhân viên. */
+type Patch = Pick<VarNhanVienSoChe, 'vi_tri' | 'so_nhom' | 'loai_chuyen'>;
 
 const SuaNguoi: React.FC<{
   nv: VarNhanVienSoChe;
@@ -31,24 +32,18 @@ const SuaNguoi: React.FC<{
   const themViTriNeuMoi = useThemViTriNeuMoi();
   const { canThemViTri } = useBaoCaoNhanCongPermissions();
   const [v, setV] = useState<Patch>({
-    ho_ten: nv.ho_ten,
     vi_tri: nv.vi_tri,
     so_nhom: nv.so_nhom,
     loai_chuyen: nv.loai_chuyen,
-    dang_dung: nv.dang_dung,
   });
-  const tenTrong = !gonTen(v.ho_ten);
 
   return (
     <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem_minmax(0,1fr)] gap-3">
-        <Input
-          label={t('baoCaoNhanCong.nv.hoTen')}
-          required
-          value={v.ho_ten}
-          onChange={(e) => setV({ ...v, ho_ten: e.target.value })}
-          error={tenTrong ? t('baoCaoNhanCong.validation.nvTenRequired') : undefined}
-        />
+      <div className="flex items-baseline gap-2 min-w-0">
+        <span className="text-sm font-medium truncate">{nv.ho_ten}</span>
+        {!nv.dang_dung && <span className="text-caption text-muted-foreground shrink-0">{t('baoCaoNhanCong.dmNv.daNghi')}</span>}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_7rem_minmax(0,1fr)] gap-3">
         <Combobox
           label={t('baoCaoNhanCong.nv.viTri')}
           options={viTriOptions}
@@ -84,15 +79,6 @@ const SuaNguoi: React.FC<{
           dropdownInPortal
         />
       </div>
-      <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-primary"
-          checked={v.dang_dung}
-          onChange={(e) => setV({ ...v, dang_dung: e.target.checked })}
-        />
-        {t('baoCaoNhanCong.dmNv.dangDung')}
-      </label>
       <div className="flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onDone}>
           {t('common.cancel')}
@@ -100,8 +86,10 @@ const SuaNguoi: React.FC<{
         <Button
           type="button"
           size="sm"
-          disabled={tenTrong || luu.isPending}
-          onClick={() => luu.mutate({ id: nv.id, patch: v }, { onSuccess: onDone })}
+          disabled={luu.isPending}
+          onClick={() =>
+            luu.mutate({ id: nv.id, id_nv: nv.id_nv ?? null, id_chi_nhanh: nv.id_chi_nhanh, patch: v }, { onSuccess: onDone })
+          }
         >
           {t('common.save')}
         </Button>
@@ -118,16 +106,20 @@ interface Props {
 }
 
 /**
- * Danh mục nhân viên sơ chế theo chi nhánh: tên tự thêm khi lưu phiếu; ở đây sửa tên / vị trí /
- * chuyền mặc định, người nghỉ thì bỏ «Đang dùng» (ẩn khỏi gợi ý, phiếu cũ giữ nguyên tên).
+ * Thiết lập nhân viên sơ chế theo chi nhánh: danh sách người lấy từ module Danh sách nhân viên
+ * (thêm / đổi tên / nghỉ việc ở đó); ở đây chỉ đặt vị trí / nhóm / chuyền mặc định cho từng người.
+ * Người đã nghỉ hiện mờ kèm nhãn «Đã nghỉ» — phiếu cũ vẫn giữ nguyên tên.
  */
 const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = '', onClose }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [idCn, setIdCn] = useState(idChiNhanhMacDinh);
   const [tuKhoa, setTuKhoa] = useState('');
   const [dangSua, setDangSua] = useState<string | null>(null);
   const { data: ds = [], isLoading } = useNhanVienSoChe(idCn);
   const { data: viTriDanhMuc = [] } = useViTriSoChe();
+  /** Người chưa có dòng thiết lập thì `id` null — vẫn phải sửa được (lưu sẽ insert). */
+  const khoaNv = (nv: VarNhanVienSoChe) => nv.id ?? `nv:${nv.id_nv}`;
 
   /** Lọc tại client: danh mục của một chi nhánh vốn nhỏ, đã tải sẵn để gợi ý tên. */
   const dsLoc = useMemo(
@@ -201,6 +193,17 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
               />
             </div>
           )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 gap-1.5 self-start sm:self-auto sm:ml-auto"
+            onClick={() => navigate('/nhan-vien')}
+            title={t('baoCaoNhanCong.dmNv.moDanhSachNhanVien')}
+          >
+            <UserRoundPlus size={14} />
+            {t('baoCaoNhanCong.dmNv.themNguoi')}
+          </Button>
         </div>
         {!idCn ? (
           <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.nv.chonChiNhanhTruoc')}</p>
@@ -213,12 +216,12 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
         ) : (
           <ul className="m-0 p-0 list-none divide-y divide-border rounded-xl border border-border">
             {dsLoc.map((nv) =>
-              dangSua === nv.id ? (
-                <li key={nv.id} className="p-2">
+              dangSua === khoaNv(nv) ? (
+                <li key={khoaNv(nv)} className="p-2">
                   <SuaNguoi nv={nv} viTriOptions={viTriOptions} nhomOptions={nhomOptions} chuyenOptions={chuyenOptions} onDone={() => setDangSua(null)} />
                 </li>
               ) : (
-                <li key={nv.id} className={cn('flex items-center gap-3 px-3 py-2', !nv.dang_dung && 'opacity-50')}>
+                <li key={khoaNv(nv)} className={cn('flex items-center gap-3 px-3 py-2', !nv.dang_dung && 'opacity-50')}>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium truncate">{nv.ho_ten}</div>
                     <div className="text-xs text-muted-foreground truncate">
@@ -235,7 +238,7 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
                   <button
                     type="button"
                     className="p-1.5 rounded-md hover:bg-muted text-primary"
-                    onClick={() => setDangSua(nv.id)}
+                    onClick={() => setDangSua(khoaNv(nv))}
                     aria-label={t('common.edit')}
                   >
                     <Edit size={14} />

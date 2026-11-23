@@ -5,6 +5,7 @@ import type { PaginatedTableResult } from '../../../../lib/db';
 import type { BaoCaoNhanCongListServerQuery } from './bao-cao-nhan-cong-list-query';
 import {
   getAllBaoCaoNhanCongDb,
+  type LuuThietLapNhanVienInput,
   getBaoCaoNhanCongPageDb,
   getBaoCaoNhanCongTomTatDb,
   fetchAllBaoCaoNhanCongForListQuery as fetchAllBaoCaoNhanCongForListQueryDb,
@@ -149,17 +150,17 @@ export async function updateBaoCaoNhanCongTrangThai(
   return enriched;
 }
 
-/** Danh mục nhân viên sơ chế của chi nhánh — gợi ý tên trong form + drawer «Danh sách nhân viên». */
+/** Nhân viên sơ chế của chi nhánh — gợi ý tên trong form + drawer «Thiết lập nhân viên sơ chế». */
 export async function getNhanVienSoChe(idChiNhanh: string): Promise<VarNhanVienSoChe[]> {
   return getNhanVienSoCheDb(idChiNhanh);
 }
 
-export async function updateNhanVienSoChe(
-  id: string,
-  patch: Partial<Pick<VarNhanVienSoChe, 'ho_ten' | 'vi_tri' | 'so_nhom' | 'loai_chuyen' | 'dang_dung'>>
-): Promise<void> {
-  await updateNhanVienSoCheDb(id, patch);
+/** Lưu thiết lập sơ chế (vị trí / nhóm / chuyền mặc định) — tên lấy từ Danh sách nhân viên. */
+export async function updateNhanVienSoChe(input: LuuThietLapNhanVienInput): Promise<void> {
+  await updateNhanVienSoCheDb(input);
 }
+
+export type { LuuThietLapNhanVienInput };
 
 /** Danh mục vị trí công việc dùng chung (Cài đặt + gợi ý dropdown trong form). */
 export async function getViTriSoChe(): Promise<VarViTriSoChe[]> {

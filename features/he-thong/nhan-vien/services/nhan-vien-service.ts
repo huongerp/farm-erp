@@ -516,14 +516,17 @@ export const createEmployee = async (data: EmployeeFormValues): Promise<Employee
   const emp: EmployeeMutationResult = rowToEmployee(inserted);
 
   // Mật khẩu không phải cột của bảng — ghi riêng qua RPC để hash bằng pgcrypto.
-  // Admin bỏ trống → cấp mật khẩu tạm ngẫu nhiên + buộc đổi ở lần đăng nhập đầu; UI hiện
-  // mật khẩu tạm đúng một lần để admin chuyển cho nhân viên.
-  const matKhau = data.mat_khau?.trim();
-  const matKhauTam = matKhau ? null : taoMatKhauTam();
-  await applyMatKhau(emp, matKhau || matKhauTam!, !matKhau);
-  if (matKhauTam) {
-    emp._passwordSet = false;
-    if (!emp._passwordError) emp._matKhauTam = matKhauTam;
+  // Không có email = không có tài khoản đăng nhập (công nhân): bỏ hẳn bước cấp mật khẩu.
+  if (emailVal) {
+    // Admin bỏ trống → cấp mật khẩu tạm ngẫu nhiên + buộc đổi ở lần đăng nhập đầu; UI hiện
+    // mật khẩu tạm đúng một lần để admin chuyển cho nhân viên.
+    const matKhau = data.mat_khau?.trim();
+    const matKhauTam = matKhau ? null : taoMatKhauTam();
+    await applyMatKhau(emp, matKhau || matKhauTam!, !matKhau);
+    if (matKhauTam) {
+      emp._passwordSet = false;
+      if (!emp._passwordError) emp._matKhauTam = matKhauTam;
+    }
   }
 
   await enrichEmployeesWithRefDataAsync([emp]);
@@ -565,9 +568,12 @@ export const importEmployees = async (
     try {
       const emp = await createEmployee(item.data);
       created++;
-      if (emp._passwordError) passwordErrors.push(`${emp.email ?? item.data.email}: ${emp._passwordError}`);
-      if (emp._matKhauTam) {
-        matKhauTam.push({ hoTen: emp.ho_ten ?? '', email: emp.email ?? '', matKhau: emp._matKhauTam });
+      // Người không có email thì không có tài khoản → không có mật khẩu để báo/phát.
+      if (emp.email) {
+        if (emp._passwordError) passwordErrors.push(`${emp.email}: ${emp._passwordError}`);
+        if (emp._matKhauTam) {
+          matKhauTam.push({ hoTen: emp.ho_ten ?? '', email: emp.email, matKhau: emp._matKhauTam });
+        }
       }
     } catch (e: unknown) {
       const msg = i18n.t('employee.import.errWrite', { msg: e instanceof Error ? e.message : String(e) });
@@ -603,9 +609,9 @@ export const updateEmployee = async (id: string, data: EmployeeFormValues): Prom
   if (error) throwDbError(error);
   const emp: EmployeeMutationResult = rowToEmployee(updated);
 
-  // Bỏ trống = không đổi mật khẩu.
+  // Bỏ trống = không đổi mật khẩu. Không email = không có tài khoản đăng nhập → không ghi mật khẩu.
   const matKhau = data.mat_khau?.trim();
-  if (matKhau) await applyMatKhau(emp, matKhau, false);
+  if (newEmail && matKhau) await applyMatKhau(emp, matKhau, false);
 
   await enrichEmployeesWithRefDataAsync([emp]);
   return emp;
