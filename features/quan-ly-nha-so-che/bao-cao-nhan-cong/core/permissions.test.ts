@@ -24,23 +24,17 @@ describe('canMutateBaoCaoNhanCong', () => {
 });
 
 describe('coQuyenThemViTri', () => {
-  it('quyền admin hoặc all trên module → được thêm', () => {
-    expect(coQuyenThemViTri({ actions: ['view', 'admin'] })).toBe(true);
-    expect(coQuyenThemViTri({ actions: ['all'] })).toBe(true);
+  it('super admin (is_super_admin = true) → được thêm', () => {
+    expect(coQuyenThemViTri({ isSuperAdmin: true })).toBe(true);
   });
 
-  it('cap_bac = 1 (số hoặc chuỗi) → được thêm dù không có quyền module', () => {
-    expect(coQuyenThemViTri({ capBac: 1, actions: [] })).toBe(true);
-    expect(coQuyenThemViTri({ capBac: '1' })).toBe(true);
-  });
-
-  it('cap_bac 2 chỉ có Thêm/Sửa phiếu → không được thêm vị trí', () => {
-    expect(coQuyenThemViTri({ capBac: 2, actions: ['view', 'create', 'update'], canAdmin: false })).toBe(false);
-  });
-
-  it('thiếu dữ liệu → không được (không hiểu nhầm là cấp cao)', () => {
-    expect(coQuyenThemViTri(null)).toBe(false);
+  it('không phải super admin → không được (quyền admin/all module hay cap_bac 1 không còn tác dụng)', () => {
+    expect(coQuyenThemViTri({ isSuperAdmin: false })).toBe(false);
     expect(coQuyenThemViTri({})).toBe(false);
-    expect(coQuyenThemViTri({ capBac: '', actions: null })).toBe(false);
+  });
+
+  it('thiếu dữ liệu → không được', () => {
+    expect(coQuyenThemViTri(null)).toBe(false);
+    expect(coQuyenThemViTri(undefined)).toBe(false);
   });
 });

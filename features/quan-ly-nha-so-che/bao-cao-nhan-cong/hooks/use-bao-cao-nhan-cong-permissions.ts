@@ -13,7 +13,7 @@ import { useAuthStore } from '../../../../store/useStore';
 export function useBaoCaoNhanCongPermissions() {
   const { canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading } =
     useModulePermissionFromContext();
-  const capBac = useAuthStore((s) => s.user?.cap_bac);
+  const isSuperAdmin = useAuthStore((s) => s.user?.is_super_admin);
 
   return useMemo(
     () => ({
@@ -29,8 +29,8 @@ export function useBaoCaoNhanCongPermissions() {
       canDeleteRow: (item: FarmBaoCaoNhanCong) =>
         canMutateBaoCaoNhanCong(item, canDelete, canAdmin),
       canCopyNextDay: () => canCopyBaoCaoNhanCongToNextDay(canCreate || canAdmin),
-      /** Thêm vị trí công việc mới vào danh mục dùng chung — chỉ cấp cao. */
-      canThemViTri: coQuyenThemViTri({ canAdmin, capBac }),
+      /** Thêm vị trí công việc mới vào danh mục dùng chung — chỉ tài khoản super admin. */
+      canThemViTri: coQuyenThemViTri({ isSuperAdmin }),
       /** Chốt thưởng vượt tháng — khớp rpc_bcnc_chot_thang (approve/admin/all, migration 089). */
       canChotThuongThang: canApprove || canAdmin,
       /** Mở chốt — khớp rpc_bcnc_mo_chot_thang (admin/all). */
@@ -42,6 +42,6 @@ export function useBaoCaoNhanCongPermissions() {
           canAdmin
         ),
     }),
-    [canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading, capBac]
+    [canView, canCreate, canUpdate, canDelete, canApprove, canAdmin, isLoading, isSuperAdmin]
   );
 }
