@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { canMutateBaoCaoNhanCong, coQuyenThemViTri } from './permissions';
+import { canMutateBaoCaoNhanCong, coQuyenThemNhanVien, coQuyenThemViTri } from './permissions';
 import type { FarmBaoCaoNhanCong } from './types';
 
 const phieu = (trang_thai: 'mo' | 'khoa') =>
@@ -36,5 +36,18 @@ describe('coQuyenThemViTri', () => {
   it('thiếu dữ liệu → không được', () => {
     expect(coQuyenThemViTri(null)).toBe(false);
     expect(coQuyenThemViTri(undefined)).toBe(false);
+  });
+});
+
+describe('coQuyenThemNhanVien — thêm tên mới vào danh mục nhân viên sơ chế', () => {
+  it('super admin → được thêm', () => {
+    expect(coQuyenThemNhanVien({ isSuperAdmin: true })).toBe(true);
+  });
+
+  it('không phải super admin hoặc thiếu dữ liệu → không được', () => {
+    expect(coQuyenThemNhanVien({ isSuperAdmin: false })).toBe(false);
+    expect(coQuyenThemNhanVien({})).toBe(false);
+    expect(coQuyenThemNhanVien(null)).toBe(false);
+    expect(coQuyenThemNhanVien(undefined)).toBe(false);
   });
 });

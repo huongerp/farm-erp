@@ -682,7 +682,12 @@ async function ganIdNhanVien(idChiNhanh: number | null, chiTiet: NvTheoChuyen[])
   if (thieu.size > 0) {
     const { data, error } = await db.from(TABLE_DM_NV).insert([...thieu.values()]).select('id,ho_ten');
     // Người khác vừa thêm cùng tên (UNIQUE chi nhánh + tên) → đọc lại danh mục là đủ.
-    if (error && !isUniqueViolation(error)) throwDbError(error, { resource: `${TABLE_DM_NV}.insert` });
+    // 42501 (RLS từ chối): người không phải super admin lưu phiếu có tên đã bị đổi/xoá trong
+    // danh mục (migration 098 chỉ cho super admin insert) → bỏ qua, tên đó lưu phiếu với
+    // id_nhan_vien null, không chặn việc lưu phiếu.
+    if (error && error.code !== '42501' && !isUniqueViolation(error)) {
+      throwDbError(error, { resource: `${TABLE_DM_NV}.insert` });
+    }
     if (error) await docDanhMuc();
     for (const r of (data ?? []) as { id: number; ho_ten: string }[]) idTheoTen.set(khoaTen(r.ho_ten), Number(r.id));
   }

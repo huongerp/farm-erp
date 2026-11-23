@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Edit, Info, Users } from 'lucide-react';
+import { Edit, Info, Search, Users } from 'lucide-react';
 import GenericDrawer from '../../../../components/shared/GenericDrawer';
 import Button from '../../../../components/ui/Button';
 import Input from '../../../../components/ui/Input';
@@ -8,6 +8,7 @@ import Combobox from '../../../../components/ui/Combobox';
 import { cn } from '../../../../lib/utils';
 import { TRANG_THAI } from '../../../../lib/constants';
 import { DIALOG_SIZE } from '../../../../lib/dialog-sizes';
+import { matchesSearch } from '../../../../lib/search-text';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { LOAI_CHUYEN_CODES, type LoaiChuyen, type VarNhanVienSoChe } from '../core/types';
 import { useNhanVienSoChe, useUpdateNhanVienSoChe, useThemViTriNeuMoi, useViTriSoChe } from '../hooks/use-bao-cao-nhan-cong';
@@ -123,9 +124,16 @@ interface Props {
 const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = '', onClose }) => {
   const { t } = useTranslation();
   const [idCn, setIdCn] = useState(idChiNhanhMacDinh);
+  const [tuKhoa, setTuKhoa] = useState('');
   const [dangSua, setDangSua] = useState<string | null>(null);
   const { data: ds = [], isLoading } = useNhanVienSoChe(idCn);
   const { data: viTriDanhMuc = [] } = useViTriSoChe();
+
+  /** Lọc tại client: danh mục của một chi nhánh vốn nhỏ, đã tải sẵn để gợi ý tên. */
+  const dsLoc = useMemo(
+    () => ds.filter((nv) => matchesSearch([nv.ho_ten, nv.vi_tri], tuKhoa)),
+    [ds, tuKhoa]
+  );
 
   const chiNhanhOptions = useMemo(
     () =>
@@ -168,17 +176,31 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
       }
     >
       <div className="space-y-3">
-        <div className="w-full sm:w-72">
-          <Combobox
-            label={t('baoCaoNhanCong.form.branch')}
-            options={chiNhanhOptions}
-            value={idCn}
-            onChange={(v) => {
-              setIdCn(v ? String(v) : '');
-              setDangSua(null);
-            }}
-            dropdownInPortal
-          />
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="w-full sm:w-72">
+            <Combobox
+              label={t('baoCaoNhanCong.form.branch')}
+              options={chiNhanhOptions}
+              value={idCn}
+              onChange={(v) => {
+                setIdCn(v ? String(v) : '');
+                setTuKhoa('');
+                setDangSua(null);
+              }}
+              dropdownInPortal
+            />
+          </div>
+          {idCn && (
+            <div className="w-full sm:w-72">
+              <Input
+                label={t('baoCaoNhanCong.dmNv.timTen')}
+                icon={<Search size={14} />}
+                value={tuKhoa}
+                onChange={(e) => setTuKhoa(e.target.value)}
+                placeholder={t('baoCaoNhanCong.dmNv.timTenPlaceholder')}
+              />
+            </div>
+          )}
         </div>
         {!idCn ? (
           <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.nv.chonChiNhanhTruoc')}</p>
@@ -186,9 +208,11 @@ const DanhMucNhanVienDialog: React.FC<Props> = ({ branches, idChiNhanhMacDinh = 
           <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.loading')}</p>
         ) : ds.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.dmNv.empty')}</p>
+        ) : dsLoc.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('baoCaoNhanCong.dmNv.khongTimThay')}</p>
         ) : (
           <ul className="m-0 p-0 list-none divide-y divide-border rounded-xl border border-border">
-            {ds.map((nv) =>
+            {dsLoc.map((nv) =>
               dangSua === nv.id ? (
                 <li key={nv.id} className="p-2">
                   <SuaNguoi nv={nv} viTriOptions={viTriOptions} nhomOptions={nhomOptions} chuyenOptions={chuyenOptions} onDone={() => setDangSua(null)} />

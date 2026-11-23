@@ -57,7 +57,7 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const themViTriNeuMoi = useThemViTriNeuMoi();
-  const { canThemViTri } = useBaoCaoNhanCongPermissions();
+  const { canThemViTri, canThemNhanVien } = useBaoCaoNhanCongPermissions();
   const ngoaiLe = loaiChuyen === NGOAI_LE_CODE;
   /**
    * Cột hẹp có bề rộng cố định (không dùng `auto`): mỗi dòng là một grid riêng, `auto` khiến dòng
@@ -219,12 +219,12 @@ const BaoCaoNhanCongNhanVienEditor: React.FC<Props> = ({
                     value={row.ho_ten}
                     onChange={(x) => chonTen(idx, x)}
                     placeholder={t('baoCaoNhanCong.nv.chonTen')}
-                    creatable
+                    creatable={canThemNhanVien}
                     creatableLabel={t('baoCaoNhanCong.nv.dungTenMoi')}
                     dropdownInPortal
                     error={err?.ho_ten?.message as string | undefined}
                   />
-                  {!err?.ho_ten && moi && <p className="text-caption text-primary m-0 mt-0.5">{t('baoCaoNhanCong.nv.tenMoiSeThem')}</p>}
+                  {canThemNhanVien && !err?.ho_ten && moi && <p className="text-caption text-primary m-0 mt-0.5">{t('baoCaoNhanCong.nv.tenMoiSeThem')}</p>}
                 </div>
                 <div className="col-span-2 sm:col-span-1 min-w-0">
                   <Combobox
