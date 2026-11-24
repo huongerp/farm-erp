@@ -30,7 +30,8 @@ import {
   tinhTonCuoiNgay,
   type SoLieuRowKeyTuDgdv,
 } from '../core/so-lieu-row-meta';
-import { cn, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDateShort, formatNumberVN } from '../../../../lib/utils';
+import type { BcscTonDauNgay } from '../core/ton-dau-ngay';
 import type { QcNgay } from '../../giam-sat-chat-luong/core/qc-ngay';
 import { DGDV_BANG_DANH_GIA_URL } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 
@@ -47,13 +48,15 @@ interface Props {
   qcGscl?: QcNgay;
   /** RPC tỉ lệ lỗi lỗi → hiện dòng báo dưới ghi chú nguồn. */
   gsclLoi?: boolean;
+  /** Tồn đầu theo phiếu liền trước; `co_phieu_truoc` → ô mục 6 khoá (DB trigger ghi đè). */
+  tonDauTuPhieuTruoc?: BcscTonDauNgay;
 }
 
 /**
- * Đồng bộ giá trị tự tính vào form. Không gọi hook trong render-prop inline của Controller
+ * Đồng bộ giá trị tự tính / khoá vào form. Không gọi hook trong render-prop inline của Controller
  * → tách component con ở module-level, effect chỉ chạy khi `value` đổi.
  */
-const DongBoTonCuoi: React.FC<{ value: number; onChange: (v: number) => void }> = ({ value, onChange }) => {
+const DongBoGiaTri: React.FC<{ value: number; onChange: (v: number) => void }> = ({ value, onChange }) => {
   useEffect(() => {
     onChange(value);
   }, [value, onChange]);
@@ -68,11 +71,15 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   dgdvLoi = false,
   qcGscl,
   gsclLoi = false,
+  tonDauTuPhieuTruoc,
 }) => {
   const { t } = useTranslation();
   const rowMeta = useWatch({ control, name: 'so_lieu_row_meta' });
-  // Mục 10 tự tính = mục 6 + mục 7 − mục 8 − mục 9 (mục 7/8 khoá theo ĐGĐV, mục 6/9 nhập tay).
-  const tonDau = useWatch({ control, name: 'sl_buong_ton_dau_ngay' });
+  // Mục 10 tự tính = mục 6 + mục 7 − mục 8 − mục 9 (mục 7/8 khoá theo ĐGĐV, mục 9 nhập tay;
+  // mục 6 khoá theo tồn cuối phiếu liền trước, phiếu đầu tiên mới nhập tay).
+  const tonDauKhoa = tonDauTuPhieuTruoc?.co_phieu_truoc ? tonDauTuPhieuTruoc : null;
+  const tonDauNhap = useWatch({ control, name: 'sl_buong_ton_dau_ngay' });
+  const tonDau = tonDauKhoa ? tonDauKhoa.ton_dau : tonDauNhap;
   const soChe = useWatch({ control, name: 'tong_buong_so_che' });
   const tonCuoi = tinhTonCuoiNgay(
     tonDau,
@@ -137,6 +144,11 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                         {t('baoCaoSoChe.form.tonCuoiTuTinh')}
                       </span>
                     )}
+                    {def.key === 'sl_buong_ton_dau_ngay' && tonDauKhoa && (
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        {t('baoCaoSoChe.form.tonDauTuPhieuTruoc', { ngay: formatDateShort(tonDauKhoa.ngay_truoc) })}
+                      </span>
+                    )}
                     {tuDgdv && (
                       <>
                         <a
@@ -196,7 +208,26 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                         <Controller
                           name={def.key}
                           control={control}
-                          render={({ field }) => <DongBoTonCuoi value={tonCuoi} onChange={field.onChange} />}
+                          render={({ field }) => <DongBoGiaTri value={tonCuoi} onChange={field.onChange} />}
+                        />
+                      </>
+                    ) : def.key === 'sl_buong_ton_dau_ngay' && tonDauKhoa ? (
+                      // Ô khoá: tồn cuối của phiếu liền trước, DB trigger ghi đè; vẫn đồng bộ vào form khi lưu.
+                      <>
+                        <span
+                          className={cn(
+                            'block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground',
+                            tonDauKhoa.ton_dau < 0 && 'text-destructive'
+                          )}
+                        >
+                          {formatNumberVN(tonDauKhoa.ton_dau)}
+                        </span>
+                        <Controller
+                          name={def.key}
+                          control={control}
+                          render={({ field }) => (
+                            <DongBoGiaTri value={tonDauKhoa.ton_dau} onChange={field.onChange} />
+                          )}
                         />
                       </>
                     ) : laSoLieuRowTuDgdv(def.key) ? (

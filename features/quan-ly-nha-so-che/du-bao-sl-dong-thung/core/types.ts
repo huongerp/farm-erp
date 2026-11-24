@@ -16,7 +16,7 @@ export interface FarmDuBaoSlDongThung {
   tong_buong_nhap_ke_hoach: number;
   ty_le_thu_hoi_ke_hoach: number;
   quy_cach_dong_thung_ke_hoach: number;
-  /** Dòng 10 = max(0, tồn đầu + Tổng thu ĐGĐV − tồn cuối) — DB trigger ghi (migration 060). */
+  /** Dòng 10 = max(0, tồn đầu + Tổng thu ĐGĐV − KSC − tồn cuối) — DB trigger ghi (migration 100). */
   tong_buong_nhap_thuc_te: number;
   /** Tồn đầu / tồn cuối ngày theo Báo cáo sơ chế cùng ngày + chi nhánh — DB trigger ghi. */
   sl_buong_ton_dau_ngay: number;

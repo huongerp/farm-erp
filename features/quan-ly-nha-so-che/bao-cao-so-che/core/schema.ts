@@ -71,7 +71,8 @@ export const baoCaoSoCheFormSchema = z.object({
   ten_chi_nhanh: z.string().optional().nullable(),
   /** Đồng bộ từ đvt từng dòng khi lưu; form không còn ô ĐVT tổng. */
   don_vi_tinh: z.string().max(50, reqMsg('baoCaoSoChe.validation.dvtMax')).optional().default('Buồng'),
-  sl_buong_ton_dau_ngay: z.coerce.number().min(0).default(0),
+  // Có phiếu trước → lấy tồn cuối phiếu đó, có thể âm (migration 100); ô nhập tay vẫn chặn âm ở NumberInput.
+  sl_buong_ton_dau_ngay: z.coerce.number().default(0),
   tong_buong_thu_hoach: z.coerce.number().min(0).default(0),
   tong_buong_khong_so_che: z.coerce.number().min(0).default(0),
   tong_buong_so_che: z.coerce.number().min(0).default(0),

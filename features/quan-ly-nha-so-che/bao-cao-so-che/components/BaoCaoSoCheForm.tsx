@@ -19,6 +19,7 @@ import {
   findBaoCaoSoCheDuplicateByBranchAndDate,
 } from '../core/form-mappers';
 import { useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
+import { useBcscTonDauNgay } from '../hooks/use-ton-dau-ngay';
 import { useGsclTiLeLoiNgay } from '../../giam-sat-chat-luong/hooks/use-gscl-ti-le-loi-ngay';
 import { BCSC_KPI_STT_OFFSET, BCSC_SO_LIEU_STT_OFFSET, deriveDonViTinhSlipFromSoLieuMeta } from '../core/so-lieu-row-meta';
 import { useCreateBaoCaoSoChe, useUpdateBaoCaoSoChe } from '../hooks/use-bao-cao-so-che';
@@ -148,6 +149,9 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     }),
     [tongDgdv]
   );
+
+  // Mục 6 tồn đầu = tồn cuối phiếu liền trước cùng chi nhánh (migration 100); phiếu đầu tiên nhập tay.
+  const { data: tonDauTuPhieuTruoc } = useBcscTonDauNgay(ngay, idChiNhanh);
 
   // % nải lỗi QC khoá theo Giám sát chất lượng của ngày + chi nhánh.
   const { data: qcGscl, isError: gsclLoi } = useGsclTiLeLoiNgay(ngay, idChiNhanh);
@@ -307,6 +311,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
               sttOffset={BCSC_SO_LIEU_STT_OFFSET}
               giaTriTuDgdv={giaTriTuDgdv}
               dgdvLoi={dgdvLoi}
+              tonDauTuPhieuTruoc={tonDauTuPhieuTruoc}
               qcGscl={qcGscl}
               gsclLoi={gsclLoi}
             />

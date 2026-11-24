@@ -51,8 +51,8 @@ describe('apTongThuDgdvVaoDuBaoForm', () => {
     expect(apTongThuDgdvVaoDuBaoForm(base, 0, khongTon).tong_buong_nhap_thuc_te).toBe(0);
   });
 
-  it('cộng buồng không sơ chế (KSC) cùng ngày: 55 + 506 + 12 − 0 = 573', () => {
-    expect(apTongThuDgdvVaoDuBaoForm(base, 506, { ton_dau: 55, ton_cuoi: 0 }, 12).tong_buong_nhap_thuc_te).toBe(573);
+  it('trừ buồng không sơ chế (KSC) cùng ngày: 55 + 506 − 12 − 0 = 549', () => {
+    expect(apTongThuDgdvVaoDuBaoForm(base, 506, { ton_dau: 55, ton_cuoi: 0 }, 12).tong_buong_nhap_thuc_te).toBe(549);
     expect(apTongThuDgdvVaoDuBaoForm(base, 814, { ton_dau: 105, ton_cuoi: 231 }, null).tong_buong_nhap_thuc_te).toBe(688);
   });
 

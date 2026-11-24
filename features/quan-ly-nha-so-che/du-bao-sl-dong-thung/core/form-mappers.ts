@@ -40,13 +40,13 @@ export function farmDuBaoSlDongThungToForm(row: FarmDuBaoSlDongThung): DuBaoSlDo
 }
 
 /**
- * Dòng 10 «Tổng số buồng nhập (thực tế)» = tồn đầu + Tổng thu Đánh giá đầu vào + buồng không sơ chế (KSC) − tồn cuối
- * (tồn theo Báo cáo sơ chế cùng ngày + chi nhánh; KSC = ĐGĐV so_luong_huy cùng ngày; khớp trigger
- * `fn_dgdv_trg_du_bao_khoa_so`, migration 076).
+ * Dòng 10 «Tổng số buồng nhập (thực tế)» = tồn đầu + Tổng thu Đánh giá đầu vào − buồng không sơ chế (KSC) − tồn cuối
+ * (tồn theo Báo cáo sơ chế cùng ngày + chi nhánh; KSC = ĐGĐV so_luong_huy cùng ngày, không sơ chế nên trừ ra;
+ * khớp trigger `fn_dgdv_trg_du_bao_khoa_so`, migration 100).
  * Âm → 0. Thiếu một trong hai số (chưa chọn ngày/chi nhánh, đang tải, lỗi) → giữ số đã lưu; DB trigger vẫn ghi đè khi lưu.
  */
 export function tinhBuongNhapThucTe(tongThu: number, ton: DuBaoTonNgay, ksc = 0): number {
-  return Math.max(0, Math.floor(ton.ton_dau + tongThu + (Number(ksc) || 0) - ton.ton_cuoi));
+  return Math.max(0, Math.floor(ton.ton_dau + tongThu - (Number(ksc) || 0) - ton.ton_cuoi));
 }
 
 /**

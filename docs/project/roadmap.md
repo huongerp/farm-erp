@@ -1,6 +1,6 @@
 # Roadmap
 
-Cập nhật lần cuối: 23/11/2026
+Cập nhật lần cuối: 24/11/2026
 
 Ký hiệu: ✅ xong · 🔄 đang làm · ⏳ chưa làm
 
@@ -32,6 +32,7 @@ React 19 + Vite + TypeScript (PWA) · PostgREST self-host + auth-service (JWT, m
 | Báo cáo nhân công dùng chung Danh sách nhân viên: tên / trạng thái lấy từ `fp_var_nhan_vien`, bảng `fp_var_nhan_vien_so_che` còn là thiết lập vị trí / nhóm / chuyền theo chi nhánh; nhân viên có thể không có email / SĐT (không tài khoản đăng nhập); nhập Excel chỉ nhận tên có trong danh sách | ✅ xong 23/11/2026 (migration 099 đã chạy: +172 nhân viên, 301 thiết lập đã gắn) |
 | Báo cáo sơ chế: tồn cuối ngày (mục 10) tự tính = mục 7 − 8 − 9, khoá ô, âm tô đỏ; tính lại toàn bộ phiếu cũ | ✅ xong (migration 090 đã chạy 22/11/2026) |
 | Báo cáo sơ chế: quản trị cài hệ số quy đổi theo farm × phẩm cấp (⚙ Cài đặt), form phiếu tự điền | ✅ xong (migration 092 đã chạy 22/11/2026) |
+| Báo cáo sơ chế: tồn đầu ngày (mục 6) = tồn cuối phiếu liền trước cùng farm, khoá ô, tự nối chuỗi khi sửa phiếu cũ (mốc 02/11/2026); Dự báo SL đóng thùng dòng 10 đổi thành tồn đầu + thu − KSC − tồn cuối | ✅ xong (migration 100 đã chạy 24/11/2026) |
 | Phiếu kho Sơ chế/Phân thuốc — tab Theo hạng mục: suy giá như NXT, luân chuyển farm đi → farm đến, theo farm, hàng chưa có giá | ✅ xong (migration 082 đã chạy 17/11/2026) |
 | Phiếu kho Sơ chế/Phân thuốc — tab đổi thành «Theo phẩm cấp» (phẩm cấp cố định theo danh mục hàng hoá), lọc Phẩm cấp ở Chi tiết dòng | ✅ xong (migration 088 đã chạy 20/11/2026) |
 | Giám sát chất lượng: tối thiểu 50 thùng kiểm/farm/ngày mới tính % lỗi QC (dưới mức = «Chưa đạt kiểm tra» ở Báo cáo sơ chế), cột/lọc/sắp xếp «Lỗi» ở danh sách phiếu | ✅ xong (migration 081 đã chạy 17/11/2026) |
