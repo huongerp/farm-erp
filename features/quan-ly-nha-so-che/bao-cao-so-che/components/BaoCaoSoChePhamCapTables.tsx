@@ -120,8 +120,13 @@ function PhamCapMobileFieldGrid({ fields }: { fields: PhamCapMobileField[] }) {
 export const BaoCaoSoChePhamCapFormSection: React.FC<{
   control: Control<BaoCaoSoCheFormValues>;
   errors: FieldErrors<BaoCaoSoCheFormValues>;
-  /** Khi true: ẩn nút Thêm/Xóa, disable toàn bộ input — chỉ quản trị mới thao tác được. */
+  /** Khi true: ẩn nút Thêm/Xóa, disable toàn bộ input (chế độ chỉ xem). */
   disabled?: boolean;
+  /**
+   * Khi true: khoá cấu trúc bảng — tên phẩm cấp, nút Thêm/Xóa dòng (chỉ quản trị).
+   * Số kg, Số thùng, Ghi chú vẫn nhập được; hệ số theo luật cài đặt farm.
+   */
+  khoaCauTruc?: boolean;
   /** SL phiếu nhập kho theo phẩm cấp (đối chiếu, không lưu DB). */
   phieuNhapByPhamCap?: Record<string, number>;
   phieuNhapRefLoading?: boolean;
@@ -136,6 +141,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
   control,
   errors,
   disabled = false,
+  khoaCauTruc = false,
   phieuNhapByPhamCap,
   phieuNhapRefLoading = false,
   setValue,
@@ -240,6 +246,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
     [phieuNhapByPhamCap, pham]
   );
   const atMax = fields.length >= PHAM_CAP_ROWS_MAX;
+  const khoaDong = disabled || khoaCauTruc;
 
   return (
     <FormSection
@@ -247,7 +254,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
       icon={<Package size={14} aria-hidden />}
       variant="primary"
       action={
-        !disabled ? (
+        !khoaDong ? (
           <div className="flex flex-wrap items-center justify-end gap-2">
             {atMax ? (
               <span className="text-2xs sm:text-xs text-muted-foreground max-w-[14rem] text-right leading-tight">
@@ -357,12 +364,12 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                             onBlur={() => {
                               f.onBlur();
                               // Đổi tên phẩm cấp: điền lại theo cài đặt của tên mới (ghi đè).
-                              if (!disabled) fillHeSoForRow(idx, f.value, true, true);
+                              if (!khoaDong) fillHeSoForRow(idx, f.value, true, true);
                             }}
                             placeholder={t('baoCaoSoChe.phamCap.tenPlaceholder')}
                             className="text-xs h-8"
                             error={errTen}
-                            disabled={disabled}
+                            disabled={khoaDong}
                           />
                         )}
                       />
@@ -479,7 +486,7 @@ export const BaoCaoSoChePhamCapFormSection: React.FC<{
                       />
                     </td>
                     <td className="px-1 py-1 align-middle text-center">
-                      {!disabled && (
+                      {!khoaDong && (
                         <Button
                           type="button"
                           variant="ghost"

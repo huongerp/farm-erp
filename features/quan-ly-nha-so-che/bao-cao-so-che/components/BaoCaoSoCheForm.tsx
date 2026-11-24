@@ -316,7 +316,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
         <BaoCaoSoChePhamCapFormSection
           control={control}
           errors={errors}
-          disabled={!canAdmin}
+          khoaCauTruc={!canAdmin}
           phieuNhapByPhamCap={phieuNhapByPhamCap}
           phieuNhapRefLoading={phieuNhapRefLoading}
           setValue={setValue}
