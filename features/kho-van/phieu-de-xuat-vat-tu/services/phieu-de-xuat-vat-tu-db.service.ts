@@ -42,7 +42,7 @@ const PHIEU_DE_XUAT_HEADER_SELECT =
   'id, so_phieu, ngay, ngay_can, id_noi_de_xuat, id_nguoi_de_xuat, id_nguoi_duyet, ghi_chu, trang_thai, tg_tao, tg_cap_nhat';
 
 const CHI_TIET_TAB_SELECT =
-  'id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi, so_phieu, ngay, ngay_can, ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet, trang_thai_phieu';
+  'id, id_phieu_de_xuat_vat_tu, id_hang_hoa, so_luong, don_vi_tinh, thong_so, ghi_chu, id_tien_do_mh, ten_tien_do_mh, trao_doi, so_phieu, ngay, ngay_can, ten_noi_de_xuat, ten_nguoi_de_xuat, ten_nguoi_duyet, trang_thai_phieu, so_po_da_len';
 
 export interface NextSoPhieuConfig {
   tien_to_so_phieu: string;
@@ -120,6 +120,8 @@ interface ChiTietFullDbRow extends ChiTietDbRow {
   ten_nguoi_de_xuat: string | null;
   ten_nguoi_duyet: string | null;
   trang_thai_phieu: string | null;
+  /** Các số PO đã lên cho dòng này (nối ", "), null khi chưa lên PO nào. */
+  so_po_da_len: string | null;
 }
 
 function toNum(s: string | null | undefined): number | null {
@@ -404,6 +406,7 @@ function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietList
       `trang_thai_phieu.ilike.${pat}`,
       `ref_ma_hang_hoa.ilike.${pat}`,
       `ref_ten_hang_hoa.ilike.${pat}`,
+      `so_po_da_len.ilike.${pat}`,
     ];
     if (/^\d+$/.test(term)) {
       const n = Number(term);
@@ -832,6 +835,7 @@ async function mapPhieuDeXuatChiTietDbRowsToRows(rows: ChiTietFullDbRow[]): Prom
       id_tien_do_mh: ct.id_tien_do_mh != null ? String(ct.id_tien_do_mh) : null,
       ten_tien_do_mh: ct.ten_tien_do_mh ?? null,
       trao_doi: ct.trao_doi ?? null,
+      so_po_da_len: full.so_po_da_len ?? null,
     };
   });
 }

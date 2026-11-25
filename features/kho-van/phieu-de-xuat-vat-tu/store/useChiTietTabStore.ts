@@ -26,11 +26,12 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'so_luong', label: i18n.t('phieuDeXuatVatTu.form.quantity'), visible: true, minWidth: 100, maxWidth: 130, order: 8 },
   { id: 'don_vi_tinh', label: i18n.t('phieuDeXuatVatTu.form.unit'), visible: true, minWidth: 90, maxWidth: 120, order: 9 },
   { id: 'ten_tien_do_mh', label: i18n.t('phieuDeXuatVatTu.form.tienDoMh'), visible: true, minWidth: 140, maxWidth: 200, order: 10 },
-  { id: 'ten_nguoi_duyet', label: i18n.t('phieuDeXuatVatTu.store.nguoiDuyetCol'), visible: true, minWidth: 150, maxWidth: 220, order: 11 },
-  { id: 'thong_so', label: i18n.t('phieuDeXuatVatTu.form.specs'), visible: false, minWidth: 180, maxWidth: 260, order: 12 },
-  { id: 'ghi_chu', label: i18n.t('phieuDeXuatVatTu.form.note'), visible: true, minWidth: 180, maxWidth: 280, order: 13 },
-  { id: 'trao_doi', label: i18n.t('phieuDeXuatVatTu.store.traoDoiGanNhatCol'), visible: false, minWidth: 220, maxWidth: 360, order: 14 },
-  { id: 'actions', label: '', visible: true, minWidth: 80, maxWidth: 80, order: 15 },
+  { id: 'so_po_da_len', label: i18n.t('phieuDeXuatVatTu.store.soPoCol'), visible: true, minWidth: 130, maxWidth: 220, order: 11 },
+  { id: 'ten_nguoi_duyet', label: i18n.t('phieuDeXuatVatTu.store.nguoiDuyetCol'), visible: true, minWidth: 150, maxWidth: 220, order: 12 },
+  { id: 'thong_so', label: i18n.t('phieuDeXuatVatTu.form.specs'), visible: false, minWidth: 180, maxWidth: 260, order: 13 },
+  { id: 'ghi_chu', label: i18n.t('phieuDeXuatVatTu.form.note'), visible: true, minWidth: 180, maxWidth: 280, order: 14 },
+  { id: 'trao_doi', label: i18n.t('phieuDeXuatVatTu.store.traoDoiGanNhatCol'), visible: false, minWidth: 220, maxWidth: 360, order: 15 },
+  { id: 'actions', label: '', visible: true, minWidth: 80, maxWidth: 80, order: 16 },
 ];
 
 const initialFilters: ChiTietTabFilters = {

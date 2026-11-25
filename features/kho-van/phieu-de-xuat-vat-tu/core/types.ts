@@ -40,6 +40,8 @@ export interface PhieuDeXuatVatTuChiTietRow {
   id_tien_do_mh: string | null;
   ten_tien_do_mh: string | null;
   trao_doi: string | null;
+  /** Các số PO đã lên cho dòng này (nối ", "), null khi chưa lên PO nào. */
+  so_po_da_len?: string | null;
 }
 
 export interface PhieuDeXuatVatTu {

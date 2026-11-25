@@ -427,6 +427,12 @@ const ChiTietTab: React.FC = () => {
           return <span className="block truncate whitespace-nowrap text-sm text-muted-foreground" title={item.don_vi_tinh ?? ''}>{item.don_vi_tinh ?? '—'}</span>;
         case 'ten_tien_do_mh':
           return renderTienDoBadge(item.ten_tien_do_mh, item.id_tien_do_mh);
+        case 'so_po_da_len':
+          return (
+            <span className="block truncate whitespace-nowrap text-xs font-mono" title={item.so_po_da_len ?? ''}>
+              {item.so_po_da_len || '—'}
+            </span>
+          );
         case 'thong_so':
           return (
             <span className="block truncate whitespace-nowrap text-xs text-muted-foreground" title={item.thong_so ?? ''}>{item.thong_so ?? '—'}</span>
@@ -544,6 +550,12 @@ const ChiTietTab: React.FC = () => {
           <p className="mt-1 text-sm text-foreground/80 truncate">
             <span className="text-muted-foreground">{t('phieuDeXuatVatTu.store.nguoiDeXuatCol')}: </span>
             {item.ten_nguoi_de_xuat}
+          </p>
+        )}
+        {item.so_po_da_len && (
+          <p className="mt-1 text-sm text-foreground/80 truncate">
+            <span className="text-muted-foreground">{t('phieuDeXuatVatTu.store.soPoCol')}: </span>
+            <span className="font-mono text-xs">{item.so_po_da_len}</span>
           </p>
         )}
       </div>
