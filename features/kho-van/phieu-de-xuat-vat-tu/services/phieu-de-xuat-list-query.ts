@@ -4,6 +4,16 @@ import type { ChiTietTabFilters } from '../store/useChiTietTabStore';
 import type { EmployeeBranchModuleScope } from '../../../he-thong/nhan-vien/hooks/use-employee-branch-module-scope';
 import type { Kho } from '../../danh-sach-kho/core/types';
 import { filterKeyToTrangThai, type TrangThaiFilterKey } from '../core/constants';
+import { getYmdRangeFromPreset } from '../../../he-thong/nhan-vien/utils/stats-date-range';
+
+function ngayCanRange(filters: {
+  ngayCanPreset?: string;
+  ngayCanCustomFrom?: string;
+  ngayCanCustomEnd?: string;
+}): { ngayCanFrom: string; ngayCanTo: string } {
+  const r = getYmdRangeFromPreset(filters.ngayCanPreset, filters.ngayCanCustomFrom, filters.ngayCanCustomEnd);
+  return { ngayCanFrom: r.start, ngayCanTo: r.end };
+}
 
 function strArr(v: unknown): string[] {
   if (v == null) return [];
@@ -37,6 +47,9 @@ export type PhieuDeXuatVatTuListServerQuery = {
   trangThaiViet: string[];
   ngayFrom: string;
   ngayTo: string;
+  /** Khoảng Ngày cần `yyyy-mm-dd`, rỗng = không lọc. */
+  ngayCanFrom: string;
+  ngayCanTo: string;
   idNoiDeXuat: number[];
   idNguoiDeXuat: number[];
   idNguoiDuyet: number[];
@@ -65,6 +78,7 @@ export function buildPhieuDeXuatVatTuListServerQuery(params: {
     trangThaiViet: trangThaiKeysToDb(stKeys),
     ngayFrom,
     ngayTo,
+    ...ngayCanRange(filters),
     idNoiDeXuat: toNumIds(strArr(filters.noiDeXuatIds)),
     idNguoiDeXuat: toNumIds(strArr(filters.nguoiDeXuatIds)),
     idNguoiDuyet: toNumIds(strArr(filters.nguoiDuyetIds)),
@@ -78,6 +92,9 @@ export type PhieuDeXuatChiTietListServerQuery = {
   trangThaiPhieuViet: string[];
   ngayFrom: string;
   ngayTo: string;
+  /** Khoảng Ngày cần `yyyy-mm-dd`, rỗng = không lọc. */
+  ngayCanFrom: string;
+  ngayCanTo: string;
   tenNoiDeXuat: string[];
   tenNguoiDeXuat: string[];
   tenNguoiDuyet: string[];
@@ -106,6 +123,7 @@ export function buildPhieuDeXuatChiTietListServerQuery(params: {
     trangThaiPhieuViet: trangThaiKeysToDb(strArr(filters.status)),
     ngayFrom,
     ngayTo,
+    ...ngayCanRange(filters),
     tenNoiDeXuat: [...new Set(strArr(filters.noiDeXuat).map((s) => s.trim()).filter(Boolean))].sort(),
     tenNguoiDeXuat: [...new Set(strArr(filters.nguoiDeXuat).map((s) => s.trim()).filter(Boolean))].sort(),
     tenNguoiDuyet: [...new Set(strArr(filters.nguoiDuyet).map((s) => s.trim()).filter(Boolean))].sort(),

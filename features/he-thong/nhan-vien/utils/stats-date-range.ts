@@ -118,6 +118,29 @@ export function getDateRangeFromPreset(
   return { preset, start, end, label };
 }
 
+function toYmd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Khoảng ngày `yyyy-mm-dd` để lọc ở DB (gte/lte). Preset `all` → chuỗi rỗng (không lọc).
+ * `customFrom`/`customEnd` là chuỗi `yyyy-mm-dd` lưu trong store bộ lọc.
+ */
+export function getYmdRangeFromPreset(
+  preset: DateRangePresetId | string | undefined,
+  customFrom?: string,
+  customEnd?: string
+): { start: string; end: string } {
+  const p = (preset || 'all') as DateRangePresetId;
+  if (p === 'all') return { start: '', end: '' };
+  const range = getDateRangeFromPreset(
+    p,
+    customFrom ? new Date(customFrom) : undefined,
+    customEnd ? new Date(customEnd) : undefined
+  );
+  return { start: toYmd(range.start), end: toYmd(range.end) };
+}
+
 function formatShort(d: Date): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 }

@@ -42,6 +42,8 @@ interface DateRangePickerProps {
    * nơi popup 380px không vừa và bị cắt bởi vùng cuộn của bảng.
    */
   inline?: boolean;
+  /** Tiền tố cố định trước nhãn (vd. «Ngày cần:»), không bị cắt cùng nhãn khoảng ngày. */
+  labelPrefix?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -58,6 +60,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   customPresetId = 'custom',
   size = 'md',
   inline = false,
+  labelPrefix,
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -172,6 +175,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
         )}
       >
         <Calendar size={13} className="shrink-0" />
+        {labelPrefix && <span className="shrink-0">{labelPrefix}</span>}
         <span className="truncate max-w-[140px]">{triggerLabel}</span>
         <ChevronDown size={12} className={cn('shrink-0 transition-transform', open && 'rotate-180')} />
       </button>

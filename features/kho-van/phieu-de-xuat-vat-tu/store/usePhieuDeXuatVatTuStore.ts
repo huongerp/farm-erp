@@ -7,6 +7,10 @@ export interface PhieuDeXuatVatTuFilters {
   datePreset: DateRangePresetId;
   customDateFrom: string;
   customDateEnd: string;
+  /** Lọc theo cột Ngày cần (cùng bộ preset với Ngày phiếu). */
+  ngayCanPreset: DateRangePresetId;
+  ngayCanCustomFrom: string;
+  ngayCanCustomEnd: string;
   noiDeXuatIds: string[];
   nguoiDeXuatIds: string[];
   nguoiDuyetIds: string[];
@@ -32,6 +36,9 @@ const initialFilters: PhieuDeXuatVatTuFilters = {
   datePreset: 'all',
   customDateFrom: '',
   customDateEnd: '',
+  ngayCanPreset: 'all',
+  ngayCanCustomFrom: '',
+  ngayCanCustomEnd: '',
   noiDeXuatIds: [],
   nguoiDeXuatIds: [],
   nguoiDuyetIds: [],

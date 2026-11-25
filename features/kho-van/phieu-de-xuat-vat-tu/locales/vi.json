@@ -8,6 +8,7 @@
   "phieuDeXuatVatTu.filters.mineHint": "Chỉ phiếu do tôi đề xuất",
   "phieuDeXuatVatTu.filters.toApproveHint": "Chỉ phiếu tôi là người duyệt",
   "phieuDeXuatVatTu.filters.datePhieu": "Thời gian",
+  "phieuDeXuatVatTu.filters.ngayCan": "Ngày cần",
   "phieuDeXuatVatTu.store.soPhieuCol": "Số phiếu",
   "phieuDeXuatVatTu.store.ngayCol": "Ngày",
   "phieuDeXuatVatTu.store.ngayCanCol": "Ngày cần",

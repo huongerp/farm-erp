@@ -8,6 +8,10 @@ export interface ChiTietTabFilters {
   datePreset: DateRangePresetId;
   customDateFrom: string;
   customDateEnd: string;
+  /** Lọc theo cột Ngày cần (cùng bộ preset với Ngày phiếu). */
+  ngayCanPreset: DateRangePresetId;
+  ngayCanCustomFrom: string;
+  ngayCanCustomEnd: string;
   noiDeXuat: string[];
   nguoiDeXuat: string[];
   nguoiDuyet: string[];
@@ -39,6 +43,9 @@ const initialFilters: ChiTietTabFilters = {
   datePreset: 'all',
   customDateFrom: '',
   customDateEnd: '',
+  ngayCanPreset: 'all',
+  ngayCanCustomFrom: '',
+  ngayCanCustomEnd: '',
   noiDeXuat: [],
   nguoiDeXuat: [],
   nguoiDuyet: [],

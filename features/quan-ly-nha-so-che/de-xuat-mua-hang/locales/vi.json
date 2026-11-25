@@ -8,6 +8,7 @@
   "deXuatMuaHang.filters.mineHint": "Chỉ phiếu do tôi đề xuất",
   "deXuatMuaHang.filters.toApproveHint": "Chỉ phiếu tôi là người duyệt",
   "deXuatMuaHang.filters.datePhieu": "Thời gian",
+  "deXuatMuaHang.filters.ngayCan": "Ngày cần",
   "deXuatMuaHang.store.soPhieuCol": "Số phiếu",
   "deXuatMuaHang.store.ngayCol": "Ngày",
   "deXuatMuaHang.store.ngayCanCol": "Ngày cần",

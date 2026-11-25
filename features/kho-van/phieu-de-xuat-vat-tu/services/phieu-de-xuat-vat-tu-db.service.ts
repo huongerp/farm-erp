@@ -331,6 +331,8 @@ function applyPhieuDeXuatVatTuListQuery(q: any, query: PhieuDeXuatVatTuListServe
   if (query.trangThaiViet.length) b = b.in('trang_thai', query.trangThaiViet);
   if (query.ngayFrom) b = b.gte('ngay', query.ngayFrom);
   if (query.ngayTo) b = b.lte('ngay', query.ngayTo);
+  if (query.ngayCanFrom) b = b.gte('ngay_can', query.ngayCanFrom);
+  if (query.ngayCanTo) b = b.lte('ngay_can', query.ngayCanTo);
   if (query.idNoiDeXuat.length) b = b.in('id_noi_de_xuat', query.idNoiDeXuat);
   if (query.idNguoiDeXuat.length) b = b.in('id_nguoi_de_xuat', query.idNguoiDeXuat);
   if (query.idNguoiDuyet.length) b = b.in('id_nguoi_duyet', query.idNguoiDuyet);
@@ -385,6 +387,8 @@ function applyPhieuDeXuatChiTietRowFilters(q: any, query: PhieuDeXuatChiTietList
   if (query.trangThaiPhieuViet.length) b = b.in('trang_thai_phieu', query.trangThaiPhieuViet);
   if (query.ngayFrom) b = b.gte('ngay', query.ngayFrom);
   if (query.ngayTo) b = b.lte('ngay', query.ngayTo);
+  if (query.ngayCanFrom) b = b.gte('ngay_can', query.ngayCanFrom);
+  if (query.ngayCanTo) b = b.lte('ngay_can', query.ngayCanTo);
   if (query.tenNoiDeXuat.length) b = b.in('ten_noi_de_xuat', query.tenNoiDeXuat);
   if (query.tenNguoiDeXuat.length) b = b.in('ten_nguoi_de_xuat', query.tenNguoiDeXuat);
   if (query.tenNguoiDuyet.length) b = b.in('ten_nguoi_duyet', query.tenNguoiDuyet);

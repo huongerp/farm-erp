@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Tag, Warehouse, User, UserCheck, Download, Calendar } from 'lucide-react';
+import { Plus, Tag, Warehouse, User, UserCheck, Download, Calendar, CalendarClock } from 'lucide-react';
 import Button from '../../../../components/ui/Button';
 import Tooltip from '../../../../components/ui/Tooltip';
 import GenericToolbar from '../../../../components/shared/GenericToolbar';
@@ -88,6 +88,32 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
     setFilter('customDateEnd', v.customEnd);
   };
 
+  // Lọc theo cột Ngày cần — chip riêng, có tiền tố «Ngày cần:» để không trùng chữ với chip Ngày phiếu.
+  const ngayCanPreset = typeof filters.ngayCanPreset === 'string' ? filters.ngayCanPreset : 'all';
+  const ngayCanCustomFrom = typeof filters.ngayCanCustomFrom === 'string' ? filters.ngayCanCustomFrom : '';
+  const ngayCanCustomEnd = typeof filters.ngayCanCustomEnd === 'string' ? filters.ngayCanCustomEnd : '';
+  const ngayCanFilterActive = ngayCanPreset !== 'all' || !!ngayCanCustomFrom.trim() || !!ngayCanCustomEnd.trim();
+  const ngayCanTitle = t('deXuatMuaHang.filters.ngayCan');
+  const ngayCanLabel = useMemo(() => {
+    if (!ngayCanFilterActive) return ngayCanTitle;
+    const range = getDateRangeFromPreset(
+      ngayCanPreset as DateRangePresetId,
+      ngayCanCustomFrom ? new Date(ngayCanCustomFrom) : undefined,
+      ngayCanCustomEnd ? new Date(ngayCanCustomEnd) : undefined
+    );
+    return range.label;
+  }, [ngayCanFilterActive, ngayCanTitle, ngayCanPreset, ngayCanCustomFrom, ngayCanCustomEnd]);
+  const ngayCanValue: DateRangeValue = {
+    preset: ngayCanPreset,
+    customStart: ngayCanCustomFrom,
+    customEnd: ngayCanCustomEnd,
+  };
+  const onNgayCanChange = (v: DateRangeValue) => {
+    setFilter('ngayCanPreset', v.preset as DateRangePresetId);
+    setFilter('ngayCanCustomFrom', v.customStart);
+    setFilter('ngayCanCustomEnd', v.customEnd);
+  };
+
   const statusLen = filters.status?.length ?? 0;
   const noiDeXuatLen = filters.noiDeXuatIds?.length ?? 0;
   const nguoiDeXuatLen = filters.nguoiDeXuatIds?.length ?? 0;
@@ -97,10 +123,11 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
       (searchInput.trim() ? 1 : 0) +
       (statusLen > 0 ? 1 : 0) +
       (dateFilterActive ? 1 : 0) +
+      (ngayCanFilterActive ? 1 : 0) +
       (noiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDeXuatLen > 0 ? 1 : 0) +
       (nguoiDuyetLen > 0 ? 1 : 0),
-    [searchInput, statusLen, dateFilterActive, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
+    [searchInput, statusLen, dateFilterActive, ngayCanFilterActive, noiDeXuatLen, nguoiDeXuatLen, nguoiDuyetLen]
   );
 
   const mineCount = currentUserId ? data.filter((d) => d.id_nguoi_de_xuat === currentUserId).length : 0;
@@ -113,6 +140,9 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
     setFilter('datePreset', 'all');
     setFilter('customDateFrom', '');
     setFilter('customDateEnd', '');
+    setFilter('ngayCanPreset', 'all');
+    setFilter('ngayCanCustomFrom', '');
+    setFilter('ngayCanCustomEnd', '');
     setFilter('noiDeXuatIds', []);
     setFilter('nguoiDeXuatIds', []);
     setFilter('nguoiDuyetIds', []);
@@ -355,6 +385,21 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
         />
       ),
     },
+    {
+      kind: 'custom',
+      key: 'ngayCan',
+      node: (
+        <DateRangePicker
+          presets={dateRangePickerPresets}
+          value={ngayCanValue}
+          onChange={onNgayCanChange}
+          displayLabel={ngayCanLabel}
+          labelPrefix={ngayCanFilterActive ? `${ngayCanTitle}:` : undefined}
+          placeholder={ngayCanTitle}
+          className="w-full sm:w-auto"
+        />
+      ),
+    },
     { kind: 'group', group: filterGroups[1], className: 'w-full sm:w-[160px]' },
     { kind: 'group', group: filterGroups[2], className: 'w-full sm:w-[160px]' },
     { kind: 'group', group: filterGroups[3], className: 'w-full sm:w-[160px]' },
@@ -378,6 +423,9 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
       )}
       <MobileFilterField label={t('deXuatMuaHang.filters.datePhieu')} icon={Calendar} active={dateFilterActive}>
         <DateRangePicker inline presets={dateRangePickerPresets} value={dateValue} onChange={onDateChange} />
+      </MobileFilterField>
+      <MobileFilterField label={ngayCanTitle} icon={CalendarClock} active={ngayCanFilterActive}>
+        <DateRangePicker inline presets={dateRangePickerPresets} value={ngayCanValue} onChange={onNgayCanChange} />
       </MobileFilterField>
     </>
   );
@@ -428,7 +476,7 @@ const DeXuatMuaHangToolbar: React.FC<Props> = ({
       filters={<ResponsiveFilterChips items={filterItems} />}
       filterGroups={filterGroups}
       mobileFilterExtra={mobileFilterExtra}
-      mobileFilterExtraCount={dateFilterActive ? 1 : 0}
+      mobileFilterExtraCount={(dateFilterActive ? 1 : 0) + (ngayCanFilterActive ? 1 : 0)}
       mobileActions={mobileActions}
       searchTrailing={searchTrailingExport}
       onAdd={canCreate ? onAdd : undefined}
