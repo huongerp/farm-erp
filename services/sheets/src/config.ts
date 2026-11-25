@@ -34,7 +34,7 @@ export const config = {
    */
   googleRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI ?? '',
   /** PostgREST nội bộ — worker đọc dữ liệu nguồn bằng JWT của người tạo lịch (giai đoạn 3). */
-  postgrestUrl: process.env.POSTGREST_URL ?? 'http://postgrest:3000',
+  postgrestUrl: process.env.POSTGREST_URL ?? 'http://farm-postgrest:3000',
   /** Chỉ production bật: dev và prod dùng chung DB, hai worker sẽ ghi đè nhau. */
   workerBat: process.env.SHEETS_WORKER_BAT === 'true',
   muiGio: process.env.COMPANY_TZ ?? 'Asia/Ho_Chi_Minh',
