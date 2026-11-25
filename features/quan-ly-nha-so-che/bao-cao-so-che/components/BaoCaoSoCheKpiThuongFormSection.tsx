@@ -11,7 +11,7 @@ import {
 import Input from '../../../../components/ui/Input';
 import NumberInput from '../../../../components/ui/NumberInput';
 import FormSection from '../../../../components/shared/FormSection';
-import { cn, formatNumberVN } from '../../../../lib/utils';
+import { cn, formatDate, formatNumberVN } from '../../../../lib/utils';
 import { computeKpiPhanTram, KPI_COT_THUONG_THEM, sumCotKpiThuong } from '../../shared/kpi-thuong/types';
 import { defaultKpiThuongFormRow } from '../../shared/kpi-thuong/form-mappers';
 import type { KpiThuongFormRow } from '../../shared/kpi-thuong/types';
@@ -55,6 +55,8 @@ interface Props {
    */
   presetSources: [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource];
   disabled?: boolean;
+  /** Ngày hiệu lực của mục tiêu cài đặt đang áp (dòng Năng suất / Lỗi khoá theo cài đặt). */
+  mucTieuApDungTu?: string | null;
 }
 
 const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
@@ -63,6 +65,7 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
   i18nPrefix,
   presetSources,
   disabled = false,
+  mucTieuApDungTu = null,
 }) => {
   const { t } = useTranslation();
   const k = (s: string) => t(`${i18nPrefix}.${s}`);
@@ -98,6 +101,9 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
       if ('mucTieuValue' in source) {
         setValue(`kpi_thuong.${index}.muc_tieu`, mucTieuStr, { shouldDirty: false, shouldTouch: false });
         setValue(`kpi_thuong.${index}.phan_tram`, phanTram, { shouldDirty: false, shouldTouch: false });
+      } else if (mucTieuStr != null && mucTieuStr !== (rows[index]?.muc_tieu ?? null)) {
+        // Mục tiêu theo cài đặt farm × ngày hiệu lực → ghi đè số nhập tay để lưu khớp.
+        setValue(`kpi_thuong.${index}.muc_tieu`, mucTieuStr, { shouldDirty: false, shouldTouch: false });
       }
       if (thucTeStr == null) return;
       setValue(`kpi_thuong.${index}.thuc_te`, thucTeStr, { shouldDirty: false, shouldTouch: false });
@@ -171,7 +177,9 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
 
                 /* Mục tiêu tự lấy (vd. Tỷ lệ thu hồi = số thùng dự báo ĐBĐT) → chỉ đọc */
                 const mucTieuAuto = isPreset && source != null && 'mucTieuValue' in source;
-                const mucTieuDisplay = mucTieuAuto
+                /* Mục tiêu theo cài đặt (super admin cài theo farm × ngày hiệu lực) → chỉ đọc */
+                const mucTieuCaiDat = isPreset && !mucTieuAuto && presetDerived!.mucTieuStr != null;
+                const mucTieuDisplay = mucTieuAuto || mucTieuCaiDat
                   ? presetDerived!.mucTieuStr != null
                     ? formatNumberVN(Number(presetDerived!.mucTieuStr))
                     : '—'
@@ -231,6 +239,15 @@ const BaoCaoSoCheKpiThuongFormSection: React.FC<Props> = ({
                         )}>
                           {mucTieuDisplay}
                         </span>
+                      ) : mucTieuCaiDat ? (
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-xs tabular-nums font-medium text-foreground">{mucTieuDisplay}</span>
+                          {mucTieuApDungTu ? (
+                            <span className="text-caption text-muted-foreground whitespace-nowrap">
+                              {t('baoCaoSoChe.caiDatKpi.theoCaiDatTu', { ngay: formatDate(mucTieuApDungTu) })}
+                            </span>
+                          ) : null}
+                        </div>
                       ) : (
                         <Controller
                           name={`kpi_thuong.${index}.muc_tieu`}

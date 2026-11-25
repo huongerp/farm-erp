@@ -45,6 +45,16 @@ export async function getDgdvTongNgayDb(ngay: string, idChiNhanh: number): Promi
   return docDgdvTongNgay(data);
 }
 
+/**
+ * Ngày + chi nhánh đã có phiếu Đánh giá đầu vào chưa (RPC `fn_dgdv_co_phieu_ngay`, migration 101).
+ * Chưa có → Báo cáo sơ chế cho nhập tay thu hoạch / KSC (DB không ghi đè).
+ */
+export async function getDgdvCoPhieuNgayDb(ngay: string, idChiNhanh: number): Promise<boolean> {
+  const { data, error } = await db.rpc('fn_dgdv_co_phieu_ngay', { p_ngay: ngay, p_id_chi_nhanh: idChiNhanh });
+  if (error) throwDbError(error);
+  return data === true;
+}
+
 // ---- Cân mẫu buồng cộng dồn (ngày + chi nhánh) ---------------------------------------
 
 /**

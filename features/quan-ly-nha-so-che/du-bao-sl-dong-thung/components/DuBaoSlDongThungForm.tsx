@@ -18,8 +18,13 @@ import {
   farmDuBaoSlDongThungToForm,
   computeKpiFromForm,
 } from '../core/form-mappers';
-import { DGDV_BANG_DANH_GIA_URL, useDgdvCanMauNgay, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
-import { useCreateDuBaoSlDongThung, useDuBaoTonNgay, useUpdateDuBaoSlDongThung } from '../hooks/use-du-bao-sl-dong-thung';
+import { DGDV_BANG_DANH_GIA_URL, useDgdvCanMauNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
+import {
+  useCreateDuBaoSlDongThung,
+  useDuBaoThuKscNgay,
+  useDuBaoTonNgay,
+  useUpdateDuBaoSlDongThung,
+} from '../hooks/use-du-bao-sl-dong-thung';
 import type { Branch } from '../../../he-thong/chi-nhanh/core/types';
 import { TRANG_THAI } from '../../../../lib/constants';
 import GenericDrawer, { DRAWER_WIDTH_BAO_CAO_NHAN_CONG } from '../../../../components/shared/GenericDrawer';
@@ -99,7 +104,8 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
   const watched = useWatch({ control }) as DuBaoSlDongThungFormValues;
   // Dòng 10 khoá: tồn đầu + Tổng thu ĐGĐV + KSC − tồn cuối (tồn theo Báo cáo sơ chế cùng ngày), live;
   // dòng 11, 13, 15 tính lại theo số này.
-  const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
+  // Thu / KSC: theo ĐGĐV, ngày chưa có ĐGĐV thì theo Báo cáo sơ chế (migration 102).
+  const { data: tongDgdv, isError: dgdvLoi } = useDuBaoThuKscNgay(ngay, idChiNhanh);
   const { data: tonNgay, isError: tonLoi } = useDuBaoTonNgay(ngay, idChiNhanh);
   // Dòng 1–2: từ mốc áp dụng (cột ap_dung) lấy Σ cân mẫu mọi chuyến trong ngày, DB trigger ghi đè khi lưu.
   const { data: canMauDgdv, isError: canMauLoi } = useDgdvCanMauNgay(ngay, idChiNhanh);
@@ -424,6 +430,11 @@ const DuBaoSlDongThungForm: React.FC<Props> = ({ branches, initialData, preferre
                           })
                         : t('duBaoSlDongThung.form.row10Note')}
                     </a>
+                    {tongDgdv && !tongDgdv.tu_dgdv && (
+                      <span className="block text-amber-600 dark:text-amber-400">
+                        {t('duBaoSlDongThung.form.row10ThuTheoBcsc')}
+                      </span>
+                    )}
                     {dgdvLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.dgdvLoi')}</span>}
                     {tonLoi && <span className="block text-destructive">{t('duBaoSlDongThung.form.tonLoi')}</span>}
                   </td>

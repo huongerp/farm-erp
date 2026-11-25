@@ -174,6 +174,12 @@ export interface BcscKpiThuongPresetSource {
   mucTieuValue?: number | null;
   /** ĐVT ghi đè lên dòng đã lưu. */
   donViTinh?: string;
+  /**
+   * Mục tiêu theo cài đặt farm × ngày hiệu lực (super admin cài, `fp_var_bcsc_kpi_muc_tieu`).
+   * Có số → thay mục tiêu nhập tay của dòng, công thức % / đánh giá giữ như dòng thường
+   * (KHÁC `mucTieuValue` — cái đó đổi % sang chênh lệch).
+   */
+  mucTieuCaiDat?: number | null;
 }
 
 export function resolveBcscPresetKpiDerivedFields(
@@ -181,7 +187,7 @@ export function resolveBcscPresetKpiDerivedFields(
   mucTieu: string | null | undefined
 ): {
   thucTeStr: string | null;
-  /** Chỉ có khi source tự lấy mục tiêu (`mucTieuValue`). */
+  /** Chỉ có khi source tự lấy mục tiêu (`mucTieuValue`) hoặc có mục tiêu cài đặt (`mucTieuCaiDat`). */
   mucTieuStr: string | null;
   phanTram: number | null;
   danhGia: string | null;
@@ -205,14 +211,16 @@ export function resolveBcscPresetKpiDerivedFields(
       tyLeDat: (tt / mt) * 100,
     };
   }
+  const mucTieuCaiDatStr = numericKpiString(source.mucTieuCaiDat);
+  const mt = mucTieuCaiDatStr ?? mucTieu;
   if (thucTeStr == null) {
-    return { thucTeStr: null, mucTieuStr: null, phanTram: null, danhGia: null, tyLeDat: null };
+    return { thucTeStr: null, mucTieuStr: mucTieuCaiDatStr, phanTram: null, danhGia: null, tyLeDat: null };
   }
   const phanTram = source.isHigherBetter
-    ? computeKpiPhanTram(mucTieu, thucTeStr)
-    : computeKpiPhanTramNguoc(mucTieu, thucTeStr);
-  const danhGia = computePresetDanhGia(thucTeStr, mucTieu, source.isHigherBetter);
-  return { thucTeStr, mucTieuStr: null, phanTram, danhGia, tyLeDat: phanTram };
+    ? computeKpiPhanTram(mt, thucTeStr)
+    : computeKpiPhanTramNguoc(mt, thucTeStr);
+  const danhGia = computePresetDanhGia(thucTeStr, mt, source.isHigherBetter);
+  return { thucTeStr, mucTieuStr: mucTieuCaiDatStr, phanTram, danhGia, tyLeDat: phanTram };
 }
 
 /**
@@ -246,14 +254,17 @@ function computePresetDanhGia(
 export function buildBaoCaoSoCheKpiThuongPresetSources(
   kpis: BcscKpiComputed,
   danhGiaLoiQcPct: number | null,
-  dbdt: FarmDuBaoSlDongThung | null
+  dbdt: FarmDuBaoSlDongThung | null,
+  /** Mục tiêu cài đặt theo farm × ngày phiếu (`mucTieuKpiTheoNgay`); null = farm chưa cài → nhập tay. */
+  mucTieuCaiDat?: { nangSuat: number | null; loi: number | null } | null
 ): [BcscKpiThuongPresetSource, BcscKpiThuongPresetSource, BcscKpiThuongPresetSource] {
   return [
-    { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true },
+    { thucTeValue: kpis.nsThungGioCong, isHigherBetter: true, mucTieuCaiDat: mucTieuCaiDat?.nangSuat ?? null },
     // null = chưa đạt kiểm tra (thiếu thùng) → không có thực tế, không tính thưởng lỗi.
     {
       thucTeValue: danhGiaLoiQcPct != null && Number.isFinite(danhGiaLoiQcPct) ? danhGiaLoiQcPct : null,
       isHigherBetter: false,
+      mucTieuCaiDat: mucTieuCaiDat?.loi ?? null,
     },
     {
       // Tỷ lệ thu hồi: số thùng nhập kho (phẩm cấp quy đổi) so với số thùng dự báo ĐBĐT

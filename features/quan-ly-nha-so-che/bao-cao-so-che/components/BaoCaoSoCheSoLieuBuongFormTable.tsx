@@ -44,6 +44,8 @@ interface Props {
   giaTriTuDgdv: Record<SoLieuRowKeyTuDgdv, number | null>;
   /** RPC tổng ngày lỗi → hiện dòng báo dưới ghi chú nguồn. */
   dgdvLoi?: boolean;
+  /** Ngày chưa có phiếu ĐGĐV → mục 7/8 nhập tay như ô thường (migration 101). */
+  dgdvNhapTay?: boolean;
   /** Tình hình QC từ Giám sát chất lượng (ngày + chi nhánh đang chọn); undefined (chưa chọn / đang tải) → «—». */
   qcGscl?: QcNgay;
   /** RPC tỉ lệ lỗi lỗi → hiện dòng báo dưới ghi chú nguồn. */
@@ -69,6 +71,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   sttOffset,
   giaTriTuDgdv,
   dgdvLoi = false,
+  dgdvNhapTay = false,
   qcGscl,
   gsclLoi = false,
   tonDauTuPhieuTruoc,
@@ -81,10 +84,12 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
   const tonDauNhap = useWatch({ control, name: 'sl_buong_ton_dau_ngay' });
   const tonDau = tonDauKhoa ? tonDauKhoa.ton_dau : tonDauNhap;
   const soChe = useWatch({ control, name: 'tong_buong_so_che' });
+  const thuNhap = useWatch({ control, name: 'tong_buong_thu_hoach' });
+  const kscNhap = useWatch({ control, name: 'tong_buong_khong_so_che' });
   const tonCuoi = tinhTonCuoiNgay(
     tonDau,
-    giaTriTuDgdv.tong_buong_thu_hoach,
-    giaTriTuDgdv.tong_buong_khong_so_che,
+    dgdvNhapTay ? thuNhap : giaTriTuDgdv.tong_buong_thu_hoach,
+    dgdvNhapTay ? kscNhap : giaTriTuDgdv.tong_buong_khong_so_che,
     soChe
   );
 
@@ -149,7 +154,15 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                         {t('baoCaoSoChe.form.tonDauTuPhieuTruoc', { ngay: formatDateShort(tonDauKhoa.ngay_truoc) })}
                       </span>
                     )}
-                    {tuDgdv && (
+                    {tuDgdv && dgdvNhapTay && (
+                      <span
+                        title={t('baoCaoSoChe.form.dgdvNhapTayTitle')}
+                        className="mt-0.5 block text-[11px] text-amber-600 dark:text-amber-400"
+                      >
+                        {t('baoCaoSoChe.form.dgdvNhapTay')}
+                      </span>
+                    )}
+                    {tuDgdv && !dgdvNhapTay && (
                       <>
                         <a
                           href={DGDV_BANG_DANH_GIA_URL}
@@ -230,7 +243,7 @@ const BaoCaoSoCheSoLieuBuongFormTable: React.FC<Props> = ({
                           )}
                         />
                       </>
-                    ) : laSoLieuRowTuDgdv(def.key) ? (
+                    ) : laSoLieuRowTuDgdv(def.key) && !dgdvNhapTay ? (
                       // Ô khoá: số do DB ghi đè theo Đánh giá đầu vào, không cho nhập tay.
                       <span className="block w-full rounded-md bg-muted/40 px-2 py-1.5 text-right text-sm font-medium tabular-nums text-foreground">
                         {formatNumberVN(giaTriTuDgdv[def.key])}

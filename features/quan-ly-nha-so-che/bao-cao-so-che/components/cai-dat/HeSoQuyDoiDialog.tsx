@@ -14,6 +14,8 @@ import { parseHeSo } from '../../core/he-so-quy-doi';
 import type { HeSoCaiDatRow } from '../../core/he-so-cai-dat';
 import { useCaiDatHeSo, useLuuCaiDatHeSo } from '../../hooks/use-he-so-quy-doi';
 import type { CaiDatHeSoDong } from '../../services/he-so-quy-doi.service';
+import { useAuthStore } from '../../../../../store/useStore';
+import KpiMucTieuSection from './KpiMucTieuSection';
 
 /** Hiện hệ số kiểu Việt: 1.2 → "1,2". */
 const hienSo = (v: number | string | null | undefined) =>
@@ -224,11 +226,12 @@ interface Props {
 }
 
 /**
- * Cài đặt hệ số quy đổi theo farm × phẩm cấp. Form phiếu đọc bảng này để tự điền;
- * farm thường không phải chọn hệ số nữa. Chỉ quản trị mở / sửa.
+ * Cài đặt hệ số quy đổi theo farm × phẩm cấp (quản trị sửa) + mục tiêu KPI theo farm × ngày hiệu lực
+ * (chỉ super admin sửa). Form phiếu đọc hai bảng này để tự điền / khoá.
  */
 const HeSoQuyDoiDialog: React.FC<Props> = ({ canAdmin, onClose }) => {
   const { t } = useTranslation();
+  const laSuperAdmin = useAuthStore((s) => s.user?.is_super_admin) === true;
   const { data: branches = [], isLoading } = useBranches();
   const farmOptions = useMemo(
     () =>
@@ -270,7 +273,7 @@ const HeSoQuyDoiDialog: React.FC<Props> = ({ canAdmin, onClose }) => {
                 options={farmOptions}
                 value={idChiNhanh}
                 onChange={(e) => setChon(e.target.value)}
-                disabled={!canAdmin}
+                disabled={!canAdmin && !laSuperAdmin}
               />
             </div>
             {!canAdmin ? (
@@ -279,12 +282,21 @@ const HeSoQuyDoiDialog: React.FC<Props> = ({ canAdmin, onClose }) => {
             {isPending ? (
               <p className="text-sm text-muted-foreground">{t('baoCaoSoChe.loading')}</p>
             ) : idChiNhanh ? (
-              <LuoiHeSo
-                key={`${idChiNhanh}-${dataUpdatedAt}`}
-                idChiNhanh={idChiNhanh}
-                caiDat={caiDat}
-                coQuyen={canAdmin}
-              />
+              <>
+                <LuoiHeSo
+                  key={`${idChiNhanh}-${dataUpdatedAt}`}
+                  idChiNhanh={idChiNhanh}
+                  caiDat={caiDat}
+                  coQuyen={canAdmin}
+                />
+                <KpiMucTieuSection
+                  key={`kpi-${idChiNhanh}`}
+                  idChiNhanh={idChiNhanh}
+                  tatCaFarmIds={farmOptions.map((f) => String(f.value))}
+                  tenFarm={(id) => farmOptions.find((f) => String(f.value) === id)?.label ?? id}
+                  coQuyen={laSuperAdmin}
+                />
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">{t('baoCaoSoChe.caiDatHeSo.chuaChonFarm')}</p>
             )}

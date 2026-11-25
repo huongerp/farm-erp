@@ -17,6 +17,7 @@ import {
 } from './du-bao-sl-dong-thung-list-query';
 import type { DuBaoTonNgay, FarmDuBaoSlDongThung, TrangThaiDuBaoSlDongThungPhieu } from '../core/types';
 import { TRANG_THAI_DU_BAO_SL_DONG_THUNG } from '../core/types';
+import { docDgdvTongNgay } from '../../danh-gia-dau-vao/services/danh-gia-dau-vao-tong-ngay.service';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
 
 const TABLE = 'fp_farm_du_bao_sl_dong_thung';
@@ -317,4 +318,19 @@ export async function getDuBaoTonNgayDb(ngay: string, idChiNhanh: number): Promi
     ton_dau: Math.max(0, Math.floor(num(dong?.ton_dau as string | number | null | undefined))),
     ton_cuoi: Math.max(0, Math.floor(num(dong?.ton_cuoi as string | number | null | undefined))),
   };
+}
+
+/** Thu / KSC của ngày cho dòng 10: theo ĐGĐV nếu có dữ liệu, không thì theo Báo cáo sơ chế (`tu_dgdv` = false). */
+export interface DuBaoThuKscNgay {
+  tong_thu: number;
+  ksc: number;
+  tu_dgdv: boolean;
+}
+
+/** RPC `fn_du_bao_thu_ksc_ngay` (migration 102) — cùng nguồn DB trigger dùng để ghi dòng 10. */
+export async function getDuBaoThuKscNgayDb(ngay: string, idChiNhanh: number): Promise<DuBaoThuKscNgay> {
+  const { data, error } = await db.rpc('fn_du_bao_thu_ksc_ngay', { p_ngay: ngay, p_id_chi_nhanh: idChiNhanh });
+  if (error) throwDbError(error);
+  const dong = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+  return { ...docDgdvTongNgay(dong), tu_dgdv: dong?.tu_dgdv !== false };
 }

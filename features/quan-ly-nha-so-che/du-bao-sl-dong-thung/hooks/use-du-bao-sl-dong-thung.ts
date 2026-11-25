@@ -15,7 +15,7 @@ import {
   updateDuBaoSlDongThungTrangThai,
   updateDuBaoSlDongThungTrangThaiMany,
 } from '../services/du-bao-sl-dong-thung-service';
-import { getDuBaoTonNgayDb } from '../services/du-bao-sl-dong-thung-db.service';
+import { getDuBaoThuKscNgayDb, getDuBaoTonNgayDb } from '../services/du-bao-sl-dong-thung-db.service';
 import { idChiNhanhChoRpc } from '../../danh-gia-dau-vao/services/danh-gia-dau-vao-tong-ngay.service';
 import { QUERY_KEY_BAO_CAO_SO_CHE } from '../../bao-cao-so-che/hooks/use-bao-cao-so-che';
 import type { DuBaoSlDongThungFormValues } from '../core/schema';
@@ -54,6 +54,21 @@ export function useDuBaoTonNgay(ngay: string | null | undefined, idChiNhanh: str
   return useQuery({
     queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, 'tonNgayDuBao', ngayIso, cn],
     queryFn: () => getDuBaoTonNgayDb(ngayIso, cn!),
+    enabled: !!ngayIso && cn != null,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Thu / KSC cho dòng 10 (migration 102): theo ĐGĐV nếu ngày có dữ liệu, không thì theo Báo cáo sơ chế
+ * (số nhập tay của ngày trước khi dùng app ĐGĐV). Key dưới `QUERY_KEY_BAO_CAO_SO_CHE` như `useDuBaoTonNgay`.
+ */
+export function useDuBaoThuKscNgay(ngay: string | null | undefined, idChiNhanh: string | number | null | undefined) {
+  const ngayIso = ngay ? ngay.slice(0, 10) : '';
+  const cn = idChiNhanhChoRpc(idChiNhanh);
+  return useQuery({
+    queryKey: [...QUERY_KEY_BAO_CAO_SO_CHE, 'thuKscDuBao', ngayIso, cn],
+    queryFn: () => getDuBaoThuKscNgayDb(ngayIso, cn!),
     enabled: !!ngayIso && cn != null,
     staleTime: 1000 * 30,
   });

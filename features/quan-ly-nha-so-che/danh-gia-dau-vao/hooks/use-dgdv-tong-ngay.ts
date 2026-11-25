@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   getBcscSoCheDb,
   getDgdvCanMauNgayDb,
+  getDgdvCoPhieuNgayDb,
   getDgdvLoiNgayDb,
   getDgdvTenToTruongDb,
   getDgdvTongChuyenDb,
@@ -26,6 +27,21 @@ export function useDgdvTongNgay(ngay: string | null | undefined, idChiNhanh: str
   return useQuery({
     queryKey: [...QUERY_KEY_DGDV, 'tongNgay', ngayIso, cn],
     queryFn: () => getDgdvTongNgayDb(ngayIso, cn!),
+    enabled: !!ngayIso && cn != null,
+    staleTime: 1000 * 30,
+  });
+}
+
+/**
+ * Ngày + chi nhánh đã có phiếu Đánh giá đầu vào chưa — `false` → Báo cáo sơ chế mở ô thu hoạch / KSC
+ * cho nhập tay (ngày trước khi dùng app ĐGĐV). Chưa chọn ngày / chi nhánh hoặc đang tải → `undefined`.
+ */
+export function useDgdvCoPhieuNgay(ngay: string | null | undefined, idChiNhanh: string | number | null | undefined) {
+  const ngayIso = ngay ? ngay.slice(0, 10) : '';
+  const cn = idChiNhanhChoRpc(idChiNhanh);
+  return useQuery({
+    queryKey: [...QUERY_KEY_DGDV, 'coPhieuNgay', ngayIso, cn],
+    queryFn: () => getDgdvCoPhieuNgayDb(ngayIso, cn!),
     enabled: !!ngayIso && cn != null,
     staleTime: 1000 * 30,
   });

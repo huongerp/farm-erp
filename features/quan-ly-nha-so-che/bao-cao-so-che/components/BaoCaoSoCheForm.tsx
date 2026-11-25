@@ -18,7 +18,7 @@ import {
   farmBaoCaoSoCheToForm,
   findBaoCaoSoCheDuplicateByBranchAndDate,
 } from '../core/form-mappers';
-import { useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
+import { useDgdvCoPhieuNgay, useDgdvTongNgay } from '../../danh-gia-dau-vao/hooks/use-dgdv-tong-ngay';
 import { useBcscTonDauNgay } from '../hooks/use-ton-dau-ngay';
 import { useGsclTiLeLoiNgay } from '../../giam-sat-chat-luong/hooks/use-gscl-ti-le-loi-ngay';
 import { BCSC_KPI_STT_OFFSET, BCSC_SO_LIEU_STT_OFFSET, deriveDonViTinhSlipFromSoLieuMeta } from '../core/so-lieu-row-meta';
@@ -42,6 +42,8 @@ import {
 } from '../core/bcsc-kpi';
 import { useDuBaoSlDongThungList } from '../../du-bao-sl-dong-thung/hooks/use-du-bao-sl-dong-thung';
 import { usePhieuNhapPhamCapRef } from '../hooks/use-phieu-nhap-pham-cap-ref';
+import { useKpiMucTieuCaiDat } from '../hooks/use-kpi-muc-tieu';
+import { mucTieuKpiTheoNgay } from '../core/kpi-muc-tieu-cai-dat';
 
 interface Props {
   branches: Branch[];
@@ -142,6 +144,9 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
 
   // 2 chỉ tiêu khoá (Tổng thu hoạch / Không sơ chế) lấy live theo Đánh giá đầu vào của ngày + chi nhánh.
   const { data: tongDgdv, isError: dgdvLoi } = useDgdvTongNgay(ngay, idChiNhanh);
+  // Ngày chưa có phiếu ĐGĐV (trước khi dùng app) → 2 ô này nhập tay, DB không ghi đè (migration 101).
+  const { data: coPhieuDgdv } = useDgdvCoPhieuNgay(ngay, idChiNhanh);
+  const dgdvNhapTay = coPhieuDgdv === false;
   const giaTriTuDgdv = useMemo(
     () => ({
       tong_buong_thu_hoach: tongDgdv?.tong_thu ?? null,
@@ -170,6 +175,13 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
     [dbsdtList, ngay, idChiNhanh]
   );
 
+  // Mục tiêu KPI theo cài đặt farm × ngày hiệu lực (super admin cài, migration 103); null = chưa cài → nhập tay.
+  const { data: kpiMucTieuCaiDat } = useKpiMucTieuCaiDat();
+  const mucTieuCaiDat = useMemo(
+    () => mucTieuKpiTheoNgay(kpiMucTieuCaiDat, idChiNhanh, ngay),
+    [kpiMucTieuCaiDat, idChiNhanh, ngay]
+  );
+
   /* 3 nguồn tự tính cho section Đánh giá KPI/thưởng */
   const kpiPresetSources = useMemo(
     () =>
@@ -181,9 +193,10 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           : Number.isFinite(Number(danhGiaLoiQcPct))
             ? Number(danhGiaLoiQcPct)
             : null,
-        dbsdtRecord
+        dbsdtRecord,
+        mucTieuCaiDat
       ),
-    [kpis, qcGscl, danhGiaLoiQcPct, dbsdtRecord]
+    [kpis, qcGscl, danhGiaLoiQcPct, dbsdtRecord, mucTieuCaiDat]
   );
 
   useEffect(() => {
@@ -204,7 +217,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
 
   const onSubmit: SubmitHandler<BaoCaoSoCheFormValues> = (raw) => {
     // Gửi đúng số đang hiện ở các ô khoá (DB trigger vẫn ghi đè theo nguồn dù gửi gì).
-    const data = apTiLeLoiGsclVaoBcscForm(apTongDgdvVaoBcscForm(raw, tongDgdv), qcGscl?.ti_le);
+    const data = apTiLeLoiGsclVaoBcscForm(apTongDgdvVaoBcscForm(raw, coPhieuDgdv === true ? tongDgdv : null), qcGscl?.ti_le);
     const dup = findBaoCaoSoCheDuplicateByBranchAndDate(
       existingList,
       data.ngay,
@@ -311,6 +324,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
               sttOffset={BCSC_SO_LIEU_STT_OFFSET}
               giaTriTuDgdv={giaTriTuDgdv}
               dgdvLoi={dgdvLoi}
+              dgdvNhapTay={dgdvNhapTay}
               tonDauTuPhieuTruoc={tonDauTuPhieuTruoc}
               qcGscl={qcGscl}
               gsclLoi={gsclLoi}
@@ -350,6 +364,7 @@ const BaoCaoSoCheForm: React.FC<Props> = ({
           setValue={setValue}
           i18nPrefix="baoCaoSoChe.kpiThuong"
           presetSources={kpiPresetSources}
+          mucTieuApDungTu={mucTieuCaiDat?.apDungTu ?? null}
           disabled={!canAdmin}
         />
       </form>

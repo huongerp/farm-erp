@@ -50,6 +50,8 @@ const DanhSachTab: React.FC = () => {
     canAdmin,
   } = useBaoCaoSoChePermissions();
   const confirm = useConfirmStore((s) => s.confirm);
+  // Super admin mở được dialog Cài đặt để cài mục tiêu KPI dù không có quyền admin module.
+  const laSuperAdmin = useAuthStore((s) => s.user?.is_super_admin) === true;
   const {
     searchTerm,
     filters,
@@ -353,7 +355,7 @@ const DanhSachTab: React.FC = () => {
         bulkActions={bulkActions}
         canCreate={canCreate}
         canDelete={canDelete}
-        canAdmin={canAdmin}
+        canAdmin={canAdmin || laSuperAdmin}
         onOpenCaiDat={() => setShowCaiDat(true)}
       />
       <div className="flex-1 min-h-0 flex flex-col md:px-4 md:pb-4 pt-1">
@@ -382,7 +384,7 @@ const DanhSachTab: React.FC = () => {
       </div>
 
       <AnimatePresence>
-        {showCaiDat && canAdmin && (
+        {showCaiDat && (canAdmin || laSuperAdmin) && (
           <HeSoQuyDoiDialog canAdmin={canAdmin} onClose={() => setShowCaiDat(false)} />
         )}
       </AnimatePresence>
