@@ -62,7 +62,7 @@ Route `/in-hang-loat?mau=<mauKey>&ids=…` (`TrangInHangLoat.tsx`). Thêm mẫu:
   (hoặc chụp màn hình để "bơm" khung hình).
 
 ## Băng hình đầu phiếu
-Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» (`public/phieu-in/bang-hinh-fp-2.png`, helper `lib/phieu-in/bang-hinh.ts`)
+Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» (`public/phieu-in/bang-hinh-fp-3.png`, helper `lib/phieu-in/bang-hinh.ts`)
 nằm TRÊN dòng công ty ở mọi đầu phiếu: `DauPhieu` tự có; phiếu tự dựng đầu đặt `<BangHinhPhieuIn />`; template HTML
 chuỗi dùng `bangHinhHtml()`; Excel có dòng tên công ty ghi bằng `ghiXlsxCoBangHinh(XLSX, wb, tenFile)`
 (`lib/export/xlsx-bang-hinh.ts`) thay `XLSX.writeFile`. Thêm phiếu/xuất mới có đầu công ty thì gắn theo.

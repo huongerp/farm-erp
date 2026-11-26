@@ -1,16 +1,16 @@
 /**
  * Băng hình «HTX NN Công Nghệ Cao fp - ForPeasantz» (thanh tên, ông nông dân, hàng cây, logo fp) in
  * trên cùng đầu phiếu — phía TRÊN dòng logo + tên công ty (không thay). Ảnh tĩnh ở
- * `public/phieu-in/bang-hinh-fp-2.png` (đổi ảnh thì đổi cả tên file để trình duyệt/PWA không giữ bản cũ), dùng chung cho phiếu in React, PDF dựng từ HTML, trang in
+ * `public/phieu-in/bang-hinh-fp-3.png` (đổi ảnh thì đổi cả tên file để trình duyệt/PWA không giữ bản cũ), dùng chung cho phiếu in React, PDF dựng từ HTML, trang in
  * báo cáo và file Excel tải về.
  */
 
 /** Kích thước gốc của ảnh (px) — tính chiều cao theo chiều rộng muốn in. */
-export const BANG_HINH_RONG = 1344;
-export const BANG_HINH_CAO = 253;
+export const BANG_HINH_RONG = 647;
+export const BANG_HINH_CAO = 112;
 
 /** Đường dẫn tương đối theo BASE_URL của app (dùng trong trang của app). */
-export const BANG_HINH_URL = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}phieu-in/bang-hinh-fp-2.png`;
+export const BANG_HINH_URL = `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}phieu-in/bang-hinh-fp-3.png`;
 
 /** Đường dẫn tuyệt đối — cho cửa sổ `about:blank` / iframe `srcdoc`, nơi đường dẫn tương đối không chạy. */
 export function bangHinhUrlTuyetDoi(): string {
